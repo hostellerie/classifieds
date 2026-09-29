@@ -150,12 +150,36 @@ function CLASSIFIEDS_saveAd($data, $files)
         return $result;
     }
 
-    if (!CLASSIFIEDS_saveImage($data, $files, $clid)) {
+    $imageResult = CLASSIFIEDS_saveImage($data, $files, $clid);
+    if (empty($imageResult['ok'])) {
         DB_query('ROLLBACK');
+        if (!empty($imageResult['uploaded_files'])) {
+            CLASSIFIEDS_cleanupImageFiles($imageResult['uploaded_files']);
+        }
         return $result;
     }
 
     DB_query('COMMIT');
+    if (DB_error()) {
+        if (!empty($imageResult['uploaded_files'])) {
+            CLASSIFIEDS_cleanupImageFiles($imageResult['uploaded_files']);
+        }
+        COM_errorLog(
+            'Classifieds: ad transaction commit failed for ad #' . $clid . '.'
+        );
+        return $result;
+    }
+
+    if (!empty($imageResult['delete_files'])) {
+        foreach ($imageResult['delete_files'] as $deleteFile) {
+            if (!CLASSIFIEDS_deleteImage($deleteFile)) {
+                COM_errorLog(
+                    'Classifieds: database update committed but old image '
+                    . basename($deleteFile) . ' could not be removed.'
+                );
+            }
+        }
+    }
 
     $result['ok'] = true;
     $result['id'] = $clid;
