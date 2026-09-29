@@ -1,3 +1,3 @@
-<div name="ad_list">
-{search_box}
-<table class="ad_list" border="0" width="100%" cellpadding="5" cellspacing="0">
+<div class="classifieds-list">
+    {search_box}
+    <div class="classifieds-list__items">
