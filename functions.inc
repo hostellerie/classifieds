@@ -1162,24 +1162,25 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 		$city = ucwords(mb_strtolower($A['city'], $_CONF['default_charset']));
 	    $ad->set_var('city', $city);
 		
-		if ($my == 1) {
-		    $admin_ad = '<td class="ad-list-views">
-			 <ul><li>' . $A['hits'] . ' ' . $LANG_CLASSIFIEDS_1['hits'] . '</li>';
-			 //repost
-			if (($active == false && $A['deleted'] == 0
+        if ($my == 1) {
+            $admin_ad = '<div class="ad-list-views"><ul><li>'
+                . (int) $A['hits'] . ' ' . $LANG_CLASSIFIEDS_1['hits'] . '</li>';
+
+            if (($active == false && $A['deleted'] == 0
                 && !empty($_CLASSIFIEDS_CONF['allow_republish'])
                 && SEC_hasRights('classifieds.publish'))
                 || (SEC_hasRights('classifieds.admin') && $active == false)) {
-			    $admin_ad .= '<li><a href="' . $_CLASSIFIEDS_CONF['site_url']
+                $admin_ad .= '<li><a href="' . $_CLASSIFIEDS_CONF['site_url']
                     . '/index.php?op=repost&amp;mode=e&amp;ad=' . (int) $A['clid']
                     . '&amp;' . CSRF_TOKEN . '=' . SEC_createToken() . '">'
-                    . $LANG_CLASSIFIEDS_2['copy_button'] . '</a></li>'; 
-			}
-		     $admin_ad .= '</ul></td>';
-		    $ad->set_var('views',$admin_ad );
-		} else {
-		    $ad->set_var('views', '');
-		}
+                    . $LANG_CLASSIFIEDS_2['copy_button'] . '</a></li>';
+            }
+
+            $admin_ad .= '</ul></div>';
+            $ad->set_var('views', $admin_ad);
+        } else {
+            $ad->set_var('views', '');
+        }
 	
 	    $retval .= $ad->parse('', 'ad');
     }
