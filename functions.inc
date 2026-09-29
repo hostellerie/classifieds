@@ -679,14 +679,15 @@ function plugin_cclabel_classifieds()
 {
     global $_CONF, $LANG_CLASSIFIEDS_1;
 
-    $retval = array();
-    if (SEC_hasRights('classifieds.admin')) {
-        $retval = array($LANG_CLASSIFIEDS_1['plugin_name'],
-            $_CONF['site_admin_url'] . '/plugins/classifieds/index.php',
-            plugin_geticon_classifieds());
+    if (!SEC_hasRights('classifieds.admin')) {
+        return false;
     }
 
-    return $retval;
+    return array(
+        $LANG_CLASSIFIEDS_1['plugin_name'],
+        $_CONF['site_admin_url'] . '/plugins/classifieds/index.php',
+        plugin_geticon_classifieds()
+    );
 }
 
 /**
@@ -797,20 +798,20 @@ function CLASSIFIEDS_upgradeConfiguration()
     // config::add() deletes/recreates an existing row, so never call it
     // blindly during an upgrade. Only create genuinely missing entries.
     $definitions = array(
-        'sg_main' => array(NULL, 'subgroup', 0, 0, NULL, 0, false),
-        'tab_main' => array(NULL, 'tab', 0, 0, NULL, 0, false),
+        'sg_main' => array(NULL, 'subgroup', 0, 0, NULL, 0, true),
+        'tab_main' => array(NULL, 'tab', 0, 0, NULL, 0, true),
 
-        'fs_main' => array(NULL, 'fieldset', 0, 0, NULL, 0, false),
+        'fs_main' => array(NULL, 'fieldset', 0, 0, NULL, 0, true),
         'classifieds_folder' => array($_CLASSIFIEDS_DEFAULT['classifieds_folder'], 'text', 0, 0, NULL, 10, true),
         'active_days' => array($_CLASSIFIEDS_DEFAULT['active_days'], 'text', 0, 0, NULL, 20, true),
 
-        'fs_images' => array(NULL, 'fieldset', 0, 1, NULL, 0, false),
+        'fs_images' => array(NULL, 'fieldset', 0, 1, NULL, 0, true),
         'max_image_width' => array($_CLASSIFIEDS_DEFAULT['max_image_width'], 'text', 0, 1, NULL, 101, true),
         'max_image_height' => array($_CLASSIFIEDS_DEFAULT['max_image_height'], 'text', 0, 1, NULL, 102, true),
         'max_image_size' => array($_CLASSIFIEDS_DEFAULT['max_image_size'], 'text', 0, 1, NULL, 103, true),
         'max_images_per_ad' => array($_CLASSIFIEDS_DEFAULT['max_images_per_ad'], 'text', 0, 1, NULL, 107, true),
 
-        'fs_display' => array(NULL, 'fieldset', 0, 2, NULL, 0, false),
+        'fs_display' => array(NULL, 'fieldset', 0, 2, NULL, 0, true),
         'menulabel' => array($_CLASSIFIEDS_DEFAULT['menulabel'], 'text', 0, 2, NULL, 201, true),
         'hide_classifieds_menu' => array($_CLASSIFIEDS_DEFAULT['hide_classifieds_menu'], 'select', 0, 2, 3, 202, true),
         'classifieds_main_header' => array($_CLASSIFIEDS_DEFAULT['classifieds_main_header'], 'text', 0, 2, NULL, 203, true),
@@ -823,7 +824,7 @@ function CLASSIFIEDS_upgradeConfiguration()
         'maxPerPage' => array($_CLASSIFIEDS_DEFAULT['maxPerPage'], 'text', 0, 2, NULL, 210, true),
         'allow_republish' => array(0, 'select', 0, 2, 3, 220, true),
 
-        'fs_email' => array(NULL, 'fieldset', 0, 3, NULL, 0, false),
+        'fs_email' => array(NULL, 'fieldset', 0, 3, NULL, 0, true),
         'create_ad_email_user' => array($_CLASSIFIEDS_DEFAULT['create_ad_email_user'], 'select', 0, 3, 3, 301, true),
         'mod_ad_email_user' => array($_CLASSIFIEDS_DEFAULT['mod_ad_email_user'], 'select', 0, 3, 3, 302, true),
         'delete_ad_email_user' => array($_CLASSIFIEDS_DEFAULT['delete_ad_email_user'], 'select', 0, 3, 3, 303, true),
@@ -833,7 +834,7 @@ function CLASSIFIEDS_upgradeConfiguration()
         'delete_ad_email_admin' => array($_CLASSIFIEDS_DEFAULT['delete_ad_email_admin'], 'select', 0, 3, 3, 307, true),
         'expire_ad_email_admin' => array($_CLASSIFIEDS_DEFAULT['expire_ad_email_admin'], 'select', 0, 3, 3, 308, true),
 
-        'fs_permissions' => array(NULL, 'fieldset', 0, 4, NULL, 0, false),
+        'fs_permissions' => array(NULL, 'fieldset', 0, 4, NULL, 0, true),
         'classifieds_login_required' => array($_CLASSIFIEDS_DEFAULT['classifieds_login_required'], 'select', 0, 4, 3, 401, true),
         'default_permissions' => array($_CLASSIFIEDS_DEFAULT['default_permissions'], '@select', 0, 4, 12, 402, true)
     );
