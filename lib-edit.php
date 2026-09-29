@@ -295,18 +295,6 @@ function CLASSIFIEDS_getAdForm($ad = array()) {
     return $retval;
 }
 
-function CLASSIFIEDS_checkCategory($cat)
-{
-    global $_TABLES;
-
-    $cat = (int) $cat;
-    if ($cat <= 0) {
-        return false;
-    }
-
-    return DB_count($_TABLES['cl_cat'], 'cid', $cat) > 0;
-}
-
 function CLASSIFIEDS_missingFieldCat($field)
 {
     global $LANG_CLASSIFIEDS_ADMIN, $_TABLES;
