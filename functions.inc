@@ -543,6 +543,130 @@ function plugin_idToURL_classifieds($sub_type, $item_id)
 }
 
 /**
+ * Declare provider-neutral Classifieds capabilities.
+ *
+ * @return array
+ */
+function plugin_getcapabilities_classifieds()
+{
+    return array(
+        'schema' => 1,
+        'roles' => array('content', 'service'),
+        'capabilities' => array(
+            'content.read',
+            'content.collection',
+            'content.search',
+            'content.url.resolve',
+            'dashboard.summary'
+        )
+    );
+}
+
+/**
+ * Enable bounded Geeklog services exposed by Classifieds.
+ *
+ * @return bool
+ */
+function plugin_wsEnabled_classifieds()
+{
+    return true;
+}
+
+/**
+ * Return an administration dashboard summary.
+ *
+ * @param array $args
+ * @param array &$output
+ * @param array &$svc_msg
+ * @return int
+ */
+function service_dashboard_summary_classifieds($args, &$output, &$svc_msg)
+{
+    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES, $LANG_CLASSIFIEDS_ADMIN;
+
+    if (!SEC_hasRights('classifieds.admin')) {
+        return PLG_RET_PERMISSION_DENIED;
+    }
+
+    $activeDays = (int) $_CLASSIFIEDS_CONF['active_days'];
+
+    $active = (int) DB_getItem(
+        $_TABLES['cl'],
+        'COUNT(*)',
+        "deleted = 0 AND enable = 1 "
+        . "AND TO_DAYS(NOW()) - TO_DAYS(created) <= " . $activeDays
+    );
+    $expired = (int) DB_getItem(
+        $_TABLES['cl'],
+        'COUNT(*)',
+        "deleted = 0 AND enable = 1 "
+        . "AND TO_DAYS(NOW()) - TO_DAYS(created) > " . $activeDays
+    );
+    $deleted = (int) DB_getItem(
+        $_TABLES['cl'],
+        'COUNT(*)',
+        "deleted = 1"
+    );
+    $categories = (int) DB_getItem(
+        $_TABLES['cl_cat'],
+        'COUNT(*)',
+        "catdeleted = 0"
+    );
+
+    $alerts = array();
+    $status = 'ok';
+
+    if (!is_dir($_CLASSIFIEDS_CONF['path_images'])
+        || !is_writable($_CLASSIFIEDS_CONF['path_images'])) {
+        $status = 'warning';
+        $alerts[] = array(
+            'id' => 'storage',
+            'status' => 'warning',
+            'message' => $LANG_CLASSIFIEDS_ADMIN['dashboard_storage_warning']
+        );
+    }
+
+    $output = array(
+        'schema' => 1,
+        'status' => $status,
+        'metrics' => array(
+            array(
+                'id' => 'active',
+                'label' => $LANG_CLASSIFIEDS_ADMIN['dashboard_active'],
+                'value' => $active
+            ),
+            array(
+                'id' => 'expired',
+                'label' => $LANG_CLASSIFIEDS_ADMIN['dashboard_expired'],
+                'value' => $expired
+            ),
+            array(
+                'id' => 'deleted',
+                'label' => $LANG_CLASSIFIEDS_ADMIN['dashboard_deleted'],
+                'value' => $deleted
+            ),
+            array(
+                'id' => 'categories',
+                'label' => $LANG_CLASSIFIEDS_ADMIN['dashboard_categories'],
+                'value' => $categories
+            )
+        ),
+        'alerts' => $alerts,
+        'links' => array(
+            array(
+                'label' => $LANG_CLASSIFIEDS_ADMIN['dashboard_manage'],
+                'url' => $_CONF['site_admin_url'] . '/plugins/classifieds/index.php'
+            )
+        ),
+        'updated' => time()
+    );
+
+    $svc_msg = array();
+
+    return PLG_RET_OK;
+}
+
+/**
 * Return plugin entry for "Command and Control" (moderation.php)
 *
 * @return  array  Array containing (plugin name, admin url, url of plugin icon)
