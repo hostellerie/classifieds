@@ -1260,12 +1260,12 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
     // Display each ads
     while ($A = DB_fetchArray($ad_res)) {
     
-	    $created = COM_getUserDateTimeFormat($A['created']);
-		$active = true;
-		$active_days = floor((time() - $created['1'])/(24*3600));
-		if (  ($active_days >= $_CLASSIFIEDS_CONF['active_days']) ) {
-			$active = false;
-		}
+        $created = COM_getUserDateTimeFormat($A['created']);
+        $createdTimestamp = isset($created[1]) ? (int) $created[1] : 0;
+        $activeDays = $createdTimestamp > 0
+            ? (time() - $createdTimestamp) / 86400
+            : PHP_INT_MAX;
+        $active = ($activeDays <= (int) $_CLASSIFIEDS_CONF['active_days']);
 
 		if ($A['deleted'] == 1) {
 		    $ad->set_var('class', ' class="ad-list-deleted"');
@@ -1292,8 +1292,7 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	    } else if( is_numeric($limit) ) {
 		    $ad->set_var(
                 'small_pic',
-                '<a href="' . $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&amp;ad='
-                . (int) $A['clid'] . '&amp;seo=' . rawurlencode(str_replace(' ', '-', $title)) . '">'
+                '<a href="' . plugin_idToURL_classifieds('classifieds', $A['clid']) . '">'
                 . '<img class="classifieds-thumb classifieds-thumb--small" loading="lazy" src="'
                 . $_CLASSIFIEDS_CONF['url_images'] . rawurlencode($A['pi_filename'])
                 . '" alt="' . htmlspecialchars($title, ENT_QUOTES, $_CONF['default_charset']) . '" /></a>'
@@ -1301,24 +1300,47 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	    } else {
 		    $ad->set_var(
                 'small_pic',
-                '<a href="' . $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&amp;ad='
-                . (int) $A['clid'] . '&amp;seo=' . rawurlencode(str_replace(' ', '-', $title)) . '">'
+                '<a href="' . plugin_idToURL_classifieds('classifieds', $A['clid']) . '">'
                 . '<img class="classifieds-thumb" loading="lazy" src="'
                 . $_CLASSIFIEDS_CONF['url_images'] . rawurlencode($A['pi_filename'])
                 . '" alt="' . htmlspecialchars($title, ENT_QUOTES, $_CONF['default_charset']) . '" /></a>'
             );
 	    }
 	
-	    //Title
-		if ( is_numeric($limit) ) {
-		    $ad->set_var('title', '<a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&amp;ad=' . $A['clid'] . '&amp;seo=' . str_replace(' ', '-', $title) . '" title="' . $title . '">' . substr($title,0,40) . ((strlen($title) > 40) ? '...' : '') . '</a>');
-		} else {
-    	    $ad->set_var('title', '<a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&amp;ad=' . $A['clid'] . '&amp;seo=' . str_replace(' ', '-', $title) . '">' . $title . '</a>');
-	    }
+        // Title
+        $escapedTitle = htmlspecialchars(
+            $title,
+            ENT_QUOTES,
+            $_CONF['default_charset']
+        );
+        $adUrl = plugin_idToURL_classifieds('classifieds', $A['clid']);
+
+        if (is_numeric($limit)) {
+            $shortTitle = (strlen($title) > 40)
+                ? substr($title, 0, 40) . '...'
+                : $title;
+            $ad->set_var(
+                'title',
+                '<a href="' . $adUrl . '" title="' . $escapedTitle . '">'
+                . htmlspecialchars($shortTitle, ENT_QUOTES, $_CONF['default_charset'])
+                . '</a>'
+            );
+        } else {
+            $ad->set_var(
+                'title',
+                '<a href="' . $adUrl . '">' . $escapedTitle . '</a>'
+            );
+        }
+
 	    //Edit link
 	    if (SEC_hasRights('classifieds.admin') && ($active == true) && ($A['deleted'] == 0) ) {
-	        $ad->set_var('edit', "<a href=\"{$_CLASSIFIEDS_CONF['site_url']}/index.php?mode=e&amp;op=edit&amp;ad={$A['clid']}\">
-			<img src=\"{$_CLASSIFIEDS_CONF['site_url']}/images/edit.png\" align=\"top\" alt=\"\" /></a>");
+            $ad->set_var(
+                'edit',
+                '<a href="' . $_CLASSIFIEDS_CONF['site_url']
+                . '/index.php?mode=e&amp;op=edit&amp;ad=' . (int) $A['clid'] . '">'
+                . '<img src="' . $_CLASSIFIEDS_CONF['site_url']
+                . '/images/edit.png" alt="" /></a>'
+            );
 	    }else {
         $ad->set_var('edit', '');
         }
@@ -1326,21 +1348,41 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	    //Price
 	    if ($A['price'] != 0) {
 		    $ad->set_var('price', number_format($A['price'], $_CONF['decimal_count'], $_CONF['decimal_separator'], $_CONF['thousand_separator']));
-			$ad->set_var('currency', $_CLASSIFIEDS_CONF['currency']);
+            $ad->set_var(
+                'currency',
+                htmlspecialchars(
+                    $_CLASSIFIEDS_CONF['currency'],
+                    ENT_QUOTES,
+                    $_CONF['default_charset']
+                )
+            );
 		} else {
 		    $ad->set_var('price', '');
 			$ad->set_var('currency', '');
 		}
 	
 	    //Category
-	    $ad->set_var('cat', $A['category']);
+        $ad->set_var(
+            'cat',
+            htmlspecialchars(
+                isset($A['category']) ? $A['category'] : '',
+                ENT_QUOTES,
+                $_CONF['default_charset']
+            )
+        );
 	
 	    //Postal
-	    $ad->set_var('postcode', $A['postcode']);
+        $ad->set_var(
+            'postcode',
+            htmlspecialchars($A['postcode'], ENT_QUOTES, $_CONF['default_charset'])
+        );
 	
 	    //City
-		$city = ucwords(mb_strtolower($A['city'], $_CONF['default_charset']));
-	    $ad->set_var('city', $city);
+        $city = ucwords(mb_strtolower($A['city'], $_CONF['default_charset']));
+        $ad->set_var(
+            'city',
+            htmlspecialchars($city, ENT_QUOTES, $_CONF['default_charset'])
+        );
 		
         if ($my == 1) {
             $admin_ad = '<div class="ad-list-views"><ul><li>'
