@@ -57,3 +57,15 @@ The current development snapshot also includes the first compatibility/security 
 - removed the final runtime/admin check for the old Pro file.
 
 The broader security/PHP audit is still in progress; this is not yet the final 1.4.0 release.
+
+
+## Legacy contact/profile cleanup
+
+- Replaced the copied Geeklog `profiles.php` mail logic with a small Classifieds-specific contact/report workflow.
+- Contact URLs now carry only the ad id; owner and subject are derived server-side from the ad record.
+- Removed the unused "advise to a friend" route and its broken story-based mail code.
+- Removed the duplicated user-profile renderer from `functions.inc`; Classifieds now uses Geeklog core `USER_showProfile()`.
+- Simplified contact form markup and made the subject display-only.
+- Added server-side CSRF, speed-limit, spam and user-preference checks to contact/report sending.
+- Strengthened `CLASSIFIEDS_checkAdAccess()` so it enforces Geeklog ACL permissions.
+- Fixed category/ad validators that could trigger PHP 8 string/array warnings.
