@@ -162,29 +162,55 @@ function plugin_savecomment_classifieds($title, $comment, $id, $pid, $postmode)
  * @param   string  $id     Item id to which $cid belongs
  * @return  mixed   false for failure, HTML string (redirect?) for success
  */
-function plugin_deletecomment_classifieds($cid, $id)
+function plugin_deletecomment_classifieds($cid, $id, $returnBoolean = false)
 {
-    global $_CONF, $_TABLES, $_USER,$_CLASSIFIEDS_CONF;
+    global $_CONF, $_TABLES, $_USER, $_CLASSIFIEDS_CONF;
 
-    $retval = '';
+    $clid = (int) $id;
+    $retval = false;
 
-    $has_editPermissions = SEC_hasRights ('classifieds.admin');
-    $result = DB_query ("SELECT owner_id,group_id,perm_owner,perm_group,perm_members,perm_anon FROM {$_TABLES['cl']} WHERE clid = '{$id}'");
-    $A = DB_fetchArray ($result);
+    $result = DB_query(
+        "SELECT owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+        . "FROM {$_TABLES['cl']} WHERE clid = " . $clid . " LIMIT 1"
+    );
+    $A = DB_fetchArray($result);
 
-    if ($has_editPermissions && SEC_hasAccess ($A['owner_id'],
-            $A['group_id'], $A['perm_owner'], $A['perm_group'],
-            $A['perm_members'], $A['perm_anon']) == 3) {
-        CMT_deleteComment($cid, $id, 'classifieds');
-        $retval .= COM_refresh ($_CLASSIFIEDS_CONF['site_url']
-                                 . "/index.php?mode=v&ad=$id&amp;aid=-1");
-    } else {
-        COM_errorLog ("User {$_USER['username']} (IP: {$_SERVER['REMOTE_ADDR']}) "
-                    . "tried to illegally delete comment $cid from poll $id");
-        $retval .= COM_refresh ($_CONF['site_url'] . '/index.php');
+    $canDelete = is_array($A)
+        && (SEC_hasRights('classifieds.admin')
+            || SEC_hasAccess(
+                $A['owner_id'],
+                $A['group_id'],
+                $A['perm_owner'],
+                $A['perm_group'],
+                $A['perm_members'],
+                $A['perm_anon']
+            ) == 3);
+
+    if ($canDelete) {
+        CMT_deleteComment($cid, (string) $clid, 'classifieds');
+
+        if ($returnBoolean) {
+            return true;
+        }
+
+        return COM_refresh(
+            $_CLASSIFIEDS_CONF['site_url']
+            . '/index.php?mode=v&ad=' . $clid . '&amp;aid=-1'
+        );
     }
 
-    return $retval;
+    $username = isset($_USER['username']) ? $_USER['username'] : 'anonymous';
+    COM_errorLog(
+        'Classifieds: user ' . $username
+        . ' tried to delete comment ' . (int) $cid
+        . ' from ad ' . $clid . ' without permission.'
+    );
+
+    if ($returnBoolean) {
+        return false;
+    }
+
+    return COM_refresh($_CONF['site_url'] . '/index.php');
 }
 
 /**
@@ -199,40 +225,57 @@ function plugin_deletecomment_classifieds($cid, $id)
 * @param   boolean $view   True to view comment (by cid), false to display (by $pid)
 * @return  mixed   results of calling the plugin_displaycomment_ function
 */
-function plugin_displaycomment_classifieds ($id, $cid, $title, $order, $format, $page, $view)
+function plugin_displaycomment_classifieds($id, $cid, $title, $order, $format, $page, $view)
 {
-    global $_TABLES, $LANG_ACCESS, $LANG_classifieds;
+    global $_TABLES, $LANG_ACCESS, $LANG_CLASSIFIEDS_1;
 
-    $retval = '';
-
-    $sql = "SELECT COUNT(*) AS count, owner_id, group_id, perm_owner, "
-        . "perm_group, perm_members, perm_anon "
-        . "FROM {$_TABLES['cl']} "
-        . "WHERE (clid = '$id')" . COM_getPermSQL('AND')
-        . ' LIMIT 1';
-    $result = DB_query ($sql);
-    $A = DB_fetchArray ($result);
-    $allowed = $A['count'];
-	
-	//Comment 
-	$A['commentcode'] = 0;
-
-    if ($allowed == 1) {
-        $delete_option = (SEC_hasRights ('classifieds.edit') &&
-                (SEC_hasAccess ($A['owner_id'], $A['group_id'],
-                    $A['perm_owner'], $A['perm_group'], $A['perm_members'],
-                    $A['perm_anon']) == 3));
-        $retval .= CMT_userComments ($id, $title, 'classifieds', $order, $format,
-                                     $cid, $page, $view, $delete_option,
-                                     $A['commentcode']);
-    } else {
-        $retval .= COM_startBlock ($LANG_ACCESS['accessdenied'], '',
-                        COM_getBlockTemplate ('_msg_block', 'header'))
-                . $LANG_STATIC['deny_msg']
-                . COM_endBlock (COM_getBlockTemplate ('_msg_block', 'footer'));
+    $clid = (int) $id;
+    if ($clid <= 0) {
+        return COM_showMessageText(
+            $LANG_CLASSIFIEDS_1['ads_not_available'],
+            $LANG_ACCESS['accessdenied']
+        );
     }
 
-    return $retval;
+    $sql = "SELECT owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+        . "FROM {$_TABLES['cl']} "
+        . "WHERE clid = " . $clid
+        . " AND deleted = 0"
+        . COM_getPermSQL('AND')
+        . " LIMIT 1";
+
+    $result = DB_query($sql);
+    $A = DB_fetchArray($result);
+
+    if (!is_array($A)) {
+        return COM_showMessageText(
+            $LANG_CLASSIFIEDS_1['ads_not_available'],
+            $LANG_ACCESS['accessdenied']
+        );
+    }
+
+    $deleteOption = SEC_hasRights('classifieds.admin')
+        || SEC_hasAccess(
+            $A['owner_id'],
+            $A['group_id'],
+            $A['perm_owner'],
+            $A['perm_group'],
+            $A['perm_members'],
+            $A['perm_anon']
+        ) == 3;
+
+    return CMT_userComments(
+        (string) $clid,
+        $title,
+        'classifieds',
+        $order,
+        $format,
+        $cid,
+        $page,
+        $view,
+        $deleteOption,
+        0
+    );
 }
 
 /**
