@@ -76,7 +76,6 @@ $LANG_CLASSIFIEDS_1 = array(
 	'modify_ad'               => 'Modifier l\'annonce',
 	'delete_ad'               => 'Effacer l\'annonce',
 	'save_ad'                 => 'Sauvegarder l\'annonce',
-	'advisor'                 => 'Signaler l\'annonce à un ami',
 	'price'                   => 'Prix',
 	'category'                => 'Rubrique',
 	'postcode'                => 'Code postal',
