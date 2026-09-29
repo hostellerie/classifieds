@@ -1196,3 +1196,50 @@ Additional cleanup completed before runtime testing:
 - [x] modernized comment callbacks and removed references to nonexistent `classifieds.edit`.
 
 - [x] date/time display now follows Geeklog user preferences through `COM_getUserDateTimeFormat()`; plugin-specific `strftime()` settings were removed.
+
+
+---
+
+## Source consolidation complete — runtime validation next
+
+The 1.4.0-dev source consolidation pass is now complete.
+
+Final source-level corrections before runtime validation include:
+
+- [x] no maintained PHP file contains the targeted legacy/deprecated patterns: `each()`, direct `strftime()`, `addslashes()`, `stripslashes()`, generic `SELECT *`, no-op `WHERE 1=1`, or direct `$_GET`/`$_POST` access;
+- [x] no remaining TODO/FIXME markers in maintained PHP code;
+- [x] runtime configuration merges persisted values over safe in-memory defaults without writing to the database;
+- [x] derived public paths and URLs are normalized before use;
+- [x] new ads apply the configured Geeklog `default_permissions` through `SEC_setDefaultPermissions()`;
+- [x] republished ads preserve source ACLs;
+- [x] the `classifieds.admin` role consistently overrides item ACLs for administration/edit/delete/republish workflows;
+- [x] public list, search, Item Info, sitemap and autotags share the same publication/ACL intent;
+- [x] comment creation/display now uses `plugin_commentenabled_classifieds()` and closes comments when an ad expires;
+- [x] category hierarchy invariants are enforced server-side and deletion cannot orphan ads/children;
+- [x] image DB changes are staged inside the ad transaction; old files are deleted only after a successful commit;
+- [x] hard deletion commits database removal before deleting physical files;
+- [x] republish no longer exposes a dead upload path and only copies existing media;
+- [x] conflicting legacy CSS rules were removed rather than overridden with additional patches.
+
+### Runtime gate
+
+No further source refactoring should be performed merely for cleanup. The next changes should be driven by actual test results.
+
+Required runtime gate:
+
+- [ ] PHP syntax/lint pass on the deployed branch;
+- [ ] fresh install on Geeklog 2.1.1 / PHP 5.6;
+- [ ] fresh install on Geeklog 2.2.2 / PHP 8.1;
+- [ ] upgrade from a real Classifieds 1.3.2 installation;
+- [ ] upgrade with a legacy Pro file still present under `path_data`;
+- [ ] shared-files multisite upgrade with mixed 1.3.2 / 1.4.0 site state;
+- [ ] Configuration page, autocomplete and tooltips EN/FR;
+- [ ] Denim and Eclipse admin navigation, including narrow screens;
+- [ ] create/edit/soft-delete/hard-delete and ACL matrix;
+- [ ] image add/delete/replace/failure paths;
+- [ ] category create/edit/disable/delete hierarchy;
+- [ ] contact/report;
+- [ ] comments, search, autotags and profile block;
+- [ ] expiration scheduled task and all notification combinations;
+- [ ] republish success and failure rollback behavior;
+- [ ] Item Info, sitemap, lifecycle events and dashboard summary.
