@@ -53,8 +53,8 @@ function plugin_autoinstall_classifieds($pi_name)
         'pi_name'         => $pi_name,
         'pi_display_name' => $pi_display_name,
         'pi_version'      => '1.4.0-dev',
-        'pi_gl_version'   => '1.8.0',
-        'pi_homepage'     => 'http://geeklog.fr'
+        'pi_gl_version'   => '2.1.1',
+        'pi_homepage'     => 'https://github.com/Geeklog-Plugins/classifieds'
     );
 
     $groups = array(
@@ -109,7 +109,9 @@ function plugin_compatible_with_this_version_classifieds($pi_name)
         return false;
     }
 
-    // add checks here
+    if (version_compare(PHP_VERSION, '5.6.0', '<')) {
+        return false;
+    }
 
     return true;
 }
