@@ -74,7 +74,7 @@ function CLASSIFIEDS_getAdForm($ad = array()) {
     $ad = is_array($ad) ? array_merge($defaults, $ad) : $defaults;
 
 	if ($_USER['uid'] < 2) {
-	    return CLASSIFIEDS_loginRequiredForm();
+	    return SEC_loginRequiredForm();
 	}
 	if(!SEC_hasRights('classifieds.publish')) {
 	
