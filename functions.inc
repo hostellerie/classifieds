@@ -1369,106 +1369,154 @@ function modifAd ($ad)
     DB_query("UPDATE {$_TABLES['cl']} SET modif = modif + 1 WHERE clid = '$ad'");
 }
 
-function CLASSIFIEDS_viewAd ($clid) 
+function CLASSIFIEDS_viewAd($clid)
 {
-    global $_TABLES, $_CLASSIFIEDS_CONF, $_CONF, $LANG_CLASSIFIEDS_1, $LANG_CLASSIFIEDS_2, $_USER;
-    
-    if (($_USER['uid'] < 2) && ($_CLASSIFIEDS_CONF['classifieds_login_required'] == 1)) {
-	    $retval = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name']);
-		$retval .= CLASSIFIEDS_loginRequiredForm();
-		$retval .= COM_siteFooter(1);
-        return $retval;
-        exit;
-    }
-	// query database for Ad
-    $sql = "SELECT a.*, u.username, c.category 
-	                 FROM {$_TABLES['cl']} as a
-					 LEFT JOIN {$_TABLES['users']} AS u
-                     ON u.uid = a.owner_id
-					 LEFT JOIN {$_TABLES['cl_cat']} AS c
-                     ON c.cid = a.catid
-					 WHERE a.clid = {$clid} ";
-	
-	$res = DB_query($sql);
+    global $_TABLES, $_CLASSIFIEDS_CONF, $_CONF;
+    global $LANG_CLASSIFIEDS_1, $LANG_CLASSIFIEDS_2, $_USER;
 
-    // count number of returned results, if unexpected redirect to Ad list
-    if (DB_numRows($res) != 1) {
-        echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
-	    exit;
+    $clid = (int) $clid;
+    if ($clid <= 0) {
+        return COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
     }
 
+    if (($_USER['uid'] < 2) && !empty($_CLASSIFIEDS_CONF['classifieds_login_required'])) {
+        return COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name'])
+            . CLASSIFIEDS_loginRequiredForm()
+            . COM_siteFooter(1);
+    }
+
+    if (!CLASSIFIEDS_checkAdAccess($clid)) {
+        return COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name'])
+            . CLASSIFIEDS_user_menu()
+            . CLASSIFIEDS_message($LANG_CLASSIFIEDS_1['ads_not_available'])
+            . COM_siteFooter(1);
+    }
+
+    $sql = "SELECT a.*, u.username, c.category "
+        . "FROM {$_TABLES['cl']} AS a "
+        . "LEFT JOIN {$_TABLES['users']} AS u ON u.uid = a.owner_id "
+        . "LEFT JOIN {$_TABLES['cl_cat']} AS c ON c.cid = a.catid "
+        . "WHERE a.clid = " . $clid . " LIMIT 1";
+
+    $res = DB_query($sql);
     $A = DB_fetchArray($res);
-	
-	if (!SEC_hasRights('classifieds.admin') && $A['deleted']) {
-	    $retval = COM_siteHeader('menu', $pagetitle);
-	    $retval .= CLASSIFIEDS_user_menu();
-	    $retval .= CLASSIFIEDS_message($LANG_CLASSIFIEDS_1['deleted_ad']);
-		$retval .= '&nbsp;<h2>' . $LANG_CLASSIFIEDS_1['last_ads'] . '</h2>';
-		$retval .= CLASSIFIEDS_centerblock_lastAds(20);
-		$retval .= COM_siteFooter(0);
-        return $retval;
-	}
-	$created = COM_getUserDateTimeFormat($A['created']);
-	$active = true;
-	$active_days = (time() - $created['1'])/(24*3600);
-	if (  ($active_days > $_CLASSIFIEDS_CONF['active_days']) ) {
-		$active = false;
-	}
-	
-	//if ads is not active 
-	if ($active == false &&  !SEC_hasRights('classifieds.admin')) {
-	    $retval = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name']);
-		$retval .= CLASSIFIEDS_user_menu();
-		$retval .= $LANG_CLASSIFIEDS_1['ads_not_available'];
-		$retval .= COM_siteFooter(1);
-        return $retval;
-        exit;
+
+    if (!is_array($A)) {
+        return COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
     }
 
-    $pagetitle = $A['title'] . ' - ' . $A['category'] . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
-	$retval = COM_siteHeader('menu', $pagetitle);
-	$retval .= CLASSIFIEDS_user_menu();
-	$retval .= CLASSIFIEDS_message(isset($_GET['msg']) ? $_GET['msg'] : '');
+    $isAdmin = SEC_hasRights('classifieds.admin');
+    $created = COM_getUserDateTimeFormat($A['created']);
+    $createdTimestamp = isset($created[1]) ? (int) $created[1] : 0;
+    $activeDays = $createdTimestamp > 0
+        ? (time() - $createdTimestamp) / 86400
+        : PHP_INT_MAX;
+    $active = ($activeDays <= (int) $_CLASSIFIEDS_CONF['active_days']);
+
+    if (!$isAdmin && (empty($A['enable']) || !empty($A['deleted']) || !$active)) {
+        return COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name'])
+            . CLASSIFIEDS_user_menu()
+            . CLASSIFIEDS_message($LANG_CLASSIFIEDS_1['ads_not_available'])
+            . COM_siteFooter(1);
+    }
+
+    $title = (string) $A['title'];
+    $category = isset($A['category']) ? (string) $A['category'] : '';
+    $pageTitle = $title
+        . ($category !== '' ? ' - ' . $category : '')
+        . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
+
+    $description = trim(strip_tags((string) $A['text']));
+    if (strlen($description) > 160) {
+        $description = substr($description, 0, 157) . '...';
+    }
+
+    $metaTags = array();
+    if ($description !== '') {
+        $metaTags[] = array(
+            'name' => 'description',
+            'content' => $description
+        );
+    }
+
+    if ($isAdmin && (!empty($A['deleted']) || !$active || empty($A['enable']))) {
+        $metaTags[] = array(
+            'name' => 'robots',
+            'content' => 'noindex,follow'
+        );
+    }
+
+    $headerCode = PLG_getMetaTags('classifieds', (string) $clid, $metaTags);
+    $canonicalUrl = plugin_idToURL_classifieds('classifieds', $clid);
+    $headerCode .= '<link rel="canonical" href="'
+        . htmlspecialchars($canonicalUrl, ENT_QUOTES, $_CONF['default_charset'])
+        . '"' . XHTML . '>' . LB;
+
+    $retval = COM_siteHeader('menu', $pageTitle, $headerCode);
+    $retval .= CLASSIFIEDS_user_menu();
+
+    $message = isset($_REQUEST['msg']) ? (string) $_REQUEST['msg'] : '';
+    if ($message !== '') {
+        $retval .= CLASSIFIEDS_message($message);
+    }
 
     $ad = new Template($_CONF['path'] . 'plugins/classifieds/templates');
     $ad->set_file(array('ad' => 'ad_detail.thtml'));
-    $ad->set_var('site_url', $_CONF['site_url']);
-    $ad->set_var('classifieds_folder', $_CLASSIFIEDS_CONF['site_url']);
-    
-	//Title
-	($A['deleted'] == 1) ? $deleted = '<font color="red">' . $LANG_CLASSIFIEDS_1['deleted'] . '</font> ' : '';
-	$ad->set_var('title', $deleted . $A['title']);
-	//Edit link
-	if (SEC_hasRights('classifieds.admin') && ($active == true) && ($A['deleted'] == 0) ) {
-	    $ad->set_var('edit', "<a href=\"{$_CLASSIFIEDS_CONF['site_url']}/index.php?mode=e&amp;op=edit&amp;ad={$A['clid']}\">
-		<img src=\"{$_CLASSIFIEDS_CONF['site_url']}/images/edit.png\" align=\"absmiddle\" alt=\"\" /></a>");
-	}else {
-    $ad->set_var('edit', '');
+
+    $deletedLabel = !empty($A['deleted'])
+        ? '<span class="classifieds-ad__deleted">' . $LANG_CLASSIFIEDS_1['deleted'] . '</span> '
+        : '';
+    $ad->set_var('title', $deletedLabel . htmlspecialchars(
+        $title,
+        ENT_QUOTES,
+        $_CONF['default_charset']
+    ));
+
+    if ($isAdmin && $active && empty($A['deleted'])) {
+        $ad->set_var(
+            'edit',
+            '<a href="' . $_CLASSIFIEDS_CONF['site_url']
+            . '/index.php?mode=e&amp;op=edit&amp;ad=' . $clid . '">'
+            . '<img src="' . $_CLASSIFIEDS_CONF['site_url']
+            . '/images/edit.png" alt="" /></a>'
+        );
+    } else {
+        $ad->set_var('edit', '');
     }
 
-    //online
-	$date = strftime( $_CLASSIFIEDS_CONF['date_format'], $created['1']);
-	$time = strftime( $_CLASSIFIEDS_CONF['time_format'], $created['1']);
-	$ad->set_var('postby', '<p>' . $LANG_CLASSIFIEDS_1['posted_by'] . ' <a href="'. $_CLASSIFIEDS_CONF['site_url'] .
-	'/index.php?mode=p&amp;u=' . $A['owner_id'] .  '">'. $A['username'] . '</a> ' .
-	$LANG_CLASSIFIEDS_1['on'] . ' ' . $date . ' ' . $LANG_CLASSIFIEDS_1['at'] . ' ' . $time . '</p>');
-	
-    // Pictures
+    $date = $createdTimestamp > 0
+        ? strftime($_CLASSIFIEDS_CONF['date_format'], $createdTimestamp)
+        : '';
+    $time = $createdTimestamp > 0
+        ? strftime($_CLASSIFIEDS_CONF['time_format'], $createdTimestamp)
+        : '';
+
+    $username = isset($A['username']) ? (string) $A['username'] : '';
+    $ad->set_var(
+        'postby',
+        '<p>' . $LANG_CLASSIFIEDS_1['posted_by']
+        . ' <a href="' . $_CLASSIFIEDS_CONF['site_url']
+        . '/index.php?mode=p&amp;u=' . (int) $A['owner_id'] . '">'
+        . htmlspecialchars($username, ENT_QUOTES, $_CONF['default_charset'])
+        . '</a> ' . $LANG_CLASSIFIEDS_1['on'] . ' ' . $date
+        . ' ' . $LANG_CLASSIFIEDS_1['at'] . ' ' . $time . '</p>'
+    );
+
     $icount = DB_count($_TABLES['cl_pic'], 'pi_pid', $clid);
-    $saved_images = '';
+    $savedImages = '';
 
     if ($icount > 0) {
-        $result_pic = DB_query(
+        $resultPic = DB_query(
             "SELECT pi_filename FROM {$_TABLES['cl_pic']} "
-            . "WHERE pi_pid = '" . (int) $clid . "' ORDER BY pi_img_num"
+            . "WHERE pi_pid = '" . $clid . "' ORDER BY pi_img_num"
         );
 
         $z = 0;
-        while ($I = DB_fetchArray($result_pic)) {
+        while ($I = DB_fetchArray($resultPic)) {
             $z++;
             $filename = rawurlencode(basename($I['pi_filename']));
             $imageUrl = $_CLASSIFIEDS_CONF['url_images'] . $filename;
-            $alt = htmlspecialchars($A['title'], ENT_QUOTES, $_CONF['default_charset']);
+            $alt = htmlspecialchars($title, ENT_QUOTES, $_CONF['default_charset']);
 
             if ($z === 1) {
                 $ad->set_var(
@@ -1478,7 +1526,7 @@ function CLASSIFIEDS_viewAd ($clid)
                 );
             }
 
-            $saved_images .= '<a class="lightbox" href="' . $imageUrl . '">'
+            $savedImages .= '<a class="lightbox" href="' . $imageUrl . '">'
                 . '<img class="classifieds-gallery-thumb" loading="lazy" src="'
                 . $imageUrl . '" alt="' . $alt . '" /></a>';
         }
@@ -1488,118 +1536,181 @@ function CLASSIFIEDS_viewAd ($clid)
         $ad->set_var('big_picture', '');
         $ad->set_var('pictures', '');
     } else {
-        $info_picture = '<p class="info_picture"><img src="'
-            . $_CLASSIFIEDS_CONF['site_url']
-            . '/images/enlarge.png" alt="" /> '
+        $infoPicture = '<p class="info_picture"><img src="'
+            . $_CLASSIFIEDS_CONF['site_url'] . '/images/enlarge.png" alt="" /> '
             . $LANG_CLASSIFIEDS_1['enlarge_picture'] . '</p>';
         $ad->set_var(
             'pictures',
-            '<div id="ad-pictures">' . $saved_images . $info_picture . '</div>'
+            '<div id="ad-pictures">' . $savedImages . $infoPicture . '</div>'
         );
     }
 
-	//Tel
-	if (($A['hide_tel'] == 0) && ($A['tel'] != '')) {
-    	$ad->set_var('tel', '<p>'. $A['username'] . $LANG_CLASSIFIEDS_1['double_point'] . ' ' . $A['tel'] . '</p>');
-	} else {
-	    $ad->set_var('tel', '');
-	}
-	//Siren
-	if (($A['status'] == 1) && ($A['siren'] != '')) {
-    	$ad->set_var('siren', '<p>'. $LANG_CLASSIFIEDS_2['siren'] . $LANG_CLASSIFIEDS_1['double_point'] . ' ' . $A['siren'] . '</p>');
-	} else {
-	    $ad->set_var('siren', '');
-	}
-	//admin
-	$admin = $LANG_CLASSIFIEDS_1['manage_ad'];
-	//if (SEC_hasAccess2($A) == 3) {
-	    $admin .= ' (' . $A['hits'] . ' ' . $LANG_CLASSIFIEDS_1['hits'] . ')';
-	//}
-	
-	$ad->set_var('admin', '<h3>' . $admin .'</h3>');
-	
-	if ( SEC_hasAccess2($A) == 3 && $A['deleted'] == 0 && $active == true ) {
-		//modify
-		$ad->set_var('modify', '<p><a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=e&amp;op=edit&amp;ad=' .
-		$A['clid'] . '">' . $LANG_CLASSIFIEDS_1['modify_ad'] . '</a></p>');
-		
-		//delete
-		$ad->set_var('delete', '<p><a href="'. $_CLASSIFIEDS_CONF['site_url']
-                    . '/index.php?mode=e&amp;op=del&amp;ad=' . (int) $A['clid']
-                    . '&amp;' . CSRF_TOKEN . '=' . SEC_createToken() .
-		'" onclick="return confirm(\'' . $LANG_CLASSIFIEDS_1['delete_confirm'] . '\');">' . $LANG_CLASSIFIEDS_1['delete_ad'] . '</a></p>');
-	} else {
-	    $ad->set_var('modify', '');
-		$ad->set_var('delete', '');
-	}
+    if (empty($A['hide_tel']) && !empty($A['tel'])) {
+        $ad->set_var(
+            'tel',
+            '<p>' . htmlspecialchars($username, ENT_QUOTES, $_CONF['default_charset'])
+            . $LANG_CLASSIFIEDS_1['double_point'] . ' '
+            . htmlspecialchars($A['tel'], ENT_QUOTES, $_CONF['default_charset'])
+            . '</p>'
+        );
+    } else {
+        $ad->set_var('tel', '');
+    }
 
-    //save ad
-	$ad->set_var('save', '<p><a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=s&amp;ad=' .
-	$A['clid'] . '">' . $LANG_CLASSIFIEDS_1['save_ad'] . '</a></p>');
-	
-	//report
-	$ad->set_var('report', '<p><a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=r&amp;ad=' .
-	$A['clid'] . '">' . $LANG_CLASSIFIEDS_1['report'] . '</a></p>');
-	
-	//view all
-	if ($_USER['uid'] == $A['owner_id']) {
-	    $ad->set_var('view_all', '');
-	} else {
-	    $ad->set_var('view_all', '<p><a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=va&amp;u=' .
-	    $A['owner_id'] . '">' . $LANG_CLASSIFIEDS_1['view_all'] . '</a></p>');
-	}
-	
-	//Price
-	    if ($A['price'] != 0) {
-		    $ad->set_var('price', '<span class="ad-col1">' .$LANG_CLASSIFIEDS_1['price'] . $LANG_CLASSIFIEDS_1['double_point'] .
-	' <strong>' . number_format($A['price'], $_CONF['decimal_count'], $_CONF['decimal_separator'], $_CONF['thousand_separator']));
-	        $ad->set_var('currency', $_CLASSIFIEDS_CONF['currency'] . '</strong></span>');
-		} else {
-		    $ad->set_var('price', '<span class="ad-col1">' . $LANG_CLASSIFIEDS_1['price'] . $LANG_CLASSIFIEDS_1['double_point'] .
-	' --</span>');
-			$ad->set_var('currency', '');
-		}
+    if (!empty($A['status']) && !empty($A['siren'])) {
+        $ad->set_var(
+            'siren',
+            '<p>' . $LANG_CLASSIFIEDS_2['siren']
+            . $LANG_CLASSIFIEDS_1['double_point'] . ' '
+            . htmlspecialchars($A['siren'], ENT_QUOTES, $_CONF['default_charset'])
+            . '</p>'
+        );
+    } else {
+        $ad->set_var('siren', '');
+    }
 
-	//postal
-	$ad->set_var('postal', '<span class="ad-col2">' . $LANG_CLASSIFIEDS_1['postcode'] .
-	$LANG_CLASSIFIEDS_1['double_point'] . ' <strong>' . $A['postcode'] . '</strong></span>');
-	
-	//category
-	$ad->set_var('category', '<div style="clear:both;"></div><p>'. $LANG_CLASSIFIEDS_1['category'] .
-	$LANG_CLASSIFIEDS_1['double_point'] . ' <strong>' . $A['category'] . '</strong></p>');
-	
-	//detail
-	$ad->set_var('detail', '<p class="ad-detail">'. PLG_replacetags(nl2br($A['text'])) . '</p>');
-	
-	//Facebook, Twitter, Google+
-	$ad->set_var('relay', '<h3>' . $LANG_CLASSIFIEDS_1['relay'] . '</h3>');
-	$ad->set_var('classifieds_name', $A['title']);
-	$ad->set_var('classifieds_url', $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $clid);
-	
-	//Comments
-	
-	$comment_page = 1;
-	$delete_option = (SEC_hasRights('classifieds.admin') &&
-                        SEC_hasAccess($A['owner_id'], $A['group_id'],
-                        $A['perm_owner'], $A['perm_group'], $A['perm_members'],
-                        $A['perm_anon']) == 3 ? true : false);
-						
-	require_once $_CONF['path_system'] . 'lib-comment.php';
-	
-	$ad->set_var('commentbar',
-                            CMT_userComments($clid, $A['title'], 'classifieds',
-                                        'ASC', 'flat', 0, $comment_page, false,
-                                        $delete_option, 0));
+    $ad->set_var(
+        'admin',
+        '<h3>' . $LANG_CLASSIFIEDS_1['manage_ad'] . ' ('
+        . (int) $A['hits'] . ' ' . $LANG_CLASSIFIEDS_1['hits'] . ')</h3>'
+    );
+
+    $canEdit = SEC_hasAccess2($A) >= 3 && empty($A['deleted']) && $active;
+    if ($canEdit) {
+        $ad->set_var(
+            'modify',
+            '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
+            . '/index.php?mode=e&amp;op=edit&amp;ad=' . $clid . '">'
+            . $LANG_CLASSIFIEDS_1['modify_ad'] . '</a></p>'
+        );
+        $ad->set_var(
+            'delete',
+            '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
+            . '/index.php?mode=e&amp;op=del&amp;ad=' . $clid
+            . '&amp;' . CSRF_TOKEN . '=' . SEC_createToken()
+            . '" onclick="return confirm(\''
+            . addslashes($LANG_CLASSIFIEDS_1['delete_confirm'])
+            . '\');">' . $LANG_CLASSIFIEDS_1['delete_ad'] . '</a></p>'
+        );
+    } else {
+        $ad->set_var('modify', '');
+        $ad->set_var('delete', '');
+    }
+
+    $ad->set_var(
+        'save',
+        '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
+        . '/index.php?mode=s&amp;ad=' . $clid . '">'
+        . $LANG_CLASSIFIEDS_1['save_ad'] . '</a></p>'
+    );
+    $ad->set_var(
+        'report',
+        '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
+        . '/index.php?mode=r&amp;ad=' . $clid . '">'
+        . $LANG_CLASSIFIEDS_1['report'] . '</a></p>'
+    );
+
+    if ((int) $_USER['uid'] === (int) $A['owner_id']) {
+        $ad->set_var('view_all', '');
+    } else {
+        $ad->set_var(
+            'view_all',
+            '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
+            . '/index.php?mode=va&amp;u=' . (int) $A['owner_id'] . '">'
+            . $LANG_CLASSIFIEDS_1['view_all'] . '</a></p>'
+        );
+    }
+
+    if ((float) $A['price'] != 0.0) {
+        $ad->set_var(
+            'price',
+            '<span class="ad-col1">' . $LANG_CLASSIFIEDS_1['price']
+            . $LANG_CLASSIFIEDS_1['double_point'] . ' <strong>'
+            . number_format(
+                $A['price'],
+                $_CONF['decimal_count'],
+                $_CONF['decimal_separator'],
+                $_CONF['thousand_separator']
+            )
+        );
+        $ad->set_var(
+            'currency',
+            htmlspecialchars(
+                $_CLASSIFIEDS_CONF['currency'],
+                ENT_QUOTES,
+                $_CONF['default_charset']
+            ) . '</strong></span>'
+        );
+    } else {
+        $ad->set_var(
+            'price',
+            '<span class="ad-col1">' . $LANG_CLASSIFIEDS_1['price']
+            . $LANG_CLASSIFIEDS_1['double_point'] . ' --</span>'
+        );
+        $ad->set_var('currency', '');
+    }
+
+    $ad->set_var(
+        'postal',
+        '<span class="ad-col2">' . $LANG_CLASSIFIEDS_1['postcode']
+        . $LANG_CLASSIFIEDS_1['double_point'] . ' <strong>'
+        . htmlspecialchars($A['postcode'], ENT_QUOTES, $_CONF['default_charset'])
+        . '</strong></span>'
+    );
+
+    $ad->set_var(
+        'category',
+        '<p>' . $LANG_CLASSIFIEDS_1['category']
+        . $LANG_CLASSIFIEDS_1['double_point'] . ' <strong>'
+        . htmlspecialchars($category, ENT_QUOTES, $_CONF['default_charset'])
+        . '</strong></p>'
+    );
+
+    $ad->set_var(
+        'detail',
+        '<div class="ad-detail">' . PLG_replaceTags(nl2br($A['text'])) . '</div>'
+    );
+
+    $ad->set_var('relay', '');
+
+    $commentPage = 1;
+    $deleteOption = (
+        $isAdmin
+        && SEC_hasAccess(
+            $A['owner_id'],
+            $A['group_id'],
+            $A['perm_owner'],
+            $A['perm_group'],
+            $A['perm_members'],
+            $A['perm_anon']
+        ) == 3
+    );
+
+    require_once $_CONF['path_system'] . 'lib-comment.php';
+    $ad->set_var(
+        'commentbar',
+        CMT_userComments(
+            $clid,
+            $title,
+            'classifieds',
+            'ASC',
+            'flat',
+            0,
+            $commentPage,
+            false,
+            $deleteOption,
+            0
+        )
+    );
 
     $retval .= $ad->parse('', 'ad');
+    $retval .= COM_siteFooter(0);
 
-	$retval .= COM_siteFooter(0);
-
-    //hit +1
-    hitAd($A['clid']);
+    hitAd($clid);
 
     return $retval;
 }
+
 
 function CLASSIFIEDS_message ($message, $title='')
 {
