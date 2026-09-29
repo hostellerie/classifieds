@@ -172,9 +172,6 @@ function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
 	$fileinputs = '';
     $saved_images = '';
     $icount = 0;
-    $size = isset($_CLASSIFIEDS_CONF['max_thumbnail_size'])
-        ? (int) $_CLASSIFIEDS_CONF['max_thumbnail_size']
-        : 75;
     if ($_CLASSIFIEDS_CONF['max_images_per_ad'] > 0) {
 	    if ($ad['clid'] != '') {
             $icount = DB_count($_TABLES['cl_pic'],'pi_pid', $ad['clid']);
