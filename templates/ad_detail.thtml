@@ -1,28 +1,36 @@
-<div id="ad">
-    <table class="ad_detail" border="0">
-		<tr valign="top">
-		    <td class="ad-picture">
-			    <h1>{title} {edit}</h1>
-				{postby}
-				{big_picture}
-				{pictures}
-				{price} {currency} {postal}
-				{category}
-				{detail}
-			</td>
-			<td class="contact_admin">
-			    {contact}
-				{tel}
-				{siren}
-				{admin}
-				{modify}
-				{delete}
-				{view_all}
-				{report}
-				{relay}
-			</td>
-		</tr>
-	</table>
-</div>
-{commentbar}
+<article id="ad" class="classifieds-ad">
+    <header class="classifieds-ad__header">
+        <h1>{title} {edit}</h1>
+        {postby}
+    </header>
 
+    <div class="classifieds-ad__layout">
+        <section class="classifieds-ad__content">
+            {big_picture}
+            {pictures}
+
+            <div class="classifieds-ad__meta">
+                {price} {currency} {postal}
+                {category}
+            </div>
+
+            <div class="classifieds-ad__description">
+                {detail}
+            </div>
+        </section>
+
+        <aside class="classifieds-ad__aside">
+            {contact}
+            {tel}
+            {siren}
+            {admin}
+            {modify}
+            {delete}
+            {view_all}
+            {report}
+            {relay}
+        </aside>
+    </div>
+</article>
+
+{commentbar}
