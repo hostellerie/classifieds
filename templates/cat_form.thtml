@@ -34,8 +34,8 @@
     <p class="classifieds-form__required"><span class="classifieds-required">*</span> {required_field}</p>
 
     <div class="classifieds-form__actions">
-        {admin_options}
         <input type="submit" name="submit" value="{validate_button}"{xhtml}>
+        {delete_action}
     </div>
 
     <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
