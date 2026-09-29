@@ -1363,7 +1363,7 @@ function CLASSIFIEDS_message ($message, $title='')
         } else {
             $retval = COM_startBlock($LANG_CLASSIFIEDS_2['message'], '', 'blockheader-message.thtml');
         }
-        $retval .= stripslashes($message);
+        $retval .= $message;
         $retval .= COM_endBlock('blockfooter-message.thtml');
     }
 	return $retval;
