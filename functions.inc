@@ -83,10 +83,9 @@ require_once $_CONF['path'] . 'plugins/classifieds/lib-contact.php';
 
 function plugin_getheadercode_classifieds()
 {
-    global $_CONF, $_CLASSIFIEDS_CONF, $_SCRIPTS;
+    global $_CONF, $_CLASSIFIEDS_CONF;
 
     $retval = '';
-    $_SCRIPTS->setJavaScriptLibrary('jquery');
 
     $cssPath = $_CLASSIFIEDS_CONF['path_html'] . 'css/classifieds.css';
     $cssVersion = is_file($cssPath) ? filemtime($cssPath) : plugin_chkVersion_classifieds();
@@ -896,7 +895,16 @@ function plugin_upgrade_classifieds()
 		case '1.3.0':
 		case '1.3.1':
 		case '1.3.2':
-			
+            if (!CLASSIFIEDS_upgradeConfiguration()) {
+                return false;
+            }
+            if (!CLASSIFIEDS_upgradeDatabase()) {
+                return false;
+            }
+            if (!CLASSIFIEDS_ensureImageDirectory()) {
+                return false;
+            }
+
 		default:
 		    // update plugin version number
             $inst_parms = plugin_autoinstall_classifieds('classifieds');
@@ -905,41 +913,10 @@ function plugin_upgrade_classifieds()
             DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '$code_version', pi_gl_version = '$pi_gl_version' WHERE pi_name = 'classifieds'");
 			COM_errorLog( "Updated classifieds plugin from v$installed_version to v$code_version", 1 );
 			
-            // Legacy folder migration is retained only for very old persisted states.
-            // A normal 1.3.2 -> 1.4.0 upgrade must not rename/delete shared plugin
-            // public files merely because new code has been deployed.
-            $needsLegacyFolderMigration = version_compare($installed_version, '1.3.2', '<');
-            if ($needsLegacyFolderMigration
-                && $_CLASSIFIEDS_CONF['classifieds_folder'] != 'classifieds'
-                && $_CLASSIFIEDS_CONF['classifieds_folder'] != '') {
-                if ( rename($_CONF['path_html'] . $_CLASSIFIEDS_CONF['classifieds_folder'],$_CONF['path_html'] . $_CLASSIFIEDS_CONF['classifieds_folder'].'_old') ) {
-                     COM_errorLog("CLASSIFIEDS - Renamed {$_CLASSIFIEDS_CONF['classifieds_folder']} folder." );
-                } else {
-                    COM_errorLog("CLASSIFIEDS - Can't rename {$_CLASSIFIEDS_CONF['classifieds_folder']} folder." );
-                }
-                sleep (5);
-                if( rename($_CONF['path_html'] . 'classifieds',$_CONF['path_html'] . $_CLASSIFIEDS_CONF['classifieds_folder']) ) {
-                     COM_errorLog("CLASSIFIEDS - Moved classifieds files to {$_CLASSIFIEDS_CONF['classifieds_folder']} folder." );
-                } else {
-                    COM_errorLog("CLASSIFIEDS - Can't move classifieds files to {$_CLASSIFIEDS_CONF['classifieds_folder']} folder." );
-				    // For ftp update
-				    rename($_CONF['path_html'] . $_CLASSIFIEDS_CONF['classifieds_folder'].'_old',$_CONF['path_html'] . $_CLASSIFIEDS_CONF['classifieds_folder']);
-					COM_errorLog("CLASSIFIEDS - Check your {$_CLASSIFIEDS_CONF['classifieds_folder']} folder." );
-                }
-                CLASSIFIEDS_delTree($_CONF['path_html'] . $_CLASSIFIEDS_CONF['classifieds_folder'].'_old');
-            }
 
 	}
     return true;
 }
-
-function CLASSIFIEDS_delTree($dir) {
-   $files = array_diff(scandir($dir), array('.','..'));
-    foreach ($files as $file) {
-      (is_dir("$dir/$file") && !is_link($dir)) ? CLASSIFIEDS_delTree("$dir/$file") : unlink("$dir/$file");
-    }
-    return rmdir($dir);
-} 
 
 /**
 * Automatic uninstall function for plugins
