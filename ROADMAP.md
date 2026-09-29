@@ -1160,3 +1160,18 @@ Source-level compliance is complete, but final release still requires:
 - [ ] verify Ads / Categories / Configuration navigation under Denim and Eclipse;
 - [ ] verify narrow-screen administration navigation;
 - [ ] upgrade a real 1.3.2 configuration with non-default values and confirm those values are unchanged.
+
+
+### Source-contract verification
+
+A source-level consistency check was run after the Memorandum audit:
+
+- 27 maintained configuration settings are declared in `install_defaults.php`;
+- all 27 have matching `$LANG_confignames['classifieds']` entries in English;
+- all 27 have matching `$LANG_confignames['classifieds']` entries in French;
+- symbolic `tab_main` exists in both languages;
+- selection arrays `3` and `12` exist in both languages;
+- all required shared admin navigation classes are present;
+- `plugin_getadminoption_classifieds()`, `plugin_cclabel_classifieds()`, and `plugin_getconfigtooltip_classifieds()` are present.
+
+No additional administration/configuration compatibility layer should be added unless runtime testing demonstrates a concrete need.
