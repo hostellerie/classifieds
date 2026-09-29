@@ -95,7 +95,7 @@ function CLASSIFIEDS_contactForm($ad, $mode = 'contact', $message = '')
 
     if (COM_isAnonUser()
         && (!empty($_CONF['loginrequired']) || !empty($_CONF['emailuserloginrequired']))) {
-        return CLASSIFIEDS_loginRequiredForm();
+        return SEC_loginRequiredForm();
     }
 
     $author = '';
