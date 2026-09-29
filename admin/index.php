@@ -130,10 +130,9 @@ function CLASSIFIEDS_listAds()
         'form_url' => $_CONF['site_admin_url'] . '/plugins/classifieds/index.php'
     );
 	
-	$sql = "SELECT
-	            *
-            FROM {$_TABLES['cl']}
-			WHERE 1=1 ";
+    $sql = "SELECT clid, created, title, owner_id, group_id, "
+        . "perm_owner, perm_group, perm_members, perm_anon "
+        . "FROM {$_TABLES['cl']}";
 
     $query_arr = array(
         'table'          => 'cl',
@@ -216,10 +215,9 @@ function CLASSIFIEDS_listCategories()
         'form_url' => $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat'
     );
 	
-	$sql = "SELECT
-	            *
-            FROM {$_TABLES['cl_cat']}
-			WHERE 1=1 ";
+    $sql = "SELECT cid, pid, category, catorder, catdeleted, owner_id, group_id, "
+        . "perm_owner, perm_group, perm_members, perm_anon "
+        . "FROM {$_TABLES['cl_cat']}";
 
     $query_arr = array(
         'table'          => 'cl_cat',
