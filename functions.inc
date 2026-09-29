@@ -1077,7 +1077,7 @@ function CLASSIFIEDS_filterVars($vars, &$arr)
                 break;
 
             case 'text':
-                $arr[$var] = htmlspecialchars(strip_tags($arr[$var]));
+                $arr[$var] = trim(strip_tags($arr[$var]));
                 break;
 
             case 'alpha':
