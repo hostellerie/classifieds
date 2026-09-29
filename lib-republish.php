@@ -59,15 +59,22 @@ function CLASSIFIEDS_repost($clid)
 
     DB_change($_TABLES['cl'], 'deleted', 1, 'clid', $clid);
     if (DB_error()) {
-        // Preserve the original visibility if the second half of the
-        // republish transition fails. The copy remains valid and is logged.
+        CLASSIFIEDS_discardRepublishedAd($newClid);
         COM_errorLog(
-            'Classifieds: republish created ad #' . $newClid
-            . ' but could not retire source ad #' . $clid . '.'
+            'Classifieds: republish aborted because source ad #' . $clid
+            . ' could not be retired. The new copy was removed.'
         );
         return $result;
     }
 
+    CLASSIFIEDS_emailNewAd(
+        $ad['title'],
+        $ad['text'],
+        $newClid,
+        (int) $ad['owner_id'],
+        $ad['price']
+    );
+    PLG_itemSaved((string) $newClid, 'classifieds');
     PLG_itemDeleted((string) $clid, 'classifieds');
 
     $result['ok'] = true;
@@ -148,10 +155,38 @@ function CLASSIFIEDS_adCopy($ad, $FILES)
         return 0;
     }
 
-    CLASSIFIEDS_emailNewAd($title, $text, $newClid, $ownerId, $price);
-    PLG_itemSaved((string) $newClid, 'classifieds');
-
     return $newClid;
+}
+
+/**
+ * Remove a provisional republished ad and its copied files.
+ *
+ * @param int $clid
+ * @return void
+ */
+function CLASSIFIEDS_discardRepublishedAd($clid)
+{
+    global $_CLASSIFIEDS_CONF, $_TABLES;
+
+    $clid = (int) $clid;
+    if ($clid <= 0) {
+        return;
+    }
+
+    $result = DB_query(
+        "SELECT pi_filename FROM {$_TABLES['cl_pic']} "
+        . "WHERE pi_pid = '" . $clid . "'"
+    );
+
+    while ($image = DB_fetchArray($result)) {
+        $path = $_CLASSIFIEDS_CONF['path_images'] . basename($image['pi_filename']);
+        if (is_file($path)) {
+            @unlink($path);
+        }
+    }
+
+    DB_query("DELETE FROM {$_TABLES['cl_pic']} WHERE pi_pid = '" . $clid . "'");
+    DB_query("DELETE FROM {$_TABLES['cl']} WHERE clid = " . $clid);
 }
 
 function CLASSIFIEDS_copyImages($ad, $FILES, $clid)
