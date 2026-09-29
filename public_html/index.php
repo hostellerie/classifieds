@@ -109,8 +109,7 @@ switch ($_REQUEST['mode']) {
                         $msg = $LANG_CLASSIFIEDS_2['save_fail'];
                     } else {
                         $msg = $LANG_CLASSIFIEDS_2['deletion_succes'];
-						if ( function_exists('CLASSIFIEDS_emailDeleteAd') ) CLASSIFIEDS_emailDeleteAd (stripslashes($A['title']), '',
-						$_REQUEST['ad'], $_USER['uid'], $A['price']);
+						CLASSIFIEDS_emailDeleteAd($A['title'], '', (int) $_REQUEST['ad'], $_USER['uid'], $A['price']);
                     }
 					echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . "/index.php?mode=my&amp;msg=$msg");
 					exit();
@@ -203,10 +202,8 @@ switch ($_REQUEST['mode']) {
                         $msg = $LANG_CLASSIFIEDS_2['save_fail'];
                     } else {
                         $msg = $LANG_CLASSIFIEDS_2['save_success'];
-						if ( function_exists('CLASSIFIEDS_emailEditAd') )  {
-						    CLASSIFIEDS_emailEditAd($_REQUEST['title'], $_REQUEST['text'], 
-							$_REQUEST['clid'], $_USER['uid'], $price);
-						}
+						CLASSIFIEDS_emailEditAd($_REQUEST['title'], $_REQUEST['text'],
+                            (int) $_REQUEST['clid'], $_USER['uid'], $price);
 						modifAd($_REQUEST['clid']);
                     }
                 } else {
@@ -241,8 +238,7 @@ switch ($_REQUEST['mode']) {
                     } else {
                         $msg = $LANG_CLASSIFIEDS_2['save_success'];
 						$adnumber = DB_insertId();
-						if ( function_exists('CLASSIFIEDS_emailNewAd') ) CLASSIFIEDS_emailNewAd ($title,
-						$text, $adnumber, $_USER['uid'], $price);
+						CLASSIFIEDS_emailNewAd($title, $text, $adnumber, $_USER['uid'], $price);
 						//add user to classifieds users group
 						require_once $_CONF['path_system'] . 'lib-user.php';
 						$ad_users = DB_getItem($_TABLES['groups'], 'grp_id',
@@ -295,11 +291,16 @@ switch ($_REQUEST['mode']) {
                 break;
 
             case 'copy':
-                if (function_exists('CLASSIFIEDS_adCopy')) CLASSIFIEDS_adCopy($_REQUEST, $_FILES); 
+                $copiedId = CLASSIFIEDS_adCopy($_REQUEST, $_FILES);
+                if ($copiedId > 0) {
+                    echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $copiedId);
+                    exit;
+                }
+                $display .= CLASSIFIEDS_message($LANG_CLASSIFIEDS_2['save_fail']);
                 break;
-			
-			case 'repost':
-                if (function_exists('CLASSIFIEDS_repost')) CLASSIFIEDS_repost($_REQUEST['ad']); 
+
+            case 'repost':
+                CLASSIFIEDS_repost($_REQUEST['ad']);
                 break;
 
             case 'new':
