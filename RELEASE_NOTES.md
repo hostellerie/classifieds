@@ -39,3 +39,21 @@ See `ROADMAP.md`. Major remaining work includes:
 - complete fresh-install, upgrade and shared-files test matrix.
 
 This development snapshot is not yet a final release.
+
+
+## PHP 8 and write-path hardening
+
+The current development snapshot also includes the first compatibility/security pass:
+
+- removed PHP 8-incompatible `each()` use;
+- removed legacy magic-quotes-era argument rewriting from image handling;
+- request filtering now tolerates absent keys and rejects unexpected array values for scalar fields;
+- ad create/edit/delete/copy/republish state changes now enforce Geeklog CSRF tokens;
+- category create/edit/delete state changes now enforce Geeklog CSRF tokens;
+- category forms now submit the native Geeklog CSRF token;
+- ad/category persistence now uses validated numeric values and `DB_escapeString()` instead of `addslashes()`;
+- fixed undefined form data and route variables that produced PHP 8 warnings;
+- fixed the active-ad pagination count implementation, which could fail on PHP 8 because an integer was treated as an array;
+- removed the final runtime/admin check for the old Pro file.
+
+The broader security/PHP audit is still in progress; this is not yet the final 1.4.0 release.
