@@ -1369,44 +1369,81 @@ function CLASSIFIEDS_message ($message, $title='')
 	return $retval;
 }
 
-function CLASSIFIEDS_missingField ($field)
+function CLASSIFIEDS_missingField($field)
 {
     global $LANG_CLASSIFIEDS_2, $_TABLES;
-	
-	$fields_array = '';
-	if ($field['catid'] != '') $pid = DB_getItem($_TABLES['cl_cat'], 'pid', "cid = {$field['catid']}");
-	($field['catid'] == '0' || $field['catid'] != '' && $pid == 0) ? $fields_array[] .= $LANG_CLASSIFIEDS_2['category'] : 0;
-	($field['type'] == '-1') ? $fields_array[] .= $LANG_CLASSIFIEDS_2['type'] : 0;
-	($field['title'] == '') ? $fields_array[] .= $LANG_CLASSIFIEDS_2['title'] : 0;
-    ($field['text'] == '') ? $fields_array[] .= $LANG_CLASSIFIEDS_2['text'] : 0;
-	($field['status'] == '-1') ? $fields_array[] .= $LANG_CLASSIFIEDS_2['status'] : 0;
-    ($field['tel'] == '') ? $fields_array[] .= $LANG_CLASSIFIEDS_2['tel'] : 0;
-	($field['postcode'] == '') ? $fields_array[] .= $LANG_CLASSIFIEDS_2['postcode'] : 0;
-	($field['city'] == '') ? $fields_array[] .= $LANG_CLASSIFIEDS_2['city'] : 0;
-    
-	return $fields_array;
 
+    $fields = array();
+    $catid = isset($field['catid']) ? (int) $field['catid'] : 0;
+
+    if ($catid <= 0) {
+        $fields[] = $LANG_CLASSIFIEDS_2['category'];
+    } else {
+        $pid = (int) DB_getItem($_TABLES['cl_cat'], 'pid', 'cid = ' . $catid);
+        if ($pid === 0) {
+            $fields[] = $LANG_CLASSIFIEDS_2['category'];
+        }
+    }
+
+    if (!isset($field['type']) || (int) $field['type'] === -1) {
+        $fields[] = $LANG_CLASSIFIEDS_2['type'];
+    }
+    if (empty($field['title'])) {
+        $fields[] = $LANG_CLASSIFIEDS_2['title'];
+    }
+    if (empty($field['text'])) {
+        $fields[] = $LANG_CLASSIFIEDS_2['text'];
+    }
+    if (!isset($field['status']) || (int) $field['status'] === -1) {
+        $fields[] = $LANG_CLASSIFIEDS_2['status'];
+    }
+    if (empty($field['tel'])) {
+        $fields[] = $LANG_CLASSIFIEDS_2['tel'];
+    }
+    if (empty($field['postcode'])) {
+        $fields[] = $LANG_CLASSIFIEDS_2['postcode'];
+    }
+    if (empty($field['city'])) {
+        $fields[] = $LANG_CLASSIFIEDS_2['city'];
+    }
+
+    return $fields;
 }
 
-function CLASSIFIEDS_checkAdAccess ($ad)
+function CLASSIFIEDS_checkAdAccess($ad)
 {
     global $_TABLES;
-	
-	$access = false;
-	// query database for Ad
-    $sql = "SELECT * FROM {$_TABLES['cl']} WHERE clid = {$ad} ";	
-	$res = DB_query($sql);
-    $A = DB_fetchArray($res);
-	if (!SEC_hasRights('classifieds.admin')) {
-	    if ($A['deleted'] != '0') {
-		    return false;
-        } else {
-    		$access = true;
-		}
-        return $access;		
-	} else {
-	    return true;
-	}
+
+    $ad = (int) $ad;
+    if ($ad <= 0) {
+        return false;
+    }
+
+    $result = DB_query(
+        "SELECT owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon, deleted "
+        . "FROM {$_TABLES['cl']} WHERE clid = " . $ad . " LIMIT 1"
+    );
+    $row = DB_fetchArray($result);
+    if (!is_array($row)) {
+        return false;
+    }
+
+    if (SEC_hasRights('classifieds.admin')) {
+        return true;
+    }
+
+    if (!empty($row['deleted'])) {
+        return false;
+    }
+
+    return SEC_hasAccess(
+        $row['owner_id'],
+        $row['group_id'],
+        $row['perm_owner'],
+        $row['perm_group'],
+        $row['perm_members'],
+        $row['perm_anon']
+    ) >= 2;
 }
 
 /**
