@@ -301,11 +301,17 @@ switch ($_REQUEST['mode']) {
                     break;
                 }
 
-                DB_delete($_TABLES['cl_cat'], 'cid', (int) $_REQUEST['cid']);
-                if (DB_affectedRows('') == 1) {
-                    $msg = $LANG_CLASSIFIEDS_ADMIN['deletion_succes'];
+                $cid = (int) $_REQUEST['cid'];
+                $adCount = DB_count($_TABLES['cl'], 'catid', $cid);
+                $childCount = DB_count($_TABLES['cl_cat'], 'pid', $cid);
+
+                if ($cid <= 0 || $adCount > 0 || $childCount > 0) {
+                    $msg = $LANG_CLASSIFIEDS_ADMIN['category_in_use'];
                 } else {
-                    $msg = $LANG_CLASSIFIEDS_ADMIN['deletion_fail'];
+                    DB_delete($_TABLES['cl_cat'], 'cid', $cid);
+                    $msg = (DB_affectedRows('') == 1)
+                        ? $LANG_CLASSIFIEDS_ADMIN['deletion_succes']
+                        : $LANG_CLASSIFIEDS_ADMIN['deletion_fail'];
                 }
 
                 echo COM_refresh(
