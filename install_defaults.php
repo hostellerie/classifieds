@@ -165,7 +165,7 @@ function plugin_initconfig_classifieds()
 		$c->add('help_page', $_CLASSIFIEDS_DEFAULT['help_page'],
                 'text', 0, 2, NULL, 206, true, 'classifieds', 0);
 		$c->add('currency', $_CLASSIFIEDS_DEFAULT['currency'],
-                'select', 0, 2, 20, 207, true, 'classifieds', 0);
+                'text', 0, 2, NULL, 207, true, 'classifieds', 0);
 		$c->add('date_format', $_CLASSIFIEDS_DEFAULT['date_format'],
                 'text', 0, 2, NULL, 208, true, 'classifieds', 0);
 		$c->add('time_format', $_CLASSIFIEDS_DEFAULT['time_format'],
