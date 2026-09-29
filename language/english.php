@@ -149,6 +149,7 @@ $LANG_CLASSIFIEDS_2 = array(
 $LANG_CLASSIFIEDS_ADMIN = array(
     'administration'          => 'Classifieds administration',
     'configuration'           => 'Configuration',
+    'category_in_use'         => 'This category cannot be deleted while it still contains ads or child categories.',
     'dashboard_active'         => 'Active ads',
     'dashboard_expired'        => 'Expired ads',
     'dashboard_deleted'        => 'Deleted ads',
