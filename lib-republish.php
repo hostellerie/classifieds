@@ -20,9 +20,12 @@ function CLASSIFIEDS_repost($clid)
     );
 
     $clid = (int) $clid;
+    $isAdmin = SEC_hasRights('classifieds.admin');
+    $canPublish = SEC_hasRights('classifieds.publish');
+
     if ($clid <= 0
         || empty($_CLASSIFIEDS_CONF['allow_republish'])
-        || !SEC_hasRights('classifieds.publish')) {
+        || (!$isAdmin && !$canPublish)) {
         return $result;
     }
 
@@ -35,7 +38,7 @@ function CLASSIFIEDS_repost($clid)
     );
     $ad = DB_fetchArray($query);
 
-    if (!is_array($ad) || SEC_hasAccess2($ad) < 3) {
+    if (!is_array($ad) || (!$isAdmin && SEC_hasAccess2($ad) < 3)) {
         return $result;
     }
 
