@@ -222,6 +222,10 @@ $LANG_configsubgroups['classifieds'] = array(
     'sg_main' => 'Main Settings'
 );
 
+$LANG_tab['classifieds'] = array(
+    'tab_main' => 'Classifieds'
+);
+
 /**
 *   Configuration system fieldset names
 *   @global array $LANG_fs['classifieds']
@@ -242,7 +246,6 @@ $LANG_confignames['classifieds'] = array(
     //Main settings
 	'classifieds_folder'  => 'Classifieds folder',
 	'active_days'  => 'Active days',
-    'site_name'  => 'Site name for images folder',
     
 	//Images settings
     'max_image_width'  => 'Max image width',
@@ -286,11 +289,17 @@ $LANG_confignames['classifieds'] = array(
 *   @global array $LANG_configselects['classifieds']
 */
 $LANG_configselects['classifieds'] = array(
-    0 => array('True' => 1, 'False' => 0),
-    1 => array('True' => TRUE, 'False' => FALSE),
     3 => array('Yes' => 1, 'No' => 0),
-    4 => array('On' => 1, 'Off' => 0),
-    10 => array('5' => 5, '10' => 10, '25' => 25, '50' => 50),
     12 => array('No access' => 0, 'Read-Only' => 2, 'Read-Write' => 3)
+);
+
+$LANG_configtooltips['classifieds'] = array(
+    'classifieds_folder' => 'Public folder used by the Classifieds pages. Changing it on an existing site requires the public files and links to remain consistent.',
+    'active_days' => 'Number of days an ad remains active before it becomes eligible for expiration notification and republishing.',
+    'max_image_size' => 'Maximum upload size in bytes for one ad image.',
+    'max_images_per_ad' => 'Maximum number of images that can be attached to one ad.',
+    'allow_republish' => 'Allows eligible expired ads to be copied into a new active ad while preserving the historical original.',
+    'classifieds_login_required' => 'When enabled, visitors must sign in before accessing Classifieds.',
+    'default_permissions' => 'Geeklog ACL permissions applied to newly created Classifieds content.'
 );
 ?>
