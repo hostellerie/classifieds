@@ -77,9 +77,6 @@ $_CLASSIFIEDS_DEFAULT['active_days'] = 60;
 $_CLASSIFIEDS_DEFAULT['max_image_width'] = 800;
 $_CLASSIFIEDS_DEFAULT['max_image_height'] = 800;
 $_CLASSIFIEDS_DEFAULT['max_image_size'] = 4194304; // size in bytes, 1048576 = 1MB
-$_CLASSIFIEDS_DEFAULT['thumb_width'] = 80;
-$_CLASSIFIEDS_DEFAULT['thumb_height'] = 60;
-$_CLASSIFIEDS_DEFAULT['max_thumbnail_size'] = 75;
 $_CLASSIFIEDS_DEFAULT['max_images_per_ad'] = 3;
 
  /**
@@ -148,12 +145,6 @@ function plugin_initconfig_classifieds()
                 'text', 0, 1, 0, 102, true, 'classifieds');
 		$c->add('max_image_size', $_CLASSIFIEDS_DEFAULT['max_image_size'],
                 'text', 0, 1, 0, 103, true, 'classifieds');
-		$c->add('thumb_width', $_CLASSIFIEDS_DEFAULT['thumb_width'],
-				'text', 0, 1, 0, 104, true, 'classifieds');
-		$c->add('thumb_height', $_CLASSIFIEDS_DEFAULT['thumb_height'],
-				'text', 0, 1, 0, 105, true, 'classifieds');
-		$c->add('max_thumbnail_size', $_CLASSIFIEDS_DEFAULT['max_thumbnail_size'],
-                'text', 0, 1, 0, 106, true, 'classifieds');
 		$c->add('max_images_per_ad', $_CLASSIFIEDS_DEFAULT['max_images_per_ad'],
                 'text', 0, 1, 0, 107, true, 'classifieds');
 		
