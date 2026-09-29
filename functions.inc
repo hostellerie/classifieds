@@ -71,6 +71,7 @@ require_once ($_CONF['path'] . 'plugins/classifieds/classifieds.php');
  * not loaded so the old and new implementations can never run together.
  */
 require_once $_CONF['path'] . 'plugins/classifieds/lib-notifications.php';
+require_once $_CONF['path'] . 'plugins/classifieds/lib-images.php';
 require_once $_CONF['path'] . 'plugins/classifieds/lib-republish.php';
 require_once $_CONF['path'] . 'plugins/classifieds/lib-ads.php';
 require_once $_CONF['path'] . 'plugins/classifieds/lib-contact.php';
