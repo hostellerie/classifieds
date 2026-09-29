@@ -97,7 +97,6 @@ $LANG_CLASSIFIEDS_1 = array(
 	'view_all_ads'            => 'Voir toutes les annonces',
 	'under_construction'      => 'En construction',
     'image_not_writable'      => 'Le dossier de stockage des images du plugin classifieds n\'existe pas ou n\'est pas accessible en écriture. Vous devez vérifier ce problème avant d\'utiliser le plugin classifieds.<br' . XHTML . '><br' . XHTML . '>Pour des raisons de compatibilité avec le plugin multi, le nom de dossier qui contient le dossier "classifieds" est paramétrable et doit être un sous dossier du dossier images. D\'autres plugins ayant recours au stockage d\'images utiliseront cette classification.<br' . XHTML . '><br' . XHTML . '>Vous pouvez modifier le nom du dossier dans la configuration du plugin.',
-    'install_jquery'          => 'Pour permettre aux utilisateurs de votre site d\'afficher les images des petites annonces dans une lightbox, vous devez installer le plugin jQuery pour Geeklog.',
 	'ad-list-active'          => 'Annonce active',
 	'ad-list-delete'          => 'Annonce effacée',
 	'ad-list-old'             => 'Annonce périmée',
