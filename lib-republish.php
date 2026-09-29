@@ -50,6 +50,9 @@ function CLASSIFIEDS_repost($clid)
     $newClid = CLASSIFIEDS_adCopy($A, isset($_FILES) ? $_FILES : array());
     if ($newClid > 0) {
         DB_change($_TABLES['cl'], 'deleted', 1, 'clid', $clid);
+        if (!DB_error()) {
+            PLG_itemDeleted((string) $clid, 'classifieds');
+        }
         echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $newClid);
         exit;
     }
@@ -132,6 +135,7 @@ function CLASSIFIEDS_adCopy($ad, $FILES)
     }
 
     CLASSIFIEDS_emailNewAd($title, $text, $newClid, $ownerId, $price);
+    PLG_itemSaved((string) $newClid, 'classifieds');
 
     return $newClid;
 }
