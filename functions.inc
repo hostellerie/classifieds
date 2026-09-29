@@ -130,29 +130,92 @@ function plugin_getcommenturlid_classifieds()
  * @param   string  $postmode 'html' or 'text'
  * @return  mixed   false for failure, HTML string (redirect?) for success
  */
-function plugin_savecomment_classifieds($title, $comment, $id, $pid, $postmode)
+function plugin_commentenabled_classifieds($id)
 {
-    global $LANG03, $_CLASSIFIEDS_CONF;
+    global $_CLASSIFIEDS_CONF, $_TABLES;
 
-    $retval = '';
-
-    $ret = CMT_saveComment ($title, $comment, $id, $pid, 'classifieds', $postmode);
-    if ($ret > 0) { // failure //FIXME: some failures should not return to comment form
-        $retval .= CMT_commentForm ($title, $comment, $id, $pid, 'classifieds',
-                                   $LANG03[14], $postmode);
-		if (!defined('COMMENT_ON_SAME_PAGE')) {
-            $retval = COM_createHTMLDocument($retval, array('pagetitle' => $LANG03[1]));
-        } else {
-            if (!COMMENT_ON_SAME_PAGE) {
-                $retval = COM_createHTMLDocument($retval, array('pagetitle' => $LANG03[1]));
-            }
-        }
-    } else { // success
-        $retval = COM_refresh ($_CLASSIFIEDS_CONF['site_url']
-                                . "/index.php?mode=v&ad=$id");
+    $clid = (int) $id;
+    if ($clid <= 0 || !CLASSIFIEDS_checkAdAccess($clid)) {
+        return COMMENT_CODE_DISABLED;
     }
 
-    return $retval;
+    $result = DB_query(
+        "SELECT created, deleted, enable FROM {$_TABLES['cl']} "
+        . "WHERE clid = " . $clid . " LIMIT 1"
+    );
+    $ad = DB_fetchArray($result);
+    if (!is_array($ad) || !empty($ad['deleted']) || empty($ad['enable'])) {
+        return COMMENT_CODE_DISABLED;
+    }
+
+    $created = COM_getUserDateTimeFormat($ad['created']);
+    $createdTimestamp = isset($created[1]) ? (int) $created[1] : 0;
+    if ($createdTimestamp <= 0) {
+        return COMMENT_CODE_DISABLED;
+    }
+
+    $ageDays = (time() - $createdTimestamp) / 86400;
+    if ($ageDays > (int) $_CLASSIFIEDS_CONF['active_days']) {
+        return COMMENT_CODE_CLOSED;
+    }
+
+    return COMMENT_CODE_ENABLED;
+}
+
+/**
+ * Save a comment attached to a Classifieds ad.
+ */
+function plugin_savecomment_classifieds($title, $comment, $id, $pid, $postmode)
+{
+    global $_CONF, $LANG03, $_CLASSIFIEDS_CONF;
+
+    $clid = (int) $id;
+    if (plugin_commentenabled_classifieds($clid) != COMMENT_CODE_ENABLED) {
+        COM_handle404($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
+    }
+
+    $retval = '';
+    $ret = CMT_saveComment(
+        $title,
+        $comment,
+        (string) $clid,
+        $pid,
+        'classifieds',
+        $postmode
+    );
+
+    if (($ret > 0) || is_string($ret)) {
+        if (is_string($ret)) {
+            $retval .= $ret;
+        }
+
+        $retval .= CMT_commentForm(
+            $title,
+            $comment,
+            (string) $clid,
+            $pid,
+            'classifieds',
+            $LANG03[14],
+            $postmode
+        );
+
+        if (!defined('COMMENT_ON_SAME_PAGE') || !COMMENT_ON_SAME_PAGE) {
+            $retval = COM_createHTMLDocument(
+                $retval,
+                array('pagetitle' => $LANG03[1])
+            );
+        }
+
+        return $retval;
+    }
+
+    $url = plugin_idToURL_classifieds('classifieds', $clid);
+    if (($_CONF['commentsubmission'] == 1)
+        && !SEC_hasRights('comment.submit')) {
+        $url .= '&msg=15';
+    }
+
+    return COM_refresh($url);
 }
 
 /**
