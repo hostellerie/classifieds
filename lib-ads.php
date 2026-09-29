@@ -90,6 +90,18 @@ function CLASSIFIEDS_saveAd($data, $files)
 
     $now = date('YmdHis');
 
+    $newAcl = array();
+    $defaultPermissions = isset($_CLASSIFIEDS_CONF['default_permissions'])
+        && is_array($_CLASSIFIEDS_CONF['default_permissions'])
+        ? $_CLASSIFIEDS_CONF['default_permissions']
+        : array(3, 3, 2, 2);
+    SEC_setDefaultPermissions($newAcl, $defaultPermissions);
+
+    $groupId = (int) SEC_getFeatureGroup('classifieds.publish');
+    if ($groupId <= 0) {
+        $groupId = 1;
+    }
+
     DB_query('START TRANSACTION');
 
     if ($isEdit) {
@@ -123,7 +135,12 @@ function CLASSIFIEDS_saveAd($data, $files)
             . "siren = '" . $siren . "', "
             . "created = '" . $now . "', "
             . "modified = '" . $now . "', "
-            . "owner_id = '" . $uid . "'";
+            . "owner_id = '" . $uid . "', "
+            . "group_id = '" . $groupId . "', "
+            . "perm_owner = '" . (int) $newAcl['perm_owner'] . "', "
+            . "perm_group = '" . (int) $newAcl['perm_group'] . "', "
+            . "perm_members = '" . (int) $newAcl['perm_members'] . "', "
+            . "perm_anon = '" . (int) $newAcl['perm_anon'] . "'";
         DB_query($sql);
         $clid = (int) DB_insertId();
     }
