@@ -13,46 +13,67 @@ function CLASSIFIEDS_repost($clid)
 {
     global $_TABLES, $_CLASSIFIEDS_CONF;
 
+    $result = array(
+        'ok' => false,
+        'source_id' => (int) $clid,
+        'new_id' => 0
+    );
+
     $clid = (int) $clid;
-    if ($clid <= 0 || empty($_CLASSIFIEDS_CONF['allow_republish']) || !SEC_hasRights('classifieds.publish')) {
-        echo COM_refresh($_CLASSIFIEDS_CONF['site_url']);
-        exit;
+    if ($clid <= 0
+        || empty($_CLASSIFIEDS_CONF['allow_republish'])
+        || !SEC_hasRights('classifieds.publish')) {
+        return $result;
     }
 
     if (!CLASSIFIEDS_checkAdAccess($clid)) {
-        echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
-        exit;
+        return $result;
     }
 
-    $result = DB_query("SELECT * FROM {$_TABLES['cl']} WHERE clid = " . $clid);
-    $A = DB_fetchArray($result);
-    if (!$A || SEC_hasAccess2($A) < 3) {
-        echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
-        exit;
+    $query = DB_query(
+        "SELECT * FROM {$_TABLES['cl']} WHERE clid = " . $clid . " LIMIT 1"
+    );
+    $ad = DB_fetchArray($query);
+
+    if (!is_array($ad) || SEC_hasAccess2($ad) < 3) {
+        return $result;
     }
 
-    $created = COM_getUserDateTimeFormat($A['created']);
+    $created = COM_getUserDateTimeFormat($ad['created']);
     $createdTs = isset($created[1]) ? (int) $created[1] : 0;
-    $activeDays = $createdTs > 0 ? (time() - $createdTs) / 86400 : 0;
+    $ageDays = $createdTs > 0 ? (time() - $createdTs) / 86400 : 0;
 
-    if (!empty($A['deleted']) || $activeDays <= (int) $_CLASSIFIEDS_CONF['active_days']) {
-        echo COM_refresh($_CLASSIFIEDS_CONF['site_url']);
-        exit;
+    if (!empty($ad['deleted'])
+        || $ageDays <= (int) $_CLASSIFIEDS_CONF['active_days']) {
+        return $result;
     }
 
-    $newClid = CLASSIFIEDS_adCopy($A, isset($_FILES) ? $_FILES : array());
-    if ($newClid > 0) {
-        DB_change($_TABLES['cl'], 'deleted', 1, 'clid', $clid);
-        if (!DB_error()) {
-            PLG_itemDeleted((string) $clid, 'classifieds');
-        }
-        echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $newClid);
-        exit;
+    $newClid = CLASSIFIEDS_adCopy($ad, array());
+    if ($newClid <= 0) {
+        COM_errorLog(
+            'Classifieds: republish failed for ad #' . $clid
+            . '; original ad was preserved.'
+        );
+        return $result;
     }
 
-    COM_errorLog('Classifieds: republish failed for ad #' . $clid . '; original ad was preserved.');
-    echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $clid);
-    exit;
+    DB_change($_TABLES['cl'], 'deleted', 1, 'clid', $clid);
+    if (DB_error()) {
+        // Preserve the original visibility if the second half of the
+        // republish transition fails. The copy remains valid and is logged.
+        COM_errorLog(
+            'Classifieds: republish created ad #' . $newClid
+            . ' but could not retire source ad #' . $clid . '.'
+        );
+        return $result;
+    }
+
+    PLG_itemDeleted((string) $clid, 'classifieds');
+
+    $result['ok'] = true;
+    $result['new_id'] = $newClid;
+
+    return $result;
 }
 
 /**
