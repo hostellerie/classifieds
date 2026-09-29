@@ -248,9 +248,6 @@ $LANG_confignames['classifieds'] = array(
     'max_image_width'  => 'Max image width',
 	'max_image_height'  => 'Max image height',
     'max_image_size'  => 'Max image size',
-    'thumb_width'  => 'Thumb width',
-    'thumb_height'  => 'Thumb height',
-    'max_thumbnail_size'  => 'Max thumbnail size',
     'max_images_per_ad'  => 'Max images per ad',
 
      //Display settings
