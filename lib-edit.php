@@ -132,7 +132,7 @@ function CLASSIFIEDS_getAdForm($ad = array()) {
     $template->set_var('category_label', $LANG_CLASSIFIEDS_2['category']);
     $categories .= '<option value="0">' . $LANG_CLASSIFIEDS_2['choose_category'] . '</option>';
 
-	$categories .= CLASSIFIEDS_adOptionList($_TABLES['cl_cat'], 'cid,category,pid', $ad['catid'], 'catorder', "catdeleted=0");
+	$categories .= CLASSIFIEDS_adCategoryOptions($ad['catid']);
 	$template->set_var('categories', $categories);
 	
 	//type
@@ -371,9 +371,9 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
     $categories .= '<option value="0">' . $LANG_CLASSIFIEDS_ADMIN['root'] . '</option>';
 
     if ($catid['cid']) {
-        $categories .= CLASSIFIEDS_catOptionList($_TABLES['cl_cat'], 'cid,category,pid', $catid['pid'], 'catorder', "cid <> {$catid['cid']}" );
+        $categories .= CLASSIFIEDS_parentCategoryOptions($catid['pid'], $catid['cid']);
     } else {
-        $categories .= CLASSIFIEDS_catOptionList($_TABLES['cl_cat'], 'cid,category,pid', $catid['pid'], 'catorder');
+        $categories .= CLASSIFIEDS_parentCategoryOptions($catid['pid']);
     }
 	$template->set_var('categories', $categories);
 	
