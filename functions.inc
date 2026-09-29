@@ -1239,13 +1239,18 @@ function CLASSIFIEDS_viewAd ($clid)
 	    $ad->set_var('pictures', '<div id="ad-pictures">' . $saved_images . $info_picture . '</div>');
     }
 		
-//Todo move contact and admin to pro version
+    // Contact advertiser
+    $contactUrl = $_CLASSIFIEDS_CONF['site_url']
+        . '/index.php?mode=c&amp;uid=' . (int) $A['owner_id']
+        . '&amp;ad=' . (int) $A['clid']
+        . '&amp;subject=' . rawurlencode($A['title']);
 
-	//contact
-	$ad->set_var('contact', '<h3>' . $LANG_CLASSIFIEDS_1['contact_advertiser'] .'</h3><p><a href="'.
-	$_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=c&amp;uid=' . $A['owner_id'] .  '&amp;ad=' . $A['clid'] .
-	'&amp;subject=' . $A['title'] . '">'. $LANG_CLASSIFIEDS_1['send_email'] . '</a></p>');
-	
+    $ad->set_var(
+        'contact',
+        '<h3>' . $LANG_CLASSIFIEDS_1['contact_advertiser'] . '</h3><p>'
+        . '<a href="' . $contactUrl . '">' . $LANG_CLASSIFIEDS_1['send_email'] . '</a></p>'
+    );
+
 	//Tel
 	if (($A['hide_tel'] == 0) && ($A['tel'] != '')) {
     	$ad->set_var('tel', '<p>'. $A['username'] . $LANG_CLASSIFIEDS_1['double_point'] . ' ' . $A['tel'] . '</p>');
