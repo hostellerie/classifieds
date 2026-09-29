@@ -1241,9 +1241,7 @@ function CLASSIFIEDS_viewAd ($clid)
 		
     // Contact advertiser
     $contactUrl = $_CLASSIFIEDS_CONF['site_url']
-        . '/index.php?mode=c&amp;uid=' . (int) $A['owner_id']
-        . '&amp;ad=' . (int) $A['clid']
-        . '&amp;subject=' . rawurlencode($A['title']);
+        . '/index.php?mode=c&amp;ad=' . (int) $A['clid'];
 
     $ad->set_var(
         'contact',
