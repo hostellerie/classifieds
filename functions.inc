@@ -88,8 +88,12 @@ function plugin_getheadercode_classifieds()
     $retval = '';
     $_SCRIPTS->setJavaScriptLibrary('jquery');
 
+    $cssPath = $_CLASSIFIEDS_CONF['path_html'] . 'css/classifieds.css';
+    $cssVersion = is_file($cssPath) ? filemtime($cssPath) : plugin_chkVersion_classifieds();
+
     $retval .= '    <link rel="stylesheet" href="' . $_CLASSIFIEDS_CONF['site_url']
-        . '/css/classifieds_130.css" type="text/css" media="screen"' . XHTML . '>' . LB;
+        . '/css/classifieds.css?v=' . rawurlencode((string) $cssVersion)
+        . '" type="text/css" media="screen"' . XHTML . '>' . LB;
 
     return $retval;
 }
