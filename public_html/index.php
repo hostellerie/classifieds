@@ -166,7 +166,10 @@ switch ($_REQUEST['mode']) {
                 }
 
                 $res = DB_query(
-                    "SELECT * FROM {$_TABLES['cl']} WHERE clid = " . $adId . " LIMIT 1"
+                    "SELECT clid, catid, status, type, tel, hide_tel, title, text, price, "
+                    . "postcode, city, siren, enable, created, modified, notification, deleted, "
+                    . "hits, modif, owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+                    . "FROM {$_TABLES['cl']} WHERE clid = " . $adId . " LIMIT 1"
                 );
                 $A = DB_fetchArray($res);
                 if (!is_array($A)
