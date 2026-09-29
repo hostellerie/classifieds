@@ -134,7 +134,12 @@ function CLASSIFIEDS_adCopy($ad)
         . "siren = '{$siren}', "
         . "created = '{$created}', "
         . "modified = '{$modified}', "
-        . "owner_id = {$ownerId}";
+        . "owner_id = {$ownerId}, "
+        . "group_id = " . (int) $ad['group_id'] . ", "
+        . "perm_owner = " . (int) $ad['perm_owner'] . ", "
+        . "perm_group = " . (int) $ad['perm_group'] . ", "
+        . "perm_members = " . (int) $ad['perm_members'] . ", "
+        . "perm_anon = " . (int) $ad['perm_anon'];
 
     DB_query($sql);
     if (DB_error()) {
