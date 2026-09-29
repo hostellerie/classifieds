@@ -150,6 +150,7 @@ $LANG_CLASSIFIEDS_2 = array(
 $LANG_CLASSIFIEDS_ADMIN = array(
     'administration'          => 'Administration des petites annonces',
     'configuration'           => 'Configuration',
+    'category_in_use'         => 'Cette rubrique ne peut pas être supprimée car elle contient encore des annonces ou des sous-rubriques.',
     'dashboard_active'         => 'Annonces actives',
     'dashboard_expired'        => 'Annonces expirées',
     'dashboard_deleted'        => 'Annonces supprimées',
