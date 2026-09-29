@@ -350,6 +350,20 @@ switch ($_REQUEST['mode']) {
 
         $display .= CLASSIFIEDS_displayAds(1);
 
+        $contextId = 'root';
+        $requestedCategory = isset($_REQUEST['catid']) ? (int) $_REQUEST['catid'] : 0;
+        if ($requestedCategory > 0) {
+            $categoryResource = CLASSIFIEDS_getContentResource(
+                'category:' . $requestedCategory,
+                0
+            );
+            if (!empty($categoryResource)) {
+                $contextId = 'category:' . $requestedCategory;
+            }
+        }
+
+        $display .= CLASSIFIEDS_renderItemExtensions($contextId);
+
         if (!empty($_CLASSIFIEDS_CONF['classifieds_main_footer'])) {
             $display .= '<div>'
                 . PLG_replaceTags($_CLASSIFIEDS_CONF['classifieds_main_footer'])
