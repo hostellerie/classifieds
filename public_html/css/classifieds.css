@@ -278,3 +278,83 @@ text-align:right;
         width: auto;
     }
 }
+
+
+/* Responsive Classifieds forms */
+.classifieds-form {
+    max-width: 100%;
+}
+
+.classifieds-form__section {
+    margin: 0 0 1rem;
+    padding: 1rem;
+}
+
+.classifieds-form__row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.classifieds-form__field {
+    margin-bottom: 1rem;
+}
+
+.classifieds-form__field > label:first-child {
+    display: block;
+    margin-bottom: .35rem;
+    font-weight: 600;
+}
+
+.classifieds-form__field input[type="text"],
+.classifieds-form__field input[type="tel"],
+.classifieds-form__field input[type="email"],
+.classifieds-form__field input[type="number"],
+.classifieds-form__field select,
+.classifieds-form__field textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.classifieds-form__field textarea {
+    resize: vertical;
+}
+
+.classifieds-form__inline {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+}
+
+.classifieds-form__check {
+    display: flex;
+    gap: .45rem;
+    align-items: center;
+    margin-top: .5rem;
+    font-weight: 400;
+}
+
+.classifieds-form__images {
+    display: grid;
+    gap: .75rem;
+}
+
+.classifieds-form__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    align-items: center;
+}
+
+.classifieds-required {
+    color: currentColor;
+    font-weight: 700;
+}
+
+@media (max-width: 640px) {
+    .classifieds-form__row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
