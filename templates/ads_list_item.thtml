@@ -1,23 +1,18 @@
- <tr valign="top"{class}>
-   <td class="ad-list-date" nowrap>
-     <p class="ad-list-date">{date}</p>
-	 <p class="ad-list-time">{time}</p>
-   </td>
-   <td class="ad-list-image">
-     <div>
-		  {small_pic}
-	  </div>
-   </td>
-   <td>
-     <p class="ad-list-title">{title} {edit}</p> 
-     <p class="ad-list-price">{price} {currency}</p>
-   </td>
-   <td class="ad-list-category">
-     <p class="ad-list-cat">{cat}</p> 
-	 <p class="ad-list-postcode">{postcode}</p> 
-	 <p class="ad-list-city">{city}</p> 
-   </td>
-   {views}
-</tr>
+<article{class}>
+    <div class="classifieds-list-item__date">
+        <span>{date}</span>
+        <span>{time}</span>
+    </div>
 
+    <div class="classifieds-list-item__image">
+        {small_pic}
+    </div>
 
+    <div class="classifieds-list-item__main">
+        <h3 class="ad-list-title">{title} {edit}</h3>
+        <p class="ad-list-price">{price} {currency}</p>
+        <p class="ad-list-location">{cat} · {postcode} {city}</p>
+    </div>
+
+    {views}
+</article>
