@@ -269,91 +269,103 @@ switch ($_REQUEST['mode']) {
 		require_once ($_CONF['path'] . 'plugins/classifieds/lib-edit.php');
 
         switch ($_REQUEST['op']) {
-			case 'delete':
-    	        DB_delete($_TABLES['cl_cat'], 'cid', $_REQUEST['cid']);
+            case 'delete':
+                if (!SEC_checkToken()) {
+                    $display .= COM_showMessageText(
+                        $LANG_CLASSIFIEDS_ADMIN['deletion_fail'],
+                        $LANG_CLASSIFIEDS_2['error']
+                    );
+                    break;
+                }
+
+                DB_delete($_TABLES['cl_cat'], 'cid', (int) $_REQUEST['cid']);
                 if (DB_affectedRows('') == 1) {
                     $msg = $LANG_CLASSIFIEDS_ADMIN['deletion_succes'];
                 } else {
                     $msg = $LANG_CLASSIFIEDS_ADMIN['deletion_fail'];
                 }
-		        // delete complete, return to ad list
-                echo COM_refresh($_CONF['site_admin_url'] .
-                "/plugins/classifieds/index.php?mode=cat&amp;msg=$msg");
 
-                exit();
-                break;
-        
+                echo COM_refresh(
+                    $_CONF['site_admin_url']
+                    . '/plugins/classifieds/index.php?mode=cat&amp;msg=' . urlencode($msg)
+                );
+                exit;
+
             case 'save':
-			    if ( $_REQUEST['cid'] == $_REQUEST['pid']) {
-				    $_REQUEST['pid'] = '0';
-				}
-			    $missingfields = CLASSIFIEDS_missingFieldCat($_REQUEST);
-                if ($missingfields != '') {
-                    $display .= COM_startBlock($LANG_CLASSIFIEDS_2['error']);
-                    $display .= $LANG_CLASSIFIEDS_2['missing_field'];
-					$display .= '<ul>';
-					foreach ($missingfields as $i => $value) {
-                        $display .= '<li>' . ($missingfields[$i]);
-                    }
-					$display .= '</ul>';
-					$display .= $LANG_CLASSIFIEDS_2['check_it'];
-                    $display .= COM_endBlock();
-                    $display .= CLASSIFIEDS_getAdForm($_REQUEST);
+                if (!SEC_checkToken()) {
+                    $display .= COM_showMessageText(
+                        $LANG_CLASSIFIEDS_2['save_fail'],
+                        $LANG_CLASSIFIEDS_2['error']
+                    );
                     break;
                 }
-				
-				// prepare strings for insertion
-                $_REQUEST['category'] = addslashes(COM_getTextContent($_REQUEST['category']));
-				( empty($_REQUEST['catorder']) ) ? $_REQUEST['catorder'] = 0 : 0;
 
-                if ( (!empty($_REQUEST['cid'])) && (is_numeric($_REQUEST['cid'])) ) {
-				    //Edit mode 
-				    $sql = "pid = '{$pid}', "
-                     . "category = '{$category}', "
-					 . "catorder = '{$catorder}', "
-			         . "catdeleted = '{$_REQUEST['catdeleted']}'
-			         ";
-                    $sql = "UPDATE {$_TABLES['cl_cat']} SET $sql "
-                         . "WHERE cid = {$_REQUEST['cid']}";
-                } else {
-				    //Create mode
-                    $catorder = (int) DB_getItem($_TABLES['cl_cat'], 'catorder', "cid = " . $pid) + 1;
-				    $sql = "pid = '{$_REQUEST['pid']}', "
-                     . "category = '{$_REQUEST['category']}', "
-					 . "catorder = '{$catorder}', "
-			         . "catdeleted = '{$_REQUEST['catdeleted']}', "
-					 . "owner_id = '{$_USER['uid']}'
-			         ";
-                    $sql = "INSERT INTO {$_TABLES['cl_cat']} SET $sql ";
+                if ($_REQUEST['cid'] == $_REQUEST['pid']) {
+                    $_REQUEST['pid'] = '0';
                 }
+
+                $missingfields = CLASSIFIEDS_missingFieldCat($_REQUEST);
+                if (!empty($missingfields)) {
+                    $display .= COM_startBlock($LANG_CLASSIFIEDS_2['error']);
+                    $display .= $LANG_CLASSIFIEDS_2['missing_field'];
+                    $display .= '<ul>';
+                    foreach ($missingfields as $value) {
+                        $display .= '<li>' . $value . '</li>';
+                    }
+                    $display .= '</ul>';
+                    $display .= $LANG_CLASSIFIEDS_2['check_it'];
+                    $display .= COM_endBlock();
+                    $display .= CLASSIFIEDS_getCatForm($_REQUEST);
+                    break;
+                }
+
+                $category = DB_escapeString(COM_getTextContent($_REQUEST['category']));
+                $pid = (int) $_REQUEST['pid'];
+                $catorder = empty($_REQUEST['catorder']) ? 0 : (int) $_REQUEST['catorder'];
+                $catdeleted = !empty($_REQUEST['catdeleted']) ? 1 : 0;
+
+                if (!empty($_REQUEST['cid']) && is_numeric($_REQUEST['cid'])) {
+                    $cid = (int) $_REQUEST['cid'];
+                    $sql = "pid = '{$pid}', "
+                         . "category = '{$category}', "
+                         . "catorder = '{$catorder}', "
+                         . "catdeleted = '{$catdeleted}'";
+                    $sql = "UPDATE {$_TABLES['cl_cat']} SET {$sql} WHERE cid = {$cid}";
+                } else {
+                    if ($catorder <= 0) {
+                        $catorder = (int) DB_getItem(
+                            $_TABLES['cl_cat'],
+                            'catorder',
+                            'cid = ' . $pid
+                        ) + 1;
+                    }
+
+                    $sql = "pid = '{$pid}', "
+                         . "category = '{$category}', "
+                         . "catorder = '{$catorder}', "
+                         . "catdeleted = '{$catdeleted}', "
+                         . "owner_id = '" . (int) $_USER['uid'] . "'";
+                    $sql = "INSERT INTO {$_TABLES['cl_cat']} SET {$sql}";
+                }
+
                 DB_query($sql);
                 if (DB_error()) {
-                    $msg = $LANG_CLASSIFIEDS_ADMIN['save_fail'];
+                    $msg = isset($LANG_CLASSIFIEDS_ADMIN['save_fail'])
+                        ? $LANG_CLASSIFIEDS_ADMIN['save_fail']
+                        : $LANG_CLASSIFIEDS_2['save_fail'];
                 } else {
-                    $msg = $LANG_CLASSIFIEDS_ADMIN['save_success'];
+                    $msg = isset($LANG_CLASSIFIEDS_ADMIN['save_success'])
+                        ? $LANG_CLASSIFIEDS_ADMIN['save_success']
+                        : $LANG_CLASSIFIEDS_2['save_success'];
                 }
-		        
-                // save complete, return to cat list
-                echo COM_refresh($_CONF['site_admin_url'] . "/plugins/classifieds/index.php?msg=" . urlencode($msg) . "&amp;mode=cat");
-                exit();
-                break;
 
-            /* this case is currently not used... future expansion? */
-            case 'preview':
-                $display .= CLASSIFIEDS_getCatForm($_REQUEST);
-                break;
+                echo COM_refresh(
+                    $_CONF['site_admin_url']
+                    . '/plugins/classifieds/index.php?msg=' . urlencode($msg)
+                    . '&amp;mode=cat'
+                );
+                exit;
 
-            case 'edit':
-                // Get the category to edit and display the form
-                if (is_numeric($_REQUEST['cid'])) {
-                    $sql = "SELECT * FROM {$_TABLES['cl_cat']} WHERE cid = {$_REQUEST['cid']}";
-                    $res = DB_query($sql);
-                    $A = DB_fetchArray($res);
-                    $display .= CLASSIFIEDS_getCatForm($A);
-                } else {
-                    echo COM_refresh($_CLASSIFIEDS_CONF['site_url']);
-                }
-                break;
 			case 'new':
 			    $display .= COM_startBlock($LANG_CLASSIFIEDS_1['plugin_name']);
 		        $display .= CLASSIFIEDS_getCatForm();
