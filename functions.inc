@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Classifieds Plugin 1.3.0                                                  |
+// | Classifieds Plugin 1.4.0-dev                                                  |
 // +---------------------------------------------------------------------------+
 // | functions.inc                                                             |
 // |                                                                           |
@@ -64,13 +64,15 @@ $_CLASSIFIEDS_CONF = $c->get_config('classifieds');
 require_once ($_CONF['path'] . 'plugins/classifieds/classifieds.php');
 
 /**
-*Include plugin files
-*/
-$pluginfile = $_CONF['path_data'] . 'classifieds_data/proversion/proversion.php';
-if (file_exists($pluginfile)) {
-    require_once $pluginfile;
-}
-require_once ($_CONF['path'] . 'plugins/classifieds/lib-contact.php');
+ * Include plugin files.
+ *
+ * The historical Pro edition is now integrated into the standard plugin.
+ * Legacy files under path_data/classifieds_data/proversion are intentionally
+ * not loaded so the old and new implementations can never run together.
+ */
+require_once $_CONF['path'] . 'plugins/classifieds/lib-notifications.php';
+require_once $_CONF['path'] . 'plugins/classifieds/lib-republish.php';
+require_once $_CONF['path'] . 'plugins/classifieds/lib-contact.php';
 
 
 
@@ -81,13 +83,15 @@ require_once ($_CONF['path'] . 'plugins/classifieds/lib-contact.php');
 
 function plugin_getheadercode_classifieds()
 {
-	global $_CONF, $_CLASSIFIEDS_CONF, $_SCRIPTS;
+    global $_CONF, $_CLASSIFIEDS_CONF, $_SCRIPTS;
 
-	$_SCRIPTS->setJavaScriptLibrary('jquery');
-	
-	$retval	.= '    <link rel="stylesheet" href="' . $_CLASSIFIEDS_CONF['site_url'] . '/css/classifieds_130.css" type="text/css" media="screen"' . XHTML . '>' . LB;
+    $retval = '';
+    $_SCRIPTS->setJavaScriptLibrary('jquery');
 
-	return $retval;
+    $retval .= '    <link rel="stylesheet" href="' . $_CLASSIFIEDS_CONF['site_url']
+        . '/css/classifieds_130.css" type="text/css" media="screen"' . XHTML . '>' . LB;
+
+    return $retval;
 }
 
 function plugin_commentsupport_classifieds()
