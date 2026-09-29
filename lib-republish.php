@@ -9,13 +9,6 @@ if (!defined('VERSION')) {
     die('This file can not be used on its own.');
 }
 
-function CLASSIFIEDS_getBonusAdminButton()
-{
-    global $LANG_CLASSIFIEDS_2;
-
-    return '<option value="copy">' . $LANG_CLASSIFIEDS_2['copy_button'] . '</option>';
-}
-
 function CLASSIFIEDS_repost($clid)
 {
     global $_TABLES, $_CLASSIFIEDS_CONF;
