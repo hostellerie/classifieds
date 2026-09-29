@@ -34,7 +34,10 @@ function CLASSIFIEDS_repost($clid)
     }
 
     $query = DB_query(
-        "SELECT * FROM {$_TABLES['cl']} WHERE clid = " . $clid . " LIMIT 1"
+        "SELECT clid, catid, status, type, tel, hide_tel, title, text, price, "
+        . "postcode, city, siren, created, deleted, owner_id, group_id, "
+        . "perm_owner, perm_group, perm_members, perm_anon "
+        . "FROM {$_TABLES['cl']} WHERE clid = " . $clid . " LIMIT 1"
     );
     $ad = DB_fetchArray($query);
 
