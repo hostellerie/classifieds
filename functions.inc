@@ -54,14 +54,24 @@ if (file_exists($langfile)) {
 /**
  * Load our config
  */
-require_once $_CONF['path_system'].'classes/config.class.php';
+require_once $_CONF['path_system'] . 'classes/config.class.php';
+require_once $plugin_path . 'install_defaults.php';
+
 $c = config::get_instance();
-$_CLASSIFIEDS_CONF = $c->get_config('classifieds');
+$storedClassifiedsConfig = $c->get_config('classifieds');
+if (!is_array($storedClassifiedsConfig)) {
+    $storedClassifiedsConfig = array();
+}
+
+$_CLASSIFIEDS_CONF = array_merge(
+    $_CLASSIFIEDS_DEFAULT,
+    $storedClassifiedsConfig
+);
 
 /*
-* Include specific classifieds config file
-*/
-require_once ($_CONF['path'] . 'plugins/classifieds/classifieds.php');
+ * Include derived Classifieds paths/URLs.
+ */
+require_once $_CONF['path'] . 'plugins/classifieds/classifieds.php';
 
 /**
  * Include plugin files.
