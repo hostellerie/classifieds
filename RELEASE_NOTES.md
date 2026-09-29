@@ -184,3 +184,20 @@ Administration now follows the documented separation of responsibilities:
 Configuration migration was also hardened after checking Geeklog Core's `config::add()` implementation. Since `config::add()` deletes and recreates an existing row, the 1.4.0 upgrade now calls it only for genuinely missing configuration entries. Existing administrator values are preserved while metadata such as type, fieldset, selection array, sort order and tab assignment is repaired in place.
 
 The migration verifies the resulting group through `get_config('classifieds')` before completing.
+
+
+## Consolidation before runtime testing
+
+A further source-level cleanup removed remaining legacy behavior before the runtime matrix:
+
+- Classifieds now uses Geeklog Core `SEC_loginRequiredForm()` instead of carrying a copied login form;
+- republishing no longer performs redirects inside the business module;
+- republish mail/lifecycle events are emitted only after the source ad is retired successfully;
+- failed source retirement removes the provisional copy instead of leaving two active ads;
+- scheduled expiration mail is one-shot per ad, avoiding duplicate delivery after partial failures;
+- public list queries and pagination counts share the same publication/category/type/ACL filters;
+- obsolete `ads_type` cookies and the dead `mode=s` route were removed;
+- the main footer now uses the correct `classifieds_main_footer` configuration key;
+- category option rendering now uses purpose-built, escaped helpers rather than dynamic generic SQL builders;
+- opening the category administration list no longer mutates category ordering;
+- comment callbacks now use the real Classifieds ACL contract.
