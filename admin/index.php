@@ -66,31 +66,45 @@ $vars = array('mode'       => 'alpha',
 CLASSIFIEDS_filterVars($vars, $_REQUEST);
 
 /**
- * Returns admin menu display
+ * Persistent Classifieds administration navigation.
  *
- * Generates the admin menu from the template and returns the result as a string of HTML
- *
- * @return string HTML of admin menu
+ * @param string $mode Current admin section
+ * @return string
  */
-function CLASSIFIEDS_admin_menu () 
+function CLASSIFIEDS_admin_menu($mode = '')
 {
-    global $_CONF, $LANG_CLASSIFIEDS_1, $_TABLES;
+    global $_CONF, $LANG_CLASSIFIEDS_1, $LANG_CLASSIFIEDS_ADMIN;
 
-    $retval = COM_startBlock();
+    $adsActive = ($mode !== 'cat');
+    $catActive = ($mode === 'cat');
 
-    // generate the menu from the template
-    $menu = new Template($_CONF['path'] . 'plugins/classifieds/templates/menus');
-    $menu->set_file(array('menu' => 'admin_menu.thtml'));
-    $menu->set_var('site_url', $_CONF['site_url']);
-	$menu->set_var('classifieds', $LANG_CLASSIFIEDS_1['plugin_name']);
-	$menu->set_var('classifieds_list', $LANG_CLASSIFIEDS_1['classifieds_list']);
-	$menu->set_var('categories_list', $LANG_CLASSIFIEDS_1['categories_list']);
-	
-    $retval .= $menu->parse('output', 'menu');
+    $retval = '<nav class="plugin-admin-nav" aria-label="'
+        . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['administration'], ENT_QUOTES, $_CONF['default_charset'])
+        . '"><div class="plugin-admin-nav__primary">';
 
-    $retval .= COM_endBlock();
+    $retval .= '<a class="plugin-admin-nav__item'
+        . ($adsActive ? ' is-active' : '') . '"'
+        . ($adsActive ? ' aria-current="page"' : '')
+        . ' href="' . $_CONF['site_admin_url'] . '/plugins/classifieds/index.php">'
+        . htmlspecialchars($LANG_CLASSIFIEDS_1['classifieds_list'], ENT_QUOTES, $_CONF['default_charset'])
+        . '</a>';
 
-    // retval results
+    $retval .= '<a class="plugin-admin-nav__item'
+        . ($catActive ? ' is-active' : '') . '"'
+        . ($catActive ? ' aria-current="page"' : '')
+        . ' href="' . $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat">'
+        . htmlspecialchars($LANG_CLASSIFIEDS_1['categories_list'], ENT_QUOTES, $_CONF['default_charset'])
+        . '</a>';
+
+    $retval .= '<form class="plugin-admin-nav__form" method="post" action="'
+        . $_CONF['site_admin_url'] . '/configuration.php">'
+        . '<input type="hidden" name="conf_group" value="classifieds">'
+        . '<button class="plugin-admin-nav__item" type="submit">'
+        . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['configuration'], ENT_QUOTES, $_CONF['default_charset'])
+        . '</button></form>';
+
+    $retval .= '</div></nav>';
+
     return $retval;
 }
 
@@ -178,7 +192,13 @@ function CLASSIFIEDS_listCategories()
 
     $retval = '';
 	
-	$retval .= '<p><a href="' . $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=new">' . $LANG_CLASSIFIEDS_ADMIN['create_new_cat'] . '</a></p>';
+    $menu_arr = array(
+        array(
+            'url' => $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=new',
+            'text' => $LANG_CLASSIFIEDS_ADMIN['create_new_cat']
+        )
+    );
+    $retval .= ADMIN_createMenu($menu_arr, '', '');
 
     reorderCategories();	
 
@@ -263,7 +283,7 @@ function plugin_getListField_classifieds_categories($fieldname, $fieldvalue, $A,
 
 $display .= COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name']);
 
-$display .= CLASSIFIEDS_admin_menu();
+$display .= CLASSIFIEDS_admin_menu($_REQUEST['mode']);
 
 // If any message
 $display .= CLASSIFIEDS_message($_REQUEST['msg']);
@@ -383,45 +403,42 @@ switch ($_REQUEST['mode']) {
 		break;
 		
 	default :
-	    $display .= COM_startBlock($LANG_CLASSIFIEDS_1['plugin_name']);
+        $display .= COM_startBlock($LANG_CLASSIFIEDS_1['plugin_name']);
 
-        $display .= '<img src="' . $_CONF['site_admin_url'] . '/plugins/classifieds/images/classifieds.png" alt="" align="left" hspace="10">' 
-                 . $LANG_CLASSIFIEDS_ADMIN['plugin_doc'] . ' <a href="http://geeklog.fr/wiki/plugins:classifieds" target="_blank">' 
-                 . $LANG_CLASSIFIEDS_ADMIN['online'] . '</a>. ' . $LANG_CLASSIFIEDS_ADMIN['plugin_conf'] 
-                 . ' <a href="#" onclick="classifieds_conf_link.submit()">'. $LANG_CLASSIFIEDS_ADMIN['online']
-                 . '</a>. ' . "<form name='classifieds_conf_link' action='{$_CONF['site_admin_url']}/configuration.php' method='POST'><input type='hidden' name='conf_group' value='classifieds'></form>";	
-        $display .= '<div style="clear:both;"></div>';
-        
-		//Display group list with classifieds.publish right or warning
-		$ft_id = DB_getItem($_TABLES['features'], 'ft_id', "ft_name = 'classifieds.publish'");
-		$sql = "SELECT * FROM {$_TABLES['access']} as a LEFT JOIN {$_TABLES['groups']} AS g ON a.acc_grp_id = g.grp_id WHERE a.acc_ft_id = $ft_id ";
-		$result = DB_query($sql);
-        $i = 0;
-		$gr_nb = DB_numRows($result);
-		if ($gr_nb == 0) {
-		    $display .= '<p>' . $LANG_CLASSIFIEDS_ADMIN['no_group_access'] . '</p><ol>';
-		} else if ($gr_nb ==1) {
-		    $display .= '<p>' . $gr_nb . ' ' . $LANG_CLASSIFIEDS_ADMIN['group_access'] . '</p><ol>';
-		} else {
-		    $display .= '<p>' . $gr_nb . ' ' . $LANG_CLASSIFIEDS_ADMIN['groups_access'] . '</p><ol>';
-		}
-	
-		while ($A = DB_fetchArray($result)) {
-		    $display .= '<li>' . $A['grp_name'] . '</li>';
-			$i++;
-		} 
-		$display .= '</ol>';
-		
-		//Select group to give classifieds.publish right
-		
-        //Check if picture folder is writable
-        if ( !file_exists($_CLASSIFIEDS_CONF['path_images']) || !is_writable($_CLASSIFIEDS_CONF['path_images']) ) {
-            $display .= CLASSIFIEDS_message('<p>'. $LANG_CLASSIFIEDS_1['image_not_writable'] . '</p><p> >> '. $_CLASSIFIEDS_CONF['path_images'] . '</p>');
+        // Show which groups currently own the publish feature.
+        $ft_id = (int) DB_getItem(
+            $_TABLES['features'],
+            'ft_id',
+            "ft_name = 'classifieds.publish'"
+        );
+        $sql = "SELECT g.grp_name "
+            . "FROM {$_TABLES['access']} AS a "
+            . "LEFT JOIN {$_TABLES['groups']} AS g ON a.acc_grp_id = g.grp_id "
+            . "WHERE a.acc_ft_id = " . $ft_id;
+        $result = DB_query($sql);
+        $groupCount = DB_numRows($result);
+
+        if ($groupCount === 0) {
+            $display .= '<p>' . $LANG_CLASSIFIEDS_ADMIN['no_group_access'] . '</p>';
         } else {
-            // check jquery plugin
-            if (!in_array('jquery', $_PLUGINS)) {
-                $display .= '<p>'. $LANG_CLASSIFIEDS_1['install_jquery'] . '</p><p> >> <a href="http://geeklog.fr/wiki/plugins:jquery" target="_blank">jQuery plugin</a></p>';
+            $label = ($groupCount === 1)
+                ? $LANG_CLASSIFIEDS_ADMIN['group_access']
+                : $LANG_CLASSIFIEDS_ADMIN['groups_access'];
+            $display .= '<p>' . $groupCount . ' ' . $label . '</p><ul>';
+            while ($A = DB_fetchArray($result)) {
+                $display .= '<li>'
+                    . htmlspecialchars($A['grp_name'], ENT_QUOTES, $_CONF['default_charset'])
+                    . '</li>';
             }
+            $display .= '</ul>';
+        }
+
+        if (!is_dir($_CLASSIFIEDS_CONF['path_images'])
+            || !is_writable($_CLASSIFIEDS_CONF['path_images'])) {
+            $display .= CLASSIFIEDS_message(
+                '<p>' . $LANG_CLASSIFIEDS_1['image_not_writable'] . '</p>'
+            );
+        } else {
             $display .= CLASSIFIEDS_listAds();
         }
 		$display .= COM_endBlock();
