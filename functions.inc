@@ -861,186 +861,69 @@ function CLASSIFIEDS_upgradeDatabase()
 
 function plugin_upgrade_classifieds()
 {
-    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES, $_DB_table_prefix;
+    global $_CONF, $_TABLES;
 
-    $installed_version = DB_getItem($_TABLES['plugins'], 'pi_version',
-                                    "pi_name = 'classifieds'");
-    $code_version = plugin_chkVersion_classifieds();
-    if ($installed_version == $code_version) {
-        // nothing to do
+    $installedVersion = DB_getItem(
+        $_TABLES['plugins'],
+        'pi_version',
+        "pi_name = 'classifieds'"
+    );
+    $codeVersion = plugin_chkVersion_classifieds();
+
+    if ($installedVersion === $codeVersion) {
         return true;
     }
 
     require_once $_CONF['path'] . 'plugins/classifieds/autoinstall.php';
-	require_once $_CONF['path'] . 'plugins/classifieds/install_defaults.php';
-	require_once $_CONF['path_system'] . 'classes/config.class.php';
+    require_once $_CONF['path_system'] . 'classes/config.class.php';
 
-    if (! plugin_compatible_with_this_version_classifieds('classifieds')) {
+    if (!plugin_compatible_with_this_version_classifieds('classifieds')) {
         return 3002;
     }
 
-    // other update code goes here
-	 switch( $installed_version ) {
-        
-		case '1.0':
-			$c = config::get_instance();
-			
-			//This is main subgroup #0
-		    $c->add('sg_main', NULL, 'subgroup', 0, 0, NULL, 0, true, 'classifieds');
-		
-		    //Main settings   
-		    $c->add('fs_main', NULL, 'fieldset', 0, 0, NULL, 0, true, 'classifieds');
-            $c->add('classifieds_folder', $_CLASSIFIEDS_DEFAULT['classifieds_folder'],
-                'text', 0, 0, 0, 10, true, 'classifieds');
-		    $c->add('active_days', $_CLASSIFIEDS_DEFAULT['active_days'],
-                'text', 0, 0, 0, 20, true, 'classifieds');
-		    $c->add('site_name', $_CLASSIFIEDS_DEFAULT['site_name'],
-                'text', 0, 0, 0, 30, true, 'classifieds');
+    // 1.4.0 has one explicit migration baseline: the last public 1.3.2
+    // release. Older installations should first be upgraded with the historical
+    // 1.3.2 package instead of carrying all legacy migrations in modern code.
+    if (version_compare($installedVersion, '1.3.2', '<')) {
+        COM_errorLog(
+            'Classifieds 1.4.0 requires Classifieds 1.3.2 as the upgrade baseline. '
+            . 'Installed version: ' . $installedVersion
+        );
+        return false;
+    }
 
-		    //images
-            $c->add('fs_images', NULL, 'fieldset', 0, 1, NULL, 0, true, 'classifieds');
-		    $c->add('max_image_width', $_CLASSIFIEDS_DEFAULT['max_image_width'],
-                'text', 0, 1, 0, 101, true, 'classifieds');
-		    $c->add('max_image_height', $_CLASSIFIEDS_DEFAULT['max_image_height'],
-                'text', 0, 1, 0, 102, true, 'classifieds');
-		    $c->add('max_image_size', $_CLASSIFIEDS_DEFAULT['max_image_size'],
-                'text', 0, 1, 0, 103, true, 'classifieds');
-		    $c->add('thumb_width', $_CLASSIFIEDS_DEFAULT['thumb_width'],
-				'text', 0, 1, 0, 104, true, 'classifieds');
-		    $c->add('thumb_height', $_CLASSIFIEDS_DEFAULT['thumb_height'],
-				'text', 0, 1, 0, 105, true, 'classifieds');
-		    $c->add('max_thumbnail_size', $_CLASSIFIEDS_DEFAULT['max_thumbnail_size'],
-                'text', 0, 1, 0, 106, true, 'classifieds');
-		    $c->add('max_images_per_ad', $_CLASSIFIEDS_DEFAULT['max_images_per_ad'],
-                'text', 0, 1, 0, 107, true, 'classifieds');
-		
-				
-            //display
-		    $c->add('fs_display', NULL, 'fieldset', 0, 2, NULL, 0, true, 'classifieds');
-		    $c->add('menulabel', $_CLASSIFIEDS_DEFAULT['menulabel'],
-                'text', 0, 2, 0, 201, true, 'classifieds');
-		    $c->add('hide_classifieds_menu', $_CLASSIFIEDS_DEFAULT['hide_classifieds_menu'],
-                'select', 0, 2, 3, 202, true, 'classifieds');
-		    $c->add('classifieds_main_header', $_CLASSIFIEDS_DEFAULT['classifieds_main_header'],
-                'text', 0, 2, 0, 203, true, 'classifieds');
-		    $c->add('classifieds_main_footer', $_CLASSIFIEDS_DEFAULT['classifieds_main_footer'],
-                'text', 0, 2, 0, 204, true, 'classifieds');
-		    $c->add('classifieds_edit_header', $_CLASSIFIEDS_DEFAULT['classifieds_edit_header'],
-                'text', 0, 2, 0, 205, true, 'classifieds');
-		    $c->add('help_page', $_CLASSIFIEDS_DEFAULT['help_page'],
-                'text', 0, 2, 0, 206, true, 'classifieds');
-		    $c->add('currency', $_CLASSIFIEDS_DEFAULT['currency'],
-                'select', 0, 2, 20, 207, true, 'classifieds');
-		    $c->add('date_format', $_CLASSIFIEDS_DEFAULT['date_format'],
-                'text', 0, 2, 0, 208, true, 'classifieds');
-		    $c->add('time_format', $_CLASSIFIEDS_DEFAULT['time_format'],
-                'text', 0, 2, 0, 209, true, 'classifieds');
-		    $c->add('maxPerPage', $_CLASSIFIEDS_DEFAULT['maxPerPage'],
-                'text', 0, 2, 0, 210, true, 'classifieds');
-				
-		    //email
-		    $c->add('fs_email', NULL, 'fieldset', 0, 3, NULL, 0, true, 'classifieds');
-		    $c->add('create_ad_email_user', $_CLASSIFIEDS_DEFAULT['create_ad_email_user'],
-                'select', 0, 3, 3, 301, true, 'classifieds');
-		    $c->add('mod_ad_email_user', $_CLASSIFIEDS_DEFAULT['mod_ad_email_user'],
-                'select', 0, 3, 3, 302, true, 'classifieds');
-		    $c->add('delete_ad_email_user', $_CLASSIFIEDS_DEFAULT['delete_ad_email_user'],
-                'select', 0, 3, 3, 303, true, 'classifieds');
-		    $c->add('expire_ad_email_user', $_CLASSIFIEDS_DEFAULT['expire_ad_email_user'],
-                'select', 0, 3, 3, 304, true, 'classifieds');
-		
-		    //permissions
-		    $c->add('fs_permissions', NULL, 'fieldset', 0, 4, NULL, 0, true, 'classifieds');
-		    $c->add('classifieds_login_required', $_CLASSIFIEDS_DEFAULT['classifieds_login_required'],
-                'select', 0, 4, 3, 401, true, 'classifieds');
-		    $c->add('default_permissions', $_CLASSIFIEDS_DEFAULT['default_permissions'],
-                '@select', 0, 4, 12, 402, true, 'classifieds');
-		
-		case '1.0.1':
-		    DB_query("CREATE TABLE {$_TABLES['cl_users']} (
-                      user_id mediumint(8) unsigned NOT NULL,
-                      tel varchar(20) NOT NULL,
-                      postcode VARCHAR(20) NOT NULL,
-                      city VARCHAR(30) NOT NULL,
-                      PRIMARY KEY (user_id)
-                      ) ENGINE=MyISAM
-                      ",0);
-		case '1.0.4':
-			DB_query("ALTER TABLE {$_TABLES['cl']} 
-		    ADD modif int(11) default '0' AFTER hits
-		    ",0);
-			
-		case '1.0.5':
-		    $c = config::get_instance();
-		    $c->add('create_ad_email_admin', $_CLASSIFIEDS_DEFAULT['create_ad_email_admin'],
-                'select', 0, 3, 3, 301, true, 'classifieds');
-		    $c->add('mod_ad_email_admin', $_CLASSIFIEDS_DEFAULT['mod_ad_email_admin'],
-                'select', 0, 3, 3, 302, true, 'classifieds');
-		    $c->add('delete_ad_email_admin', $_CLASSIFIEDS_DEFAULT['delete_ad_email_admin'],
-                'select', 0, 3, 3, 303, true, 'classifieds');
-		    $c->add('expire_ad_email_admin', $_CLASSIFIEDS_DEFAULT['expire_ad_email_admin'],
-                'select', 0, 3, 3, 304, true, 'classifieds');
-		case '1.0.6':
-		    DB_query("ALTER TABLE {$_TABLES['cl_users']} 
-		    ADD status tinyint(1) DEFAULT '0',
-            ADD siren varchar(20)
-		    ",0);
-		case '1.0.7':
-		    DB_query("ALTER TABLE {$_TABLES['cl']} 
-		    ADD notification tinyint(1) DEFAULT '0' AFTER modified
-		    ",0);
-		case '1.1':
-		case '1.1.0':
-		case '1.1.1':
-        case '1.1.2':
-		    $c = config::get_instance();
-            $c->del('site_name', 'classifieds');
-            $c->add('allow_republish', 0,
-                'select', 0, 2, 3, 220, true, 'classifieds');
-        case '1.1.3':
-            //create ad users group
-			DB_save($_TABLES['groups'],
-                'grp_name,grp_descr',
-                "'Classifieds Users','Users in this group posted at least one ad'");
-			// Add user to ad users group
-            $ad_users = DB_getItem($_TABLES['groups'], 'grp_id',
-                             "grp_name='Classifieds Users'");
-			$sql = "SELECT DISTINCT owner_id FROM {$_TABLES['cl']}";
-			$users = DB_query($sql);
-			require_once $_CONF['path_system'] . 'lib-user.php';
-			 while ($A = DB_fetchArray($users)) {
-                USER_addGroup ($ad_users, $A['owner_id']);
-		    }
-		case '1.1.4':
-		case '1.2':		
-		    //create publish feature
-			DB_save($_TABLES['features'],
-                'ft_name,ft_descr',
-                "'classifieds.publish','Can publish classifieds'");
-		case '1.2.1':
-		case '1.3.0':
-		case '1.3.1':
-		case '1.3.2':
-            if (!CLASSIFIEDS_upgradeConfiguration()) {
-                return false;
-            }
-            if (!CLASSIFIEDS_upgradeDatabase()) {
-                return false;
-            }
-            if (!CLASSIFIEDS_ensureImageDirectory()) {
-                return false;
-            }
+    if (!CLASSIFIEDS_upgradeConfiguration()) {
+        return false;
+    }
 
-		default:
-		    // update plugin version number
-            $inst_parms = plugin_autoinstall_classifieds('classifieds');
-            $pi_gl_version = $inst_parms['info']['pi_gl_version'];
+    if (!CLASSIFIEDS_upgradeDatabase()) {
+        return false;
+    }
 
-            DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '$code_version', pi_gl_version = '$pi_gl_version' WHERE pi_name = 'classifieds'");
-			COM_errorLog( "Updated classifieds plugin from v$installed_version to v$code_version", 1 );
-			
+    if (!CLASSIFIEDS_ensureImageDirectory()) {
+        return false;
+    }
 
-	}
+    $install = plugin_autoinstall_classifieds('classifieds');
+    $glVersion = $install['info']['pi_gl_version'];
+
+    DB_query(
+        "UPDATE {$_TABLES['plugins']} SET "
+        . "pi_version = '" . DB_escapeString($codeVersion) . "', "
+        . "pi_gl_version = '" . DB_escapeString($glVersion) . "' "
+        . "WHERE pi_name = 'classifieds'"
+    );
+
+    if (DB_error()) {
+        return false;
+    }
+
+    COM_errorLog(
+        'Updated Classifieds plugin from v'
+        . $installedVersion . ' to v' . $codeVersion,
+        1
+    );
+
     return true;
 }
 
