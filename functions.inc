@@ -460,6 +460,83 @@ function plugin_chkVersion_classifieds()
 * @return   int     Number of message to display or true for success
 *
 */
+/**
+ * Return localized help for native Geeklog configuration options.
+ *
+ * @param string $id
+ * @return string
+ */
+function plugin_getconfigtooltip_classifieds($id)
+{
+    global $LANG_configtooltips;
+
+    if (isset($LANG_configtooltips['classifieds'])
+        && isset($LANG_configtooltips['classifieds'][$id])) {
+        return $LANG_configtooltips['classifieds'][$id];
+    }
+
+    return '';
+}
+
+/**
+ * Repair native configuration metadata without changing administrator values.
+ *
+ * @return bool
+ */
+function CLASSIFIEDS_upgradeConfiguration()
+{
+    global $_TABLES;
+
+    require_once dirname(__FILE__) . '/install_defaults.php';
+
+    $c = config::get_instance();
+
+    // Add the explicit tab required by modern Geeklog configuration UI.
+    $c->add('tab_main', NULL, 'tab', 0, 0, NULL, 0, true, 'classifieds', 0);
+
+    // Remove settings that existed only for TimThumb rendering.
+    $c->del('thumb_width', 'classifieds');
+    $c->del('thumb_height', 'classifieds');
+    $c->del('max_thumbnail_size', 'classifieds');
+
+    // These are plain text settings. Existing installations may have stored
+    // selectionArray=0, which makes Geeklog expect a language-backed select.
+    $textSettings = array(
+        'classifieds_folder',
+        'active_days',
+        'max_image_width',
+        'max_image_height',
+        'max_image_size',
+        'max_images_per_ad',
+        'menulabel',
+        'classifieds_main_header',
+        'classifieds_main_footer',
+        'classifieds_edit_header',
+        'help_page',
+        'currency',
+        'date_format',
+        'time_format',
+        'maxPerPage'
+    );
+
+    foreach ($textSettings as $name) {
+        DB_query(
+            "UPDATE {$_TABLES['conf_values']} "
+            . "SET type = 'text', selectionArray = -1, tab = 0 "
+            . "WHERE group_name = 'classifieds' "
+            . "AND name = '" . DB_escapeString($name) . "'"
+        );
+    }
+
+    // Keep every maintained Classifieds setting on the explicit main tab.
+    DB_query(
+        "UPDATE {$_TABLES['conf_values']} SET tab = 0 "
+        . "WHERE group_name = 'classifieds' AND type <> 'subgroup'"
+    );
+
+    return true;
+}
+
 function plugin_upgrade_classifieds()
 {
     global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES, $_DB_table_prefix;
