@@ -225,7 +225,7 @@ function CLASSIFIEDS_listCategories()
         'table'          => 'cl_cat',
         'sql'            => $sql,
         'query_fields'   => array('cid', 'pid', 'category', 'catorder', 'catdeleted'),
-        'default_filter' => COM_getPermSQL ('AND', 0, 3)
+        'default_filter' => ''
     );
 
     $retval .= ADMIN_list('classifieds', 'plugin_getListField_classifieds_categories',
