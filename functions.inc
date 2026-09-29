@@ -517,7 +517,200 @@ function plugin_autotags_classifieds($op, $content = '', $autotag = '')
 
 
 /**
- * Return normalized Classifieds item information to generic Geeklog consumers.
+ * Parse one provider-owned Classifieds content identity.
+ *
+ * Stable public identities:
+ * - root
+ * - category:<cid>
+ * - ad:<clid>
+ *
+ * Positive numeric ids remain accepted as a compatibility alias for ad:<id>.
+ *
+ * @param mixed  $id
+ * @param string $subtypeHint
+ * @return array
+ */
+function CLASSIFIEDS_parseContentIdentity($id, $subtypeHint = '')
+{
+    $raw = trim((string) $id);
+    $hint = strtolower(trim((string) $subtypeHint));
+
+    if ($raw === 'root' || $hint === 'root') {
+        return array('subtype' => 'root', 'numeric_id' => 0, 'id' => 'root');
+    }
+
+    if (preg_match('/^category:([1-9][0-9]*)$/', $raw, $match)) {
+        $numericId = (int) $match[1];
+        return array(
+            'subtype' => 'category',
+            'numeric_id' => $numericId,
+            'id' => 'category:' . $numericId
+        );
+    }
+
+    if (preg_match('/^(?:ad|classified):([1-9][0-9]*)$/', $raw, $match)) {
+        $numericId = (int) $match[1];
+        return array(
+            'subtype' => 'ad',
+            'numeric_id' => $numericId,
+            'id' => 'ad:' . $numericId
+        );
+    }
+
+    if (ctype_digit($raw) && (int) $raw > 0) {
+        $numericId = (int) $raw;
+        $subtype = ($hint === 'category') ? 'category' : 'ad';
+
+        return array(
+            'subtype' => $subtype,
+            'numeric_id' => $numericId,
+            'id' => $subtype . ':' . $numericId
+        );
+    }
+
+    return array('subtype' => '', 'numeric_id' => 0, 'id' => '');
+}
+
+/**
+ * Project one normalized resource onto the fields requested by Item Info.
+ *
+ * @param array $item
+ * @param array $properties
+ * @return array
+ */
+function CLASSIFIEDS_projectItemInfo($item, $properties)
+{
+    $result = array();
+
+    foreach ($properties as $property) {
+        $property = trim((string) $property);
+        if ($property === '') {
+            continue;
+        }
+
+        $result[$property] = isset($item[$property]) ? $item[$property] : '';
+    }
+
+    return $result;
+}
+
+/**
+ * Return one normalized public Classifieds resource.
+ *
+ * @param mixed  $id
+ * @param int    $uid
+ * @param string $subtypeHint
+ * @return array
+ */
+function CLASSIFIEDS_getContentResource($id, $uid = 0, $subtypeHint = '')
+{
+    global $_CLASSIFIEDS_CONF, $_TABLES, $LANG_CLASSIFIEDS_1;
+
+    $identity = CLASSIFIEDS_parseContentIdentity($id, $subtypeHint);
+    if ($identity['subtype'] === '') {
+        return array();
+    }
+
+    if ($identity['subtype'] === 'root') {
+        return array(
+            'id' => 'root',
+            'title' => $LANG_CLASSIFIEDS_1['plugin_name'],
+            'url' => plugin_idToURL_classifieds('root', 'root'),
+            'description' => '',
+            'excerpt' => '',
+            'date-created' => 0,
+            'date-modified' => 0,
+            'type' => 'classifieds',
+            'subtype' => 'root',
+            'is-container' => 1,
+            'parent-id' => '',
+            'parent-subtype' => ''
+        );
+    }
+
+    if ($identity['subtype'] === 'category') {
+        $cid = (int) $identity['numeric_id'];
+        $sql = "SELECT c.cid, c.pid, c.category "
+            . "FROM {$_TABLES['cl_cat']} AS c "
+            . "WHERE c.cid = " . $cid . " AND c.catdeleted = 0"
+            . COM_getPermSQL('AND', $uid, 2, 'c')
+            . " LIMIT 1";
+
+        $result = DB_query($sql);
+        $row = DB_fetchArray($result);
+        if (!is_array($row)) {
+            return array();
+        }
+
+        $pid = (int) $row['pid'];
+
+        return array(
+            'id' => 'category:' . $cid,
+            'title' => (string) $row['category'],
+            'url' => plugin_idToURL_classifieds('category', $cid),
+            'description' => '',
+            'excerpt' => '',
+            'date-created' => 0,
+            'date-modified' => 0,
+            'type' => 'classifieds',
+            'subtype' => 'category',
+            'is-container' => 1,
+            'parent-id' => ($pid > 0) ? 'category:' . $pid : 'root',
+            'parent-subtype' => ($pid > 0) ? 'category' : 'root'
+        );
+    }
+
+    $clid = (int) $identity['numeric_id'];
+    $activeDays = max(0, (int) $_CLASSIFIEDS_CONF['active_days']);
+
+    $sql = "SELECT a.clid, a.title, a.text, a.catid, a.hits, a.owner_id, "
+        . "UNIX_TIMESTAMP(a.created) AS c_unixdate, "
+        . "UNIX_TIMESTAMP(a.modified) AS m_unixdate, "
+        . "c.category "
+        . "FROM {$_TABLES['cl']} AS a "
+        . "INNER JOIN {$_TABLES['cl_cat']} AS c ON c.cid = a.catid "
+        . "WHERE a.clid = " . $clid . " "
+        . "AND a.deleted = 0 AND a.enable = 1 "
+        . "AND c.catdeleted = 0 "
+        . "AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= " . $activeDays
+        . COM_getPermSQL('AND', $uid, 2, 'a')
+        . COM_getPermSQL('AND', $uid, 2, 'c')
+        . " LIMIT 1";
+
+    $result = DB_query($sql);
+    $row = DB_fetchArray($result);
+    if (!is_array($row)) {
+        return array();
+    }
+
+    $description = trim(strip_tags((string) $row['text']));
+    $excerpt = (strlen($description) > 255)
+        ? substr($description, 0, 252) . '...'
+        : $description;
+
+    return array(
+        'id' => 'ad:' . (int) $row['clid'],
+        'title' => (string) $row['title'],
+        'url' => plugin_idToURL_classifieds('ad', $row['clid']),
+        'description' => $description,
+        'excerpt' => $excerpt,
+        'date-created' => isset($row['c_unixdate']) ? (int) $row['c_unixdate'] : 0,
+        'date-modified' => isset($row['m_unixdate']) ? (int) $row['m_unixdate'] : 0,
+        'uid' => (int) $row['owner_id'],
+        'category' => (string) $row['category'],
+        'hits' => (int) $row['hits'],
+        'type' => 'classifieds',
+        'subtype' => 'ad',
+        'is-container' => 0,
+        'parent-id' => 'category:' . (int) $row['catid'],
+        'parent-subtype' => 'category'
+    );
+}
+
+/**
+ * Return normalized Classifieds resources to generic Geeklog consumers.
+ *
+ * Root, categories and ads are all first-class addressable resources.
  *
  * @param mixed  $id
  * @param string $what
@@ -529,108 +722,99 @@ function plugin_getiteminfo_classifieds($id, $what, $uid = 0, $options = array()
 {
     global $_CLASSIFIEDS_CONF, $_TABLES;
 
-    $properties = explode(',', $what);
-    $fields = array('a.clid', 'a.deleted', 'a.enable');
-
-    foreach ($properties as $property) {
-        switch ($property) {
-            case 'date-created':
-                $fields[] = 'UNIX_TIMESTAMP(a.created) AS c_unixdate';
-                break;
-            case 'date-modified':
-                $fields[] = 'UNIX_TIMESTAMP(a.modified) AS m_unixdate';
-                break;
-            case 'title':
-                $fields[] = 'a.title';
-                break;
-            case 'description':
-            case 'excerpt':
-                $fields[] = 'a.text';
-                break;
-            case 'id':
-            case 'url':
-                $fields[] = 'a.clid';
-                break;
-        }
-    }
-
-    $fields = array_unique($fields);
-    $sql = 'SELECT ' . implode(',', $fields) . " FROM {$_TABLES['cl']} AS a";
-
-    if ($id === '*') {
-        $sql .= " WHERE a.deleted = 0 AND a.enable = 1"
-            . " AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= "
-            . (int) $_CLASSIFIEDS_CONF['active_days'];
-    } else {
-        $itemId = (int) $id;
-        if ($itemId <= 0) {
-            return array();
-        }
-        $sql .= ' WHERE a.clid = ' . $itemId
-            . ' AND a.deleted = 0 AND a.enable = 1'
-            . ' AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= '
-            . (int) $_CLASSIFIEDS_CONF['active_days'];
-    }
-
-    $sql .= COM_getPermSQL('AND', $uid, 2, 'a');
+    $properties = array_map('trim', explode(',', (string) $what));
+    $uid = (int) $uid;
 
     if ($id !== '*') {
-        $sql .= ' LIMIT 1';
-    }
+        $subtypeHint = isset($options['subtype']) ? (string) $options['subtype'] : '';
+        $item = CLASSIFIEDS_getContentResource($id, $uid, $subtypeHint);
 
-    $result = DB_query($sql);
-    $retval = array();
+        if (empty($item)) {
+            return array();
+        }
 
-    while ($A = DB_fetchArray($result)) {
-        $props = array();
+        $projected = CLASSIFIEDS_projectItemInfo($item, $properties);
+        if (count($properties) === 1) {
+            $property = reset($properties);
+            return isset($projected[$property]) ? $projected[$property] : '';
+        }
 
+        $values = array();
         foreach ($properties as $property) {
-            switch ($property) {
-                case 'date-created':
-                    $props['date-created'] = isset($A['c_unixdate']) ? (int) $A['c_unixdate'] : 0;
-                    break;
-                case 'date-modified':
-                    $props['date-modified'] = isset($A['m_unixdate']) ? (int) $A['m_unixdate'] : 0;
-                    break;
-                case 'id':
-                    $props['id'] = (int) $A['clid'];
-                    break;
-                case 'title':
-                    $props['title'] = isset($A['title']) ? $A['title'] : '';
-                    break;
-                case 'description':
-                    $props['description'] = isset($A['text'])
-                        ? trim(strip_tags($A['text']))
-                        : '';
-                    break;
-                case 'excerpt':
-                    $description = isset($A['text']) ? trim(strip_tags($A['text'])) : '';
-                    $props['excerpt'] = (strlen($description) > 255)
-                        ? substr($description, 0, 252) . '...'
-                        : $description;
-                    break;
-                case 'url':
-                    $props['url'] = plugin_idToURL_classifieds('classifieds', $A['clid']);
-                    break;
-                default:
-                    $props[$property] = '';
-                    break;
-            }
+            $values[] = isset($projected[$property]) ? $projected[$property] : '';
         }
 
-        if ($id === '*') {
-            $retval[] = $props;
-        } else {
-            $values = array();
-            foreach ($properties as $property) {
-                $values[] = isset($props[$property]) ? $props[$property] : '';
+        return $values;
+    }
+
+    $limit = isset($options['limit']) ? (int) $options['limit'] : 100;
+    $limit = max(1, min(200, $limit));
+    $subtype = isset($options['subtype'])
+        ? strtolower(trim((string) $options['subtype']))
+        : '';
+
+    $items = array();
+
+    if ($subtype === '' || $subtype === 'root') {
+        $items[] = CLASSIFIEDS_projectItemInfo(
+            CLASSIFIEDS_getContentResource('root', $uid),
+            $properties
+        );
+    }
+
+    if (($subtype === '' || $subtype === 'category') && count($items) < $limit) {
+        $sql = "SELECT c.cid FROM {$_TABLES['cl_cat']} AS c "
+            . "WHERE c.catdeleted = 0"
+            . COM_getPermSQL('AND', $uid, 2, 'c')
+            . " ORDER BY c.category ASC, c.cid ASC";
+
+        $result = DB_query($sql);
+        while (($row = DB_fetchArray($result)) && count($items) < $limit) {
+            $resource = CLASSIFIEDS_getContentResource(
+                'category:' . (int) $row['cid'],
+                $uid
+            );
+            if (!empty($resource)) {
+                $items[] = CLASSIFIEDS_projectItemInfo($resource, $properties);
             }
-            $retval = (count($values) === 1) ? $values[0] : $values;
-            break;
         }
     }
 
-    return $retval;
+    if (($subtype === '' || $subtype === 'ad') && count($items) < $limit) {
+        $activeDays = max(0, (int) $_CLASSIFIEDS_CONF['active_days']);
+        $order = isset($options['order']) ? (string) $options['order'] : 'modified-desc';
+
+        if ($order === 'created-desc') {
+            $orderSql = 'a.created DESC, a.clid DESC';
+        } elseif ($order === 'hits-desc') {
+            $orderSql = 'a.hits DESC, a.modified DESC';
+        } else {
+            $orderSql = 'a.modified DESC, a.clid DESC';
+        }
+
+        $sql = "SELECT a.clid "
+            . "FROM {$_TABLES['cl']} AS a "
+            . "INNER JOIN {$_TABLES['cl_cat']} AS c ON c.cid = a.catid "
+            . "WHERE a.deleted = 0 AND a.enable = 1 "
+            . "AND c.catdeleted = 0 "
+            . "AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= " . $activeDays
+            . COM_getPermSQL('AND', $uid, 2, 'a')
+            . COM_getPermSQL('AND', $uid, 2, 'c')
+            . " ORDER BY " . $orderSql;
+
+        $result = DB_query($sql);
+        while (($row = DB_fetchArray($result)) && count($items) < $limit) {
+            $resource = CLASSIFIEDS_getContentResource(
+                'ad:' . (int) $row['clid'],
+                $uid
+            );
+            if (!empty($resource)) {
+                $items[] = CLASSIFIEDS_projectItemInfo($resource, $properties);
+            }
+        }
+    }
+
+    return $items;
 }
 
 /**
@@ -686,8 +870,52 @@ function plugin_idToURL_classifieds($sub_type, $item_id)
 {
     global $_CLASSIFIEDS_CONF;
 
-    return $_CLASSIFIEDS_CONF['site_url']
-        . '/index.php?mode=v&ad=' . (int) $item_id;
+    $identity = CLASSIFIEDS_parseContentIdentity($item_id, $sub_type);
+    if ($identity['subtype'] === 'root') {
+        return $_CLASSIFIEDS_CONF['site_url'] . '/index.php';
+    }
+
+    if ($identity['subtype'] === 'category') {
+        return $_CLASSIFIEDS_CONF['site_url']
+            . '/index.php?catid=' . (int) $identity['numeric_id'];
+    }
+
+    if ($identity['subtype'] === 'ad') {
+        return $_CLASSIFIEDS_CONF['site_url']
+            . '/index.php?mode=v&ad=' . (int) $identity['numeric_id'];
+    }
+
+    return '';
+}
+
+/**
+ * Render generic third-party fragments for one Classifieds public resource.
+ *
+ * Classifieds owns the placement. Consumers such as FAQ or Hub contribute
+ * through Geeklog's provider-neutral PLG_itemDisplay() dispatcher.
+ *
+ * @param string $id Stable provider-owned identity.
+ * @return string
+ */
+function CLASSIFIEDS_renderItemExtensions($id)
+{
+    if (!function_exists('PLG_itemDisplay')) {
+        return '';
+    }
+
+    $fragments = PLG_itemDisplay((string) $id, 'classifieds');
+    if (!is_array($fragments) || empty($fragments)) {
+        return '';
+    }
+
+    $html = '';
+    foreach ($fragments as $fragment) {
+        if (is_string($fragment) && $fragment !== '') {
+            $html .= $fragment;
+        }
+    }
+
+    return $html;
 }
 
 /**
