@@ -430,7 +430,10 @@ switch ($_REQUEST['mode']) {
 	    require_once ($_CONF['path_system']  . 'lib-user.php');
 	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['profile']);
 		$display .= CLASSIFIEDS_user_menu();
-		(function_exists('USER_showProfile')) ? $display .= USER_showProfile($_GET['u'], true) : $display .=CLASSIFIEDS_showProfile($_GET['u'], true);
+		$profileUid = (int) $_REQUEST['u'];
+        (function_exists('USER_showProfile'))
+            ? $display .= USER_showProfile($profileUid, true)
+            : $display .= CLASSIFIEDS_showProfile($profileUid, true);
 		$display .= COM_siteFooter(1);
 		break;
 	//Offert
