@@ -232,3 +232,97 @@ function CLASSIFIEDS_addPublisherGroup($uid)
     require_once $_CONF['path_system'] . 'lib-user.php';
     USER_addGroup($groupId, $uid);
 }
+
+
+/**
+ * Delete an ad.
+ *
+ * Soft deletion keeps the historical ad and its media for normal user flows.
+ * Hard deletion is restricted to Classifieds administrators and removes media
+ * and comments as well as the ad record.
+ *
+ * @param int  $clid
+ * @param bool $hard
+ * @return bool
+ */
+function CLASSIFIEDS_deleteAd($clid, $hard = false)
+{
+    global $_CONF, $_TABLES, $_USER;
+
+    $clid = (int) $clid;
+    if ($clid <= 0) {
+        return false;
+    }
+
+    $query = DB_query(
+        "SELECT * FROM {$_TABLES['cl']} WHERE clid = " . $clid . " LIMIT 1"
+    );
+    $ad = DB_fetchArray($query);
+    if (!is_array($ad)) {
+        return false;
+    }
+
+    if ($hard) {
+        if (!SEC_hasRights('classifieds.admin')) {
+            return false;
+        }
+
+        $pictures = DB_query(
+            "SELECT pi_filename FROM {$_TABLES['cl_pic']} "
+            . "WHERE pi_pid = '" . $clid . "'"
+        );
+
+        while ($picture = DB_fetchArray($pictures)) {
+            if (!CLASSIFIEDS_deleteImage($picture['pi_filename'])) {
+                COM_errorLog(
+                    'Classifieds: hard delete aborted; unable to remove image '
+                    . basename($picture['pi_filename'])
+                );
+                return false;
+            }
+        }
+
+        DB_query('START TRANSACTION');
+        DB_query(
+            "DELETE FROM {$_TABLES['cl_pic']} WHERE pi_pid = '" . $clid . "'"
+        );
+        DB_query(
+            "DELETE FROM {$_TABLES['cl']} WHERE clid = " . $clid
+        );
+
+        if (DB_error()) {
+            DB_query('ROLLBACK');
+            return false;
+        }
+
+        DB_query('COMMIT');
+
+        require_once $_CONF['path_system'] . 'lib-comment.php';
+        CMT_deleteComment('', (string) $clid, 'classifieds', false);
+
+        PLG_itemDeleted((string) $clid, 'classifieds');
+        return true;
+    }
+
+    if (SEC_hasAccess2($ad) < 3) {
+        return false;
+    }
+
+    DB_change($_TABLES['cl'], 'deleted', 1, 'clid', $clid);
+    if (DB_error()) {
+        return false;
+    }
+
+    $uid = isset($_USER['uid']) ? (int) $_USER['uid'] : (int) $ad['owner_id'];
+    CLASSIFIEDS_emailDeleteAd(
+        $ad['title'],
+        '',
+        $clid,
+        $uid,
+        $ad['price']
+    );
+
+    PLG_itemDeleted((string) $clid, 'classifieds');
+
+    return true;
+}
