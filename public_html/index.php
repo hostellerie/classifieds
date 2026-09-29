@@ -44,32 +44,30 @@ if (!in_array('classifieds', $_PLUGINS)) {
     exit;
 }
 
-$vars = array('mode'     => 'alpha',
-              'page'     => 'number',
-              'catid'    => 'alpha',
-			  'ad'       => 'number',
-			  'op'       => 'alpha',
-			  'clid'     => 'number',
-			  'catid'    => 'alpha',
-			  'msg'      => 'text',
-			  'pro'      => 'number',
-			  'type'     => 'number',
-			  'title'    => 'text',
-			  'text'     => 'text',
-			  'price'    => 'text',
-			  'tel'      => 'alpha',
-			  'hide_tel' => 'number',
-              'status'   => 'number',
-              'siren'    => 'text',
-              'deleted'  => 'number',
-              'author'   => 'text',
-              'authoremail' => 'text',
-              'message'  => 'text',
-              'cc'       => 'number',
-			  'postcode' => 'alpha',
-			  'city'     => 'text',
-			  'u'        => 'number'
-              );
+$vars = array(
+    'mode'        => 'alpha',
+    'page'        => 'number',
+    'catid'       => 'alpha',
+    'ad'          => 'number',
+    'op'          => 'alpha',
+    'clid'        => 'number',
+    'msg'         => 'text',
+    'type'        => 'number',
+    'title'       => 'text',
+    'text'        => 'text',
+    'price'       => 'text',
+    'tel'         => 'alpha',
+    'hide_tel'    => 'number',
+    'status'      => 'number',
+    'siren'       => 'text',
+    'author'      => 'text',
+    'authoremail' => 'text',
+    'message'     => 'text',
+    'cc'          => 'number',
+    'postcode'    => 'alpha',
+    'city'        => 'text',
+    'u'           => 'number'
+);
 			  
 CLASSIFIEDS_filterVars($vars, $_REQUEST);
 
