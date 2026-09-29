@@ -1,16 +1,16 @@
- <tr valign="middle">
-   <td  nowrap style="width:10%">
-     {title} <small><span style="padding-left:10px;"> {price} {currency}</span></small>
-   </td>
-   <td  nowrap style="width:2%; padding: 0px 20px 0px 20px;">
-     {small_pic}
-   </td>
-   <td nowrap>
-     <small>{cat}</small>
-   </td>
-   <td nowrap style="width:10%; padding-left:15px;">
-     <small>{date} - {time}</small>
-   </td>
-</tr>
+<article class="classifieds-list-item classifieds-list-item--compact">
+    <div class="classifieds-list-item__main">
+        <h3 class="ad-list-title">{title}</h3>
+        <p class="ad-list-price">{price} {currency}</p>
+        <p class="ad-list-location">{cat}</p>
+    </div>
 
+    <div class="classifieds-list-item__image">
+        {small_pic}
+    </div>
 
+    <div class="classifieds-list-item__date">
+        <span>{date}</span>
+        <span>{time}</span>
+    </div>
+</article>
