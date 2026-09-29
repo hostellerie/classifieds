@@ -218,8 +218,8 @@ $PLG_classifieds_MESSAGE1    = 'Hello world :)';
 *   @global array $LANG_configsections['classifieds']
 */
 $LANG_configsections['classifieds'] = array(
-    'label' => 'Classifieds',
-    'title' => 'Classifieds Configuration'
+    'label' => 'Petites annonces',
+    'title' => 'Configuration des petites annonces'
 );
 
 /**
@@ -275,14 +275,14 @@ $LANG_confignames['classifieds'] = array(
 	'allow_republish' => 'Permettre la republication des annonces',
 
     // Email settings
-    'create_ad_email_user'  => 'Email user on ad creation',
-    'mod_ad_email_user'  => 'Email user on ad modification',
-    'delete_ad_email_user'  => 'Email user on ad delete',
-    'expire_ad_email_user'  => 'Email user on ad expire',
-	'create_ad_email_admin'  => 'Email admin on ad creation',
-    'mod_ad_email_admin'  => 'Email admin on ad modification',
-    'delete_ad_email_admin'  => 'Email admin on ad delete',
-    'expire_ad_email_admin'  => 'Email admin on ad expire',
+    'create_ad_email_user'  => 'Envoyer un email à l’utilisateur lors de la création',
+    'mod_ad_email_user'  => 'Envoyer un email à l’utilisateur lors d’une modification',
+    'delete_ad_email_user'  => 'Envoyer un email à l’utilisateur lors de la suppression',
+    'expire_ad_email_user'  => 'Envoyer un email à l’utilisateur à l’expiration',
+	'create_ad_email_admin'  => 'Envoyer un email à l’administrateur lors de la création',
+    'mod_ad_email_admin'  => 'Envoyer un email à l’administrateur lors d’une modification',
+    'delete_ad_email_admin'  => 'Envoyer un email à l’administrateur lors de la suppression',
+    'expire_ad_email_admin'  => 'Envoyer un email à l’administrateur à l’expiration',
 	
     //Permissions settings
     'classifieds_login_required'  => 'Connexion requise pour accéder aux annonces',
