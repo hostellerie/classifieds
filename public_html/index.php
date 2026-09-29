@@ -358,17 +358,18 @@ switch ($_REQUEST['mode']) {
 		break;
 	//see all
 	case 'va':
-	    $user = DB_getItem($_TABLES['users'],'username','uid=' . $_GET['u']);
+        $profileUid = (int) $_REQUEST['u'];
+	    $user = DB_getItem($_TABLES['users'], 'username', 'uid=' . $profileUid);
 	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['all_ads_from'] . ' ' . $user);
 		$display .= CLASSIFIEDS_user_menu();
-	    $display .= CLASSIFIEDS_displayAds($_GET['u'],0,$user);
+	    $display .= CLASSIFIEDS_displayAds($profileUid, 0, $user);
 		$display .= COM_siteFooter(1);
 	    break;
     //contact
 	case 'c':
-		$uid = $_GET['uid'];
-		$ad = $_GET['ad'];
-		$subject = $_GET['subject'];
+		$uid = (int) $_REQUEST['uid'];
+		$ad = (int) $_REQUEST['ad'];
+		$subject = $_REQUEST['subject'];
 		$display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['contact']);
 		if (($uid > 1) && CLASSIFIEDS_checkAdAccess($ad) == true ) {
 		    ($_USER['uid'] > 1) ? $user = $_USER['uid'] : 0;
@@ -381,6 +382,8 @@ switch ($_REQUEST['mode']) {
 		break;
 	//advise
 	case 'a':
+        $uid = isset($_REQUEST['uid']) ? (int) $_REQUEST['uid'] : 0;
+        $ad = (int) $_REQUEST['ad'];
 	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['advisor']);
 		$display .= CLASSIFIEDS_user_menu();
 		if (($uid > 1) && CLASSIFIEDS_checkAdAccess($ad) == true ) {
@@ -395,7 +398,7 @@ switch ($_REQUEST['mode']) {
 	//report
 	case 'r':
 	    $uid = 2;
-		$ad = $_GET['ad'];
+		$ad = (int) $_REQUEST['ad'];
 		$subject = $LANG_CLASSIFIEDS_1['report'];
 		$display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['contact']);
 		if (($uid > 1) && CLASSIFIEDS_checkAdAccess($ad) == true ) {
