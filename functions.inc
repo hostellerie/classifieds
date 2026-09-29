@@ -1290,16 +1290,13 @@ function CLASSIFIEDS_viewAd ($clid)
 	$A['clid'] . '">' . $LANG_CLASSIFIEDS_1['report'] . '</a></p>');
 	
 	//view all
-	if ($_USER['uid'] == $A[owner_id]) {
+	if ($_USER['uid'] == $A['owner_id']) {
 	    $ad->set_var('view_all', '');
 	} else {
 	    $ad->set_var('view_all', '<p><a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=va&amp;u=' .
 	    $A['owner_id'] . '">' . $LANG_CLASSIFIEDS_1['view_all'] . '</a></p>');
 	}
-	
-//todo advise function
-	$ad->set_var('advisor', '<p><a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=a&amp;ad=' .
-	$A['clid'] . '">' . $LANG_CLASSIFIEDS_1['advisor'] . '</a></p>');
+	$ad->set_var('advisor', '');
 	
 	//Price
 	    if ($A['price'] != 0) {
