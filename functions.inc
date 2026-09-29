@@ -631,8 +631,13 @@ function plugin_upgrade_classifieds()
             DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '$code_version', pi_gl_version = '$pi_gl_version' WHERE pi_name = 'classifieds'");
 			COM_errorLog( "Updated classifieds plugin from v$installed_version to v$code_version", 1 );
 			
-            //move public_html/classifieds to custom folder if needed
-            if ($_CLASSIFIEDS_CONF['classifieds_folder'] != 'classifieds' && $_CLASSIFIEDS_CONF['classifieds_folder'] != '') {
+            // Legacy folder migration is retained only for very old persisted states.
+            // A normal 1.3.2 -> 1.4.0 upgrade must not rename/delete shared plugin
+            // public files merely because new code has been deployed.
+            $needsLegacyFolderMigration = version_compare($installed_version, '1.3.2', '<');
+            if ($needsLegacyFolderMigration
+                && $_CLASSIFIEDS_CONF['classifieds_folder'] != 'classifieds'
+                && $_CLASSIFIEDS_CONF['classifieds_folder'] != '') {
                 if ( rename($_CONF['path_html'] . $_CLASSIFIEDS_CONF['classifieds_folder'],$_CONF['path_html'] . $_CLASSIFIEDS_CONF['classifieds_folder'].'_old') ) {
                      COM_errorLog("CLASSIFIEDS - Renamed {$_CLASSIFIEDS_CONF['classifieds_folder']} folder." );
                 } else {
@@ -649,12 +654,7 @@ function plugin_upgrade_classifieds()
                 }
                 CLASSIFIEDS_delTree($_CONF['path_html'] . $_CLASSIFIEDS_CONF['classifieds_folder'].'_old');
             }
-            
-            /* This code is for statistics ONLY */
-            $message =  'Completed classifieds plugin upgrade: ' . date('m d Y',time()) . "   AT " . date('H:i', time()) . "\n";
-            $message .= 'Site: ' . $_CONF['site_url'] . ' and Sitename: ' . $_CONF['site_name'] . "\n";
-			if (function_exists('CLASSIFIEDS_adCopy')) $message .= 'Proversion' . "\n";
-            COM_mail("ben@geeklog.fr","Updated classifieds plugin from $installed_version to v$code_version",$message);
+
 	}
     return true;
 }
