@@ -1186,9 +1186,7 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
     $mode = isset($_REQUEST['mode']) ? (string) $_REQUEST['mode'] : '';
     $catid = isset($_REQUEST['catid']) ? (string) $_REQUEST['catid'] : '';
     $message = isset($_GET['msg']) ? (string) $_GET['msg'] : '';
-    $cookieType = isset($_COOKIE['ads_type']) ? (string) $_COOKIE['ads_type'] : '';
     $cookieCat = isset($_COOKIE['ads_cat']) ? (string) $_COOKIE['ads_cat'] : '';
-    $type = '';
     $checked_category = '';
 
     if ($page <= 0) {
@@ -1202,85 +1200,96 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
     }
 	
 
-    // Get ads from database
-    $sql = "SELECT a.*, i.pi_filename, c.category, c.catdeleted
-            FROM {$_TABLES['cl']} AS a
-            LEFT JOIN {$_TABLES['cl_pic']} AS i
-            ON i.pi_pid = a.clid AND i.pi_img_num IN (SELECT MIN(pi_img_num) FROM {$_TABLES['cl_pic']} WHERE pi_img_num >= 1 AND pi_pid = a.clid) 
-	    	LEFT JOIN {$_TABLES['cl_cat']} AS c
-            ON c.cid = a.catid WHERE c.catdeleted=0 
-			";
-	
-	if ($my == 0) $sql .= "AND a.deleted = '0' ";
-	if ($my == 1) $sql .= "AND 1 = 1 ";
-	
-    if ( ($my != 1) || ($profile == 1) ) {
-        $sql .= " AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= {$_CLASSIFIEDS_CONF['active_days']} 
-	    	";
-	}
+    if (COM_isAnonUser() && $my == 1) {
+        return CLASSIFIEDS_loginRequiredForm();
+    }
 
-    if ( ($user > 1) && ($my == 1) ) {
-	    $sql .= "AND a.owner_id = {$user} ";
-	}
-	if ( ($user > 1) && ($my == 0) ) {
-	    $sql .= "AND a.owner_id = {$user} ";
-	}
-	if ( COM_isAnonUser() && ($my == 1) ) {
-	    return CLASSIFIEDS_loginRequiredForm();
-	}
-	
-    $sql_index = $sql;
+    $user = (int) $user;
+    $activeDays = max(0, (int) $_CLASSIFIEDS_CONF['active_days']);
 
-    if ( ($my == 0) && ($profile == 0) ) {
-	    // If applicable, limit by category
-	    $category = '';
-        if (is_numeric($cookieCat) && $cookieCat !== '0') {
-            $category = ' AND a.catid = ' . (int) $cookieCat;
+    $where = array('c.catdeleted = 0');
+
+    if ($my == 1) {
+        if ($user > 1) {
+            $where[] = 'a.owner_id = ' . $user;
         }
-	    if ($catid !== '' && $catid !== '--' && $catid !== '0' && is_numeric($catid)) {
-	        $category = ' AND a.catid = ' . (int) $catid;
-        } else if ($catid === '0') {
-		    $category = '';
-		}
-	    $sql_index .= $category;
-		
-		// If applicable, limit by type
-	    // TODO remove cookie filter
-		//($_COOKIE['ads_type'] == 'o') ? $type = " AND a.type = '0'" : 0;
-	    //($_COOKIE['ads_type'] == 'd') ? $type = " AND a.type = '1'" : 0;
+    } else {
+        $where[] = 'a.deleted = 0';
+        $where[] = 'a.enable = 1';
+        $where[] = 'TO_DAYS(NOW()) - TO_DAYS(a.created) <= ' . $activeDays;
+        $where[] = ltrim(COM_getPermSQL('AND', 0, 2, 'a'), ' AND');
+
+        if ($user > 1) {
+            $where[] = 'a.owner_id = ' . $user;
+        }
+    }
+
+    if ($my == 0 && $profile == 0) {
+        $categoryId = 0;
+
+        if (is_numeric($cookieCat) && (int) $cookieCat > 0) {
+            $categoryId = (int) $cookieCat;
+        }
+
+        if ($catid !== '' && $catid !== '--' && is_numeric($catid)) {
+            $categoryId = (int) $catid;
+        }
+
+        if ($catid === '0') {
+            $categoryId = 0;
+        }
+
+        if ($categoryId > 0) {
+            $where[] = 'a.catid = ' . $categoryId;
+        }
+
         if ($mode === 'o') {
-            $type = " AND a.type = '0'";
+            $where[] = 'a.type = 0';
         } elseif ($mode === 'd') {
-            $type = " AND a.type = '1'";
+            $where[] = 'a.type = 1';
         }
-	    $sql_index .= $type;
-	}
+    }
 
-    $sql_index .= " ORDER BY created DESC";
+    $whereSql = implode(' AND ', array_filter($where));
 
-    // If applicable, handle pagination of query
-    if (isset($_CLASSIFIEDS_CONF['maxPerPage']) && $_CLASSIFIEDS_CONF['maxPerPage'] > 0) {
-        // Count Ads from database
-        $countResult = DB_query(
-            "SELECT COUNT(*) AS total FROM {$_TABLES['cl']} "
-            . "WHERE deleted = '0' "
-            . "AND TO_DAYS(NOW()) <= " . (int) $_CLASSIFIEDS_CONF['active_days'] . " + TO_DAYS(created)"
-        );
-        $countRow = DB_fetchArray($countResult);
-        $count = isset($countRow['total']) ? (int) $countRow['total'] : 0;
+    $sql_index = "SELECT a.*, i.pi_filename, c.category, c.catdeleted "
+        . "FROM {$_TABLES['cl']} AS a "
+        . "LEFT JOIN {$_TABLES['cl_pic']} AS i "
+        . "ON i.pi_pid = a.clid "
+        . "AND i.pi_img_num = ("
+        . "SELECT MIN(p.pi_img_num) FROM {$_TABLES['cl_pic']} AS p "
+        . "WHERE p.pi_pid = a.clid"
+        . ") "
+        . "INNER JOIN {$_TABLES['cl_cat']} AS c ON c.cid = a.catid "
+        . "WHERE " . $whereSql
+        . " ORDER BY a.created DESC";
 
-        // Make sure page count is reasonable, if not, fix it.
-        if ((($page - 1) * (int) $_CLASSIFIEDS_CONF['maxPerPage']) > $count) {
-            $page = max(1, (int) ceil($count / (int) $_CLASSIFIEDS_CONF['maxPerPage']));
+    $countSql = "SELECT COUNT(*) AS total "
+        . "FROM {$_TABLES['cl']} AS a "
+        . "INNER JOIN {$_TABLES['cl_cat']} AS c ON c.cid = a.catid "
+        . "WHERE " . $whereSql;
+
+    $countResult = DB_query($countSql);
+    $countRow = DB_fetchArray($countResult);
+    $count = isset($countRow['total']) ? (int) $countRow['total'] : 0;
+
+    // Keep the requested page inside the filtered result set.
+    $perPage = isset($_CLASSIFIEDS_CONF['maxPerPage'])
+        ? max(0, (int) $_CLASSIFIEDS_CONF['maxPerPage'])
+        : 0;
+
+    if ($perPage > 0 && $count > 0) {
+        $lastPage = max(1, (int) ceil($count / $perPage));
+        if ($page > $lastPage) {
+            $page = $lastPage;
         }
-        // Add limit for pagination (if applicable)
-        if ( is_numeric($limit) ) {
-		    $sql_index .= ' LIMIT ' . $limit;
-		}
-		else if ($count > $_CLASSIFIEDS_CONF['maxPerPage']) {
-            $offset = ($page - 1) * (int) $_CLASSIFIEDS_CONF['maxPerPage'];
-            $sql_index .= ' LIMIT ' . $offset . ', ' . (int) $_CLASSIFIEDS_CONF['maxPerPage'];
-        }
+    }
+
+    if (is_numeric($limit)) {
+        $sql_index .= ' LIMIT ' . max(0, (int) $limit);
+    } elseif ($perPage > 0 && $count > $perPage) {
+        $offset = ($page - 1) * $perPage;
+        $sql_index .= ' LIMIT ' . $offset . ', ' . $perPage;
     }
 
     // query
@@ -1316,9 +1325,9 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	if ( ($profile == 0) && ($my != 1) && ($user == 1) ) {
 	    //type label
 		$type_label = $LANG_CLASSIFIEDS_1['offers_demands'];
-        if ($cookieType === 'o' || $mode === 'o') {
+        if ($mode === 'o') {
             $type_label = $LANG_CLASSIFIEDS_1['offers'];
-        } elseif ($cookieType === 'd' || $mode === 'd') {
+        } elseif ($mode === 'd') {
             $type_label = $LANG_CLASSIFIEDS_1['demands'];
         }
 	
@@ -1525,10 +1534,15 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
     }
 	
     // Display pagination
-    if ( (isset($_CLASSIFIEDS_CONF['maxPerPage'])) && ($_CLASSIFIEDS_CONF['maxPerPage'] > 0) &&
-            ($count > $_CLASSIFIEDS_CONF['maxPerPage']) && $limit == '' ) {
-        $ad->set_var('pagination', COM_printPageNavigation($_CLASSIFIEDS_CONF['site_url'] . '/index.php', 
-		$page, ceil($count / $_CLASSIFIEDS_CONF['maxPerPage'])));
+    if ($perPage > 0 && $count > $perPage && $limit == '') {
+        $ad->set_var(
+            'pagination',
+            COM_printPageNavigation(
+                $_CLASSIFIEDS_CONF['site_url'] . '/index.php',
+                $page,
+                (int) ceil($count / $perPage)
+            )
+        );
     } else {
         $ad->set_var('pagination', '');
     }
