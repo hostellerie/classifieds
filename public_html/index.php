@@ -470,9 +470,7 @@ switch ($_REQUEST['mode']) {
 	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['profile']);
 		$display .= CLASSIFIEDS_user_menu();
 		$profileUid = (int) $_REQUEST['u'];
-        (function_exists('USER_showProfile'))
-            ? $display .= USER_showProfile($profileUid, true)
-            : $display .= CLASSIFIEDS_showProfile($profileUid, true);
+        $display .= USER_showProfile($profileUid, true);
 		$display .= COM_siteFooter(1);
 		break;
 	//Offert
