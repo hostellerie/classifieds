@@ -1200,7 +1200,7 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	
 
     if (COM_isAnonUser() && $my == 1) {
-        return CLASSIFIEDS_loginRequiredForm();
+        return SEC_loginRequiredForm();
     }
 
     $user = (int) $user;
@@ -1591,7 +1591,7 @@ function CLASSIFIEDS_viewAd($clid)
 
     if (($_USER['uid'] < 2) && !empty($_CLASSIFIEDS_CONF['classifieds_login_required'])) {
         return COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name'])
-            . CLASSIFIEDS_loginRequiredForm()
+            . SEC_loginRequiredForm()
             . COM_siteFooter(1);
     }
 
@@ -2008,24 +2008,6 @@ function CLASSIFIEDS_checkAdAccess($ad)
 }
 
 /**
-* Display a "to access this area you need to be logged in" message
-*
-* @return   string      HTML for the message
-*
-*/
-function CLASSIFIEDS_loginRequiredForm()
-{
-    global $_CONF, $LANG_CLASSIFIEDS_LOGIN;
-
-    $cfg = array(
-        'title'   => $LANG_CLASSIFIEDS_LOGIN[1],
-        'message' => $LANG_CLASSIFIEDS_LOGIN[2]
-    );
-
-    return CLASSIFIEDS_loginForm($cfg);
-}
-
-/**
 * Creates a <option> list from a database list for use in category form
 *
 * Creates option list form field using given arguments
@@ -2225,145 +2207,6 @@ function CLASSIFIEDS_getTextContent($text)
     //$text = preg_replace('/\s\s+/', ' ', $text);
 
     return trim($text);
-}
-
-/**
-* Displays a login form
-*
-* This is the version of the login form displayed in the content area of the
-* page (not the side bar). It will present all options (remote authentication
-* - including OpenID, new registration link, etc.) according to the current
-* configuration settings.
-*
-* @param    array   $use_config     options to override some of the defaults
-* @return   string                  HTML of the login form
-*
-*/
-function CLASSIFIEDS_loginForm($use_config = array())
-{
-    global $_CONF, $LANG01, $LANG04;
-
-    $retval = '';
-
-    $default_config = array(
-        // display options
-        'hide_forgotpw_link' => false,
-
-        // for hidden fields to be included in the form
-        'hidden_fields'     => '',
-
-        // options to locally override some specific $_CONF options
-        'no_3rdparty_login' => false, // $_CONF['user_login_method']['3rdparty']
-        'no_openid_login'   => false, // $_CONF['user_login_method']['openid']
-        'no_newreg_link'    => false, // $_CONF['disable_new_user_registration']
-        'no_plugin_vars'    => false, // call PLG_templateSetVars?
-
-        // default texts
-        'title'       => $LANG04[65], // Try Logging in Again
-        'message'     => $LANG04[66], // You may have mistyped ...
-        'button_text' => $LANG04[80]  // Login
-    );
-
-    $config = array_merge($default_config, $use_config);
-
-    $loginform = new Template($_CONF['path_layout'] . 'users');
-    $loginform->set_file('login', 'loginform.thtml');
-    $loginform->set_var('xhtml', XHTML);
-    $loginform->set_var('site_url', $_CONF['site_url']);
-    $loginform->set_var('site_admin_url', $_CONF['site_admin_url']);
-    $loginform->set_var('layout_url', $_CONF['layout_url']);
-
-    $loginform->set_var('start_block_loginagain',
-                        COM_startBlock($config['title']));
-    $loginform->set_var('lang_message', $config['message']);
-    if ($config['no_newreg_link'] || $_CONF['disable_new_user_registration']) {
-        $loginform->set_var('lang_newreglink', '');
-    } else {
-        $loginform->set_var('lang_newreglink', $LANG04[123]);
-    }
-
-    $loginform->set_var('lang_username', $LANG04[2]);
-    $loginform->set_var('lang_password', $LANG01[57]);
-    if ($config['hide_forgotpw_link']) {
-        $loginform->set_var('lang_forgetpassword', '');
-        $loginform->set_var('forgetpassword_link', '');
-    } else {
-        $loginform->set_var('lang_forgetpassword', $LANG04[25]);
-        $forget = COM_createLink($LANG04[25], $_CONF['site_url']
-                                              . '/users.php?mode=getpassword',
-                                 array('rel' => 'nofollow'));
-        $loginform->set_var('forgetpassword_link', $forget);
-    }
-    $loginform->set_var('lang_login', $config['button_text']);
-    $loginform->set_var('end_block', COM_endBlock());
-
-    // 3rd party remote authentification.
-    $services = '';
-    if (!$config['no_3rdparty_login'] &&
-            $_CONF['user_login_method']['3rdparty'] &&
-            ($_CONF['usersubmission'] == 0)) {
-        $modules = SEC_collectRemoteAuthenticationModules();
-        if (count($modules) > 0) {
-            if (!$_CONF['user_login_method']['standard'] &&
-                    (count($modules) == 1)) {
-                $select = '<input type="hidden" name="service" value="'
-                        . $modules[0] . '"' . XHTML . '>' . $modules[0];
-            } else {
-                // Build select
-                $select = '<select name="service">';
-                if ($_CONF['user_login_method']['standard']) {
-                    $select .= '<option value="">' .  $_CONF['site_name']
-                            . '</option>';
-                }
-                foreach ($modules as $service) {
-                    $select .= '<option value="' . $service . '">' . $service
-                            . '</option>';
-                }
-                $select .= '</select>';
-            }
-
-            $loginform->set_file('services', 'services.thtml');
-            $loginform->set_var('lang_service', $LANG04[121]);
-            $loginform->set_var('select_service', $select);
-            $loginform->parse('output', 'services');
-            $services .= $loginform->finish($loginform->get_var('output'));
-        }
-    }
-    if (! empty($config['hidden_fields'])) {
-        // allow caller to (ab)use {services} for hidden fields
-        $services .= $config['hidden_fields'];
-    }
-    $loginform->set_var('services', $services);
-
-    // OpenID remote authentification.
-    if (!$config['no_openid_login'] && $_CONF['user_login_method']['openid'] &&
-            ($_CONF['usersubmission'] == 0) &&
-            !$_CONF['disable_new_user_registration']) {
-        $loginform->set_file('openid_login', '../loginform_openid.thtml');
-        $loginform->set_var('lang_openid_login', $LANG01[128]);
-        $loginform->set_var('input_field_size', 40);
-
-        // for backward compatibility - not used any more
-        $app_url = isset($_SERVER['SCRIPT_URI'])
-                 ? $_SERVER['SCRIPT_URI']
-                 : 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'];
-        $loginform->set_var('app_url', $app_url);
-
-        $loginform->parse('output', 'openid_login');
-        $loginform->set_var('openid_login',
-            $loginform->finish($loginform->get_var('output')));
-    } else {
-        $loginform->set_var('openid_login', '');
-    }
-
-    if (! $config['no_plugin_vars']) {
-        PLG_templateSetVars('loginform', $loginform);
-    }
-    $loginform->parse('output', 'login');
-
-    $retval .= $loginform->finish($loginform->get_var('output'));
-
-    return $retval;
 }
 
 
