@@ -452,6 +452,8 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
     $template->set_file(array('cat' => 'cat_form.thtml'));
     $template->set_var('site_admin_url', $_CONF['site_admin_url']);
 	$template->set_var('xhtml', XHTML);
+    $template->set_var('gltoken_name', CSRF_TOKEN);
+    $template->set_var('gltoken', SEC_createToken());
 	
 	if (is_numeric($catid['cid'])) {
         $template->set_var('cid', '<input type="hidden" name="cid" value="' . $catid['cid'] .'" />');
