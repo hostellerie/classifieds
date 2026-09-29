@@ -17,7 +17,7 @@ if (!defined('VERSION')) {
  */
 function CLASSIFIEDS_canContactUser($uid)
 {
-    global $_CONF, $_TABLES;
+    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES;
 
     $uid = (int) $uid;
     if ($uid <= 1) {
@@ -107,6 +107,7 @@ function CLASSIFIEDS_contactForm($uid, $ad, $subject, $mode = 'contact', $messag
     $template->set_var('uid', $uid);
     $template->set_var('ad', $ad);
     $template->set_var('contact_mode', $mode);
+    $template->set_var('route_mode', $mode === 'report' ? 'r' : 'c');
     $template->set_var('gltoken_name', CSRF_TOKEN);
     $template->set_var('gltoken', SEC_createToken());
 
@@ -209,7 +210,7 @@ function CLASSIFIEDS_sendContact(
     $mailSubject = '[' . $_CONF['site_name'] . '] Classifieds #' . $ad . ' - ' . $subject;
     $mailBody = $message . "\n\n"
         . 'Classified ad: #' . $ad . "\n"
-        . $_CONF['site_url'] . '/classifieds/index.php?mode=v&ad=' . $ad . "\n";
+        . $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $ad . "\n";
 
     $sent = COM_mail($to, $mailSubject, $mailBody, $from);
 
