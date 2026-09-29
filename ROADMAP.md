@@ -1103,3 +1103,60 @@ Do not block 1.4.0 on:
 - moving all existing uploads to a new storage system without a separately tested migration.
 
 The priority is a clean, private, complete, upgrade-safe Classifieds plugin that works as one unified edition on modern Geeklog.
+
+
+---
+
+## Memorandum compliance audit — administration and configuration
+
+Reviewed against:
+
+- `hostellerie/memorandum/plugin-admin-navigation.md`;
+- `hostellerie/memorandum/plugin-configuration-migration-guide-2.2.2.md`;
+- `hostellerie/memorandum/plugin-configuration-tooltips.md`.
+
+### Administration navigation
+
+Implemented:
+
+- [x] native `plugin_getadminoption_classifieds()` global administration entry;
+- [x] native `plugin_cclabel_classifieds()` Command & Control entry;
+- [x] both hooks enforce `classifieds.admin`;
+- [x] persistent peer navigation uses the shared `plugin-admin-nav*` contract;
+- [x] current section uses `is-active` and `aria-current="page"`;
+- [x] Configuration remains Geeklog Core-owned and is opened through POST `conf_group=classifieds`;
+- [x] page-local actions use `ADMIN_createMenu()` where its native link-action model fits;
+- [x] fallback CSS is theme-neutral and responsive;
+- [x] no UIkit, Bootstrap, Eclipse or Denim class is required by the plugin contract;
+- [x] obsolete custom admin-menu template removed.
+
+### Native configuration
+
+Implemented:
+
+- [x] configuration uses `config::get_instance()->get_config('classifieds')`;
+- [x] fresh install hierarchy is explicit: subgroup → tab → fieldsets → settings;
+- [x] symbolic `tab_main` is registered and localized;
+- [x] every maintained setting is assigned to explicit tab id `0`;
+- [x] plain text settings use `NULL` for `selection_array`;
+- [x] select controls use only declared selection-array IDs (`3` and `12`);
+- [x] English and French provide `$LANG_configsections`, `$LANG_configsubgroups`, `$LANG_tab`, `$LANG_fs`, `$LANG_confignames`, and `$LANG_configselects`;
+- [x] `plugin_getconfigtooltip_classifieds()` uses localized `$LANG_configtooltips['classifieds']`;
+- [x] tooltips are limited to consequential/ambiguous settings;
+- [x] upgrade creates only missing configuration rows;
+- [x] upgrade never blindly calls `config::add()` for existing settings, because Core deletes/recreates those rows;
+- [x] upgrade repairs persisted configuration metadata without replacing administrator values;
+- [x] obsolete TimThumb settings are removed explicitly;
+- [x] migrated configuration is verified through `get_config('classifieds')` before the plugin version is advanced.
+
+### Runtime validation still required
+
+Source-level compliance is complete, but final release still requires:
+
+- [ ] open Classifieds Configuration under Geeklog 2.1.1 with warnings enabled;
+- [ ] open Classifieds Configuration under Geeklog 2.2.2 / PHP 8.1 with warnings enabled;
+- [ ] verify search/autocomplete on the Configuration page;
+- [ ] verify all tooltips in English and French;
+- [ ] verify Ads / Categories / Configuration navigation under Denim and Eclipse;
+- [ ] verify narrow-screen administration navigation;
+- [ ] upgrade a real 1.3.2 configuration with non-default values and confirm those values are unchanged.
