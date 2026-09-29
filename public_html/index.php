@@ -155,19 +155,21 @@ switch ($_REQUEST['mode']) {
                     $display .= CLASSIFIEDS_getAdForm($_REQUEST);
                     break;
                 }
-				//test token
-                //if(!SEC_checkToken()) break;
-                
-				// prepare strings for insertion
-                $title = addslashes(COM_getTextContent($_REQUEST['title']));
-                $text = addslashes(CLASSIFIEDS_getTextContent($_REQUEST['text']));
-				$city = addslashes(COM_getTextContent($_REQUEST['city']));
-				$remove_from_tel = array(' ', '.', '|', ',', '/', ':', '-', '_');
-                $clean_tel = str_replace($remove_from_tel, '', $_REQUEST['tel']);
-				($_REQUEST['hide_tel'] == '1') ? $hide_tel = '1' : $hide_tel = '0';
-                ($_REQUEST['status'] == '1') ? $status = '1' : $status = '0';
-				$created = date("YmdHis");
-				$modified = date("YmdHis");
+                // Prepare validated values for persistence.
+                $title = DB_escapeString(COM_getTextContent($_REQUEST['title']));
+                $text = DB_escapeString(CLASSIFIEDS_getTextContent($_REQUEST['text']));
+                $city = DB_escapeString(COM_getTextContent($_REQUEST['city']));
+                $postcode = DB_escapeString($_REQUEST['postcode']);
+                $siren = DB_escapeString(COM_getTextContent($_REQUEST['siren']));
+                $catid = (int) $_REQUEST['catid'];
+                $type = ((int) $_REQUEST['type'] === 1) ? 1 : 0;
+                $deleted = !empty($_REQUEST['deleted']) ? 1 : 0;
+                $remove_from_tel = array(' ', '.', '|', ',', '/', ':', '-', '_');
+                $clean_tel = DB_escapeString(str_replace($remove_from_tel, '', $_REQUEST['tel']));
+                $hide_tel = !empty($_REQUEST['hide_tel']) ? 1 : 0;
+                $status = !empty($_REQUEST['status']) ? 1 : 0;
+                $created = date("YmdHis");
+                $modified = date("YmdHis");
 
                 // price can only contain numbers and a decimal
                 $price = str_replace(",","",$_REQUEST['price']);
@@ -224,20 +226,20 @@ switch ($_REQUEST['mode']) {
 						break;
 	                }
 					
-				    $sql = "catid = '{$_REQUEST['catid']}', "
+				    $sql = "catid = '{$catid}', "
                      . "status = '{$status}', "
-                     . "type = '{$_REQUEST['type']}', "
+                     . "type = '{$type}', "
                      . "tel = '{$clean_tel}', "
                      . "hide_tel = '{$hide_tel}', "
 			         . "title = '{$title}', "
 			         . "text = '{$text}', "
 			         . "price = '{$price}', "
-					 . "postcode = '{$_REQUEST['postcode']}', "
+					 . "postcode = '{$postcode}', "
 					 . "city = '{$city}', "
-                     . "siren = '{$_REQUEST['siren']}', "
+                     . "siren = '{$siren}', "
 			         . "created = '{$created}', "
 			         . "modified = '{$modified}', "
-					 . "owner_id = '{$_USER['uid']}'
+					 . "owner_id = '" . (int) $_USER['uid'] . "'
 			         ";
                     $sql = "INSERT INTO {$_TABLES['cl']} SET $sql ";
 					
