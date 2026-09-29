@@ -72,6 +72,7 @@ require_once ($_CONF['path'] . 'plugins/classifieds/classifieds.php');
  */
 require_once $_CONF['path'] . 'plugins/classifieds/lib-notifications.php';
 require_once $_CONF['path'] . 'plugins/classifieds/lib-republish.php';
+require_once $_CONF['path'] . 'plugins/classifieds/lib-ads.php';
 require_once $_CONF['path'] . 'plugins/classifieds/lib-contact.php';
 
 
