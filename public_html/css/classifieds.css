@@ -85,69 +85,45 @@ border:1px solid #333;
 #ad {
 	margin-bottom:60px;
 }
-.ad_detail {
-	width:100%;
-}
 .ad-title {
-width:100%;
-text-transform:lowercase;
-text-transform: capitalize;
+    width: 100%;
+    text-transform: capitalize;
 }
-#ad h1{
-text-transform:uppercase;
-font-size: 18px;
-margin:0px;
+
+#ad h1 {
+    text-transform: uppercase;
+    font-size: 18px;
+    margin: 0;
 }
-#ad h3{
-font-weight: bold;
-margin-bottom :7px;
-padding:5px;
-background:#CCC;
+
+#ad h3 {
+    font-weight: bold;
+    margin-bottom: 7px;
+    padding: 5px;
+    background: #CCC;
 }
+
 .ad-price {
-font-weight: bold;
-font-size: 1.1em;
-color: #999;
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #999;
 }
-.ad-picture {
-padding-right:5px;
-min-width:500px;
-}
-.ad-picture img{
-border: 1px solid #DDD;
-padding: 5px;
-margin-right:5px;
-}
-.ad-pictures {
-padding-right:10px;
-}
+
 .ad-col1 {
-float: left;
-width: 150px;
-display: block;
+    display: inline-block;
+    margin-right: .5rem;
 }
+
 .ad-col2 {
-width: 400px;
-display: block;
-text-align:right;
+    display: inline-block;
 }
+
 .ad-detail {
-margin-top:7px;
+    margin-top: 7px;
 }
+
 #ad-pictures {
-margin: 5px 0px;
-}
-#ad-pictures img{
-border: 1px solid #DDD;
-padding: 5px;
-margin-right:5px;
-}
-.contact_admin {
-border:1px solid #CCC;
-width:250px!important;
-}
-.contact_admin p{
-margin:5px;
+    margin: .75rem 0;
 }
 .info_picture {
 font-size: x-small;
@@ -244,5 +220,61 @@ text-align:right;
     .plugin-admin-nav__form .plugin-admin-nav__item {
         width: 100%;
         box-sizing: border-box;
+    }
+}
+
+
+/* Responsive ad detail */
+.classifieds-ad__header {
+    margin-bottom: 1rem;
+}
+
+.classifieds-ad__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.classifieds-ad__content {
+    min-width: 0;
+}
+
+.classifieds-ad__aside {
+    border: 1px solid #CCC;
+    padding: .75rem;
+}
+
+.classifieds-ad__aside > :first-child {
+    margin-top: 0;
+}
+
+.classifieds-ad__meta {
+    margin: 1rem 0;
+}
+
+.classifieds-ad__description {
+    margin-top: 1rem;
+}
+
+#ad-pictures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+#ad-pictures img {
+    border: 1px solid #DDD;
+    padding: 4px;
+    margin: 0;
+}
+
+@media (max-width: 720px) {
+    .classifieds-ad__layout {
+        grid-template-columns: 1fr;
+    }
+
+    .classifieds-ad__aside {
+        width: auto;
     }
 }
