@@ -80,7 +80,7 @@ function CLASSIFIEDS_canContactUser($uid)
  */
 function CLASSIFIEDS_contactForm($ad, $mode = 'contact', $message = '')
 {
-    global $_CONF, $_CLASSIFIEDS_CONF, $_USER, $LANG08;
+    global $_CONF, $_CLASSIFIEDS_CONF, $_USER, $LANG08, $LANG_CLASSIFIEDS_1;
 
     $mode = ($mode === 'report') ? 'report' : 'contact';
     $target = CLASSIFIEDS_getContactTarget($ad);
@@ -107,7 +107,7 @@ function CLASSIFIEDS_contactForm($ad, $mode = 'contact', $message = '')
     }
 
     $subject = ($mode === 'report')
-        ? $LANG08[10] . ' #' . (int) $target['clid']
+        ? $LANG_CLASSIFIEDS_1['report']
         : $target['title'];
 
     $template = new Template($_CONF['path'] . 'plugins/classifieds/templates/contact');
