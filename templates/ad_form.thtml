@@ -96,7 +96,6 @@
     </div>
 
     <div class="classifieds-form__actions">
-        {admin_options}
         <input type="submit" name="submit" value="{validate_button}"{xhtml}>
     </div>
 
