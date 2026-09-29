@@ -1883,7 +1883,9 @@ function CLASSIFIEDS_viewAd($clid)
         . (int) $A['hits'] . ' ' . $LANG_CLASSIFIEDS_1['hits'] . ')</h3>'
     );
 
-    $canEdit = SEC_hasAccess2($A) >= 3 && empty($A['deleted']) && $active;
+    $canEdit = ($isAdmin || SEC_hasAccess2($A) >= 3)
+        && empty($A['deleted'])
+        && $active;
     if ($canEdit) {
         $ad->set_var(
             'modify',
