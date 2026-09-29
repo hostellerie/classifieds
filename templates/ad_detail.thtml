@@ -1,4 +1,3 @@
-<script type="text/javascript" src="https://apis.google.com/js/plusone.js"></script>
 <div id="ad">
     <table class="ad_detail" border="0">
 		<tr valign="top">
@@ -21,28 +20,6 @@
 				{view_all}
 				{report}
 				{relay}
-				<div>
-					<div id="fb-root" style="margin:10px;"></div>
-					<script>(function(d, s, id) {
-					  var js, fjs = d.getElementsByTagName(s)[0];
-					  if (d.getElementById(id)) return;
-					  js = d.createElement(s); js.id = id;
-					  js.src = "//connect.facebook.net/fr_FR/all.js#xfbml=1";
-					  fjs.parentNode.insertBefore(js, fjs);
-					}(document, 'script', 'facebook-jssdk'));</script>
-					<div style="margin:10px;"><fb:like href="{classifieds_url}" send="true" layout="button_count" width="200" show_faces="false"></fb:like></div>
-					<div style=" margin:10px;"><a href="https://twitter.com/share" class="twitter-share-button" data-url="{classifieds_url}" data-text="{classifieds_name}" data-counturl="{classifieds_url}" data-lang="en" data-size="small" data-count="hortizontal">Tweet</a>
-					</div><script>!function(d,s,id) { var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)) { js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs); } } (document,"script","twitter-wjs");</script>
-					<div style="margin:10px;">
-						<div class="g-plusone" data-size="medium" data-href="{classifieds_url}"></div>
-					</div>
-					<div style="margin:10px;">
-						<div class="g-plus" data-action="share" data-annotation="bubble" data-href="{classifieds_url}"></div>
-					</div>
-					
-					<div style="clear:both;"></div>
-				</div>
-
 			</td>
 		</tr>
 	</table>
