@@ -721,10 +721,21 @@ function plugin_profileblocksdisplay_classifieds ($uid)
  * @param array $vars associative array of variable name => type (type in (number,alpha,text,html))
  * @param array &$arr reference to associative array of variable name => value
  */
-function CLASSIFIEDS_filterVars($vars, &$arr) 
+function CLASSIFIEDS_filterVars($vars, &$arr)
 {
-    // cycle through each variable applying the appropriate filter
     foreach ($vars as $var => $type) {
+        if (!isset($arr[$var])) {
+            $arr[$var] = '';
+            continue;
+        }
+
+        if (is_array($arr[$var])) {
+            // Scalar request fields are expected here. Reject arrays rather than
+            // allowing them to trigger warnings or unexpected SQL/string casts.
+            $arr[$var] = '';
+            continue;
+        }
+
         switch ($type) {
             case 'number':
                 $arr[$var] = COM_applyFilter($arr[$var], true);
@@ -735,7 +746,7 @@ function CLASSIFIEDS_filterVars($vars, &$arr)
                 break;
 
             case 'text':
-                $arr[$var] = htmlspecialchars(strip_tags(COM_stripslashes($arr[$var])));
+                $arr[$var] = htmlspecialchars(strip_tags($arr[$var]));
                 break;
 
             case 'alpha':
@@ -1034,7 +1045,10 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 			 <ul><li>' . $A['hits'] . ' ' . $LANG_CLASSIFIEDS_1['hits'] . '</li>';
 			 //repost
 			if ( (function_exists('CLASSIFIEDS_adCopy') && $active==false && $A['deleted'] == 0 &&  $_CLASSIFIEDS_CONF['allow_republish'] == 1 && SEC_hasRights('classifieds.publish')) || SEC_hasRights('classifieds.admin') && $active==false) {
-			    $admin_ad .= '<li><a href="' . $_CLASSIFIEDS_CONF['site_url'] . '/index.php?op=repost&amp;mode=e&amp;ad=' . $A['clid'] . '">' . $LANG_CLASSIFIEDS_2['copy_button'] . '</a></li>'; 
+			    $admin_ad .= '<li><a href="' . $_CLASSIFIEDS_CONF['site_url']
+                    . '/index.php?op=repost&amp;mode=e&amp;ad=' . (int) $A['clid']
+                    . '&amp;' . CSRF_TOKEN . '=' . SEC_createToken() . '">'
+                    . $LANG_CLASSIFIEDS_2['copy_button'] . '</a></li>'; 
 			}
 		     $admin_ad .= '</ul></td>';
 		    $ad->set_var('views',$admin_ad );
@@ -1228,7 +1242,9 @@ function CLASSIFIEDS_viewAd ($clid)
 		$A['clid'] . '">' . $LANG_CLASSIFIEDS_1['modify_ad'] . '</a></p>');
 		
 		//delete
-		$ad->set_var('delete', '<p><a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=e&amp;op=del&amp;ad=' . $A['clid'] .
+		$ad->set_var('delete', '<p><a href="'. $_CLASSIFIEDS_CONF['site_url']
+                    . '/index.php?mode=e&amp;op=del&amp;ad=' . (int) $A['clid']
+                    . '&amp;' . CSRF_TOKEN . '=' . SEC_createToken() .
 		'" onclick="return confirm(\'' . $LANG_CLASSIFIEDS_1['delete_confirm'] . '\');">' . $LANG_CLASSIFIEDS_1['delete_ad'] . '</a></p>');
 	} else {
 	    $ad->set_var('modify', '');
