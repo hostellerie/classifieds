@@ -33,8 +33,6 @@
     <p>
         <input type="hidden" name="mode" value="{route_mode}"{xhtml}>
         <input type="hidden" name="op" value="send"{xhtml}>
-        <input type="hidden" name="contact_mode" value="{contact_mode}"{xhtml}>
-        <input type="hidden" name="uid" value="{uid}"{xhtml}>
         <input type="hidden" name="ad" value="{ad}"{xhtml}>
         <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
         <input type="submit" value="{lang_submit}"{xhtml}>
