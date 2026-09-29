@@ -370,51 +370,100 @@ switch ($_REQUEST['mode']) {
 	    $display .= CLASSIFIEDS_displayAds($profileUid, 0, $user);
 		$display .= COM_siteFooter(1);
 	    break;
-    //contact
-	case 'c':
-		$uid = (int) $_REQUEST['uid'];
-		$ad = (int) $_REQUEST['ad'];
-		$subject = $_REQUEST['subject'];
-		$display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['contact']);
-		if (($uid > 1) && CLASSIFIEDS_checkAdAccess($ad) == true ) {
-		    ($_USER['uid'] > 1) ? $user = $_USER['uid'] : 0;
-            $display .= CLASSIFIEDS_contactemail ($uid, $user, '', $subject, '', $ad);
-        } else {
-            $display .= COM_refresh ($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
-			exit();
-        }
-		$display .= COM_siteFooter(1);
-		break;
-	//advise
-	case 'a':
-        $uid = isset($_REQUEST['uid']) ? (int) $_REQUEST['uid'] : 0;
+    // Contact advertiser
+    case 'c':
+        $uid = (int) $_REQUEST['uid'];
         $ad = (int) $_REQUEST['ad'];
-	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['advisor']);
-		$display .= CLASSIFIEDS_user_menu();
-		if (($uid > 1) && CLASSIFIEDS_checkAdAccess($ad) == true ) {
-		    $display .= 'Hello';
-		    //$display .= CLASSIFIEDS_mailAd($_GET['ad'], '', '', '', '', '');
-		} else {
-            $display .= COM_refresh ($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
-			exit();
+        $subject = $_REQUEST['subject'];
+        $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['contact_advertiser']);
+
+        if ($uid <= 1 || !CLASSIFIEDS_checkAdAccess($ad)) {
+            echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
+            exit;
         }
-		$display .= COM_siteFooter(1);
-		break;
-	//report
-	case 'r':
-	    $uid = 2;
-		$ad = (int) $_REQUEST['ad'];
-		$subject = $LANG_CLASSIFIEDS_1['report'];
-		$display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['contact']);
-		if (($uid > 1) && CLASSIFIEDS_checkAdAccess($ad) == true ) {
-		    ($_USER['uid'] > 1) ? $user = $_USER['uid'] : 0;
-            $display .= CLASSIFIEDS_contactemail ($uid, $user, '', $subject, '', $ad);
-        } else {
-            $display .= COM_refresh ($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
-			exit();
+
+        if ($_REQUEST['op'] === 'send') {
+            $sent = CLASSIFIEDS_sendContact(
+                $uid,
+                $ad,
+                $subject,
+                $_REQUEST['author'],
+                $_REQUEST['authoremail'],
+                $_REQUEST['message'],
+                'contact',
+                !empty($_REQUEST['cc'])
+            );
+
+            if ($sent) {
+                echo COM_refresh(
+                    $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $ad
+                );
+                exit;
+            }
+
+            $display .= COM_showMessageText(
+                $LANG_CLASSIFIEDS_2['save_fail'],
+                $LANG_CLASSIFIEDS_2['error']
+            );
         }
-		$display .= COM_siteFooter(1);
-		break;
+
+        $display .= CLASSIFIEDS_contactForm(
+            $uid,
+            $ad,
+            $subject,
+            'contact',
+            $_REQUEST['message']
+        );
+        $display .= COM_siteFooter(1);
+        break;
+
+    // Report ad / abuse
+    case 'r':
+        $uid = 2;
+        $ad = (int) $_REQUEST['ad'];
+        $subject = $LANG_CLASSIFIEDS_1['report'];
+        $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['report']);
+
+        if (!CLASSIFIEDS_checkAdAccess($ad)) {
+            echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
+            exit;
+        }
+
+        if ($_REQUEST['op'] === 'send') {
+            $sent = CLASSIFIEDS_sendContact(
+                $uid,
+                $ad,
+                $subject,
+                $_REQUEST['author'],
+                $_REQUEST['authoremail'],
+                $_REQUEST['message'],
+                'report',
+                !empty($_REQUEST['cc'])
+            );
+
+            if ($sent) {
+                echo COM_refresh(
+                    $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $ad
+                );
+                exit;
+            }
+
+            $display .= COM_showMessageText(
+                $LANG_CLASSIFIEDS_2['save_fail'],
+                $LANG_CLASSIFIEDS_2['error']
+            );
+        }
+
+        $display .= CLASSIFIEDS_contactForm(
+            $uid,
+            $ad,
+            $subject,
+            'report',
+            $_REQUEST['message']
+        );
+        $display .= COM_siteFooter(1);
+        break;
+
 	//save
 	case 's':
 	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['save_ad']);
