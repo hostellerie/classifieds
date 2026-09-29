@@ -558,6 +558,7 @@ function plugin_getcapabilities_classifieds()
             'content.collection',
             'content.search',
             'content.url.resolve',
+            'content.lifecycle',
             'dashboard.summary'
         )
     );
