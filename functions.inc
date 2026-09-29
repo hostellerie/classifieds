@@ -1346,7 +1346,7 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
         if ($catid !== '' && is_numeric($catid)) {
             $checked_category = (int) $catid;
         }
-		$categories .= CLASSIFIEDS_adOptionList("{$_TABLES['cl']} AS a,{$_TABLES['cl_cat']} AS c", 'c.cid, c.category, c.pid, a.catid', $checked_category, 'catorder', "(c.cid=a.catid AND a.deleted=0 AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= {$_CLASSIFIEDS_CONF['active_days']}) OR (c.pid=0) GROUP BY c.cid");
+		$categories .= CLASSIFIEDS_adCategoryOptions($checked_category);
         $search_box = '<div id="ad-list-searchbox">
                         <form action="' . $_CLASSIFIEDS_CONF['site_url'] . '/index.php" id="classifieds_cat" method="post"><strong>' .
 						    $type_label .
@@ -2008,178 +2008,79 @@ function CLASSIFIEDS_checkAdAccess($ad)
 }
 
 /**
-* Creates a <option> list from a database list for use in category form
-*
-* Creates option list form field using given arguments
-*
-* @param        string      $table      Database Table to get data from
-* @param        string      $selection  Comma delimited string of fields to pull The first field is the value of the option and the second is the label to be displayed.  This is used in a SQL statement and can include DISTINCT to start.
-* @param        string/array      $selected   Value (from $selection) to set to SELECTED or default
-* @param        int         $sortcol    Which field to sort option list
-* @param        string      $where      Optional WHERE clause to use in the SQL Selection
-* @see function COM_checkList
-* @return   string  Formated HTML of option values
-*
-*/
-function CLASSIFIEDS_catOptionList( $table, $selection, $selected='', $sortcol='', $where='')
+ * Build selectable parent-category options.
+ *
+ * Only root categories can be parents.
+ *
+ * @param int $selected
+ * @param int $exclude
+ * @return string
+ */
+function CLASSIFIEDS_parentCategoryOptions($selected = 0, $exclude = 0)
 {
-    global $_DB_table_prefix;
+    global $_CONF, $_TABLES;
 
+    $selected = (int) $selected;
+    $exclude = (int) $exclude;
+
+    $sql = "SELECT cid, category FROM {$_TABLES['cl_cat']} "
+        . "WHERE pid = 0 AND catdeleted = 0";
+    if ($exclude > 0) {
+        $sql .= " AND cid <> " . $exclude;
+    }
+    $sql .= " ORDER BY catorder ASC, category ASC";
+
+    $result = DB_query($sql);
     $retval = '';
 
-    $LangTableName = '';
-    if( substr( $table, 0, strlen( $_DB_table_prefix )) == $_DB_table_prefix )
-    {
-        $LangTableName = 'LANG_' . substr( $table, strlen( $_DB_table_prefix ));
-    }
-    else
-    {
-        $LangTableName = 'LANG_' . $table;
-    }
-
-    global $$LangTableName;
-
-    if( isset( $$LangTableName ))
-    {
-        $LangTable = $$LangTableName;
-    }
-    else
-    {
-        $LangTable = array();
-    }
-
-    $sql = "SELECT $selection FROM $table";
-    if( $where != '' )
-    {
-        $sql .= " WHERE $where";
-    }
-	if ($sortcol != '') {
-        $sql .= " ORDER BY {$sortcol} ASC";
-	}
-	$result = DB_query( $sql );
-    $nrows = DB_numRows( $result );
-
-    for( $i = 0; $i < $nrows; $i++ )
-    {
-        $A = DB_fetchArray( $result, true );
-		if ( $A['pid'] == '0' ) {
-            $retval .= '<option value="' . $A[0] . '"';
-
-            if( is_array( $selected ) AND count( $selected ) > 0 )
-            {
-                foreach( $selected as $selected_item )
-                {
-                    if( ($A[0] == $selected_item) && ( $A[3] != '0' ) )
-                    {
-                        $retval .= ' selected="selected"';
-                    }
-				    if( $A[3] == '0' )
-                    {
-                        $retval .= ' disabled="disabled"';
-                    }
-                }
-            }
-            elseif( !is_array( $selected ) AND $A[0] == $selected )
-            {
-                $retval .= ' selected="selected"';
-            }
-
-            $retval .= '>';
-            if( empty( $LangTable[$A[0]] ))
-            {
-                $retval .= $A[1];
-            }
-            else
-            {
-                $retval .= $LangTable[$A[0]];
-            }
-            $retval .= '</option>' . LB;
-		}
+    while ($row = DB_fetchArray($result)) {
+        $cid = (int) $row['cid'];
+        $retval .= '<option value="' . $cid . '"'
+            . ($cid === $selected ? ' selected="selected"' : '')
+            . '>'
+            . htmlspecialchars($row['category'], ENT_QUOTES, $_CONF['default_charset'])
+            . '</option>' . LB;
     }
 
     return $retval;
 }
 
 /**
-* Creates a <option> list for use in category form
-*
-* @return   string  Formated HTML of option values
-*
-*/
-function CLASSIFIEDS_adOptionList( $table, $selection, $selected='', $sortcol='', $where='' )
+ * Build ad-category options.
+ *
+ * Root categories are shown as disabled group labels; child categories are
+ * selectable destinations for ads.
+ *
+ * @param int $selected
+ * @return string
+ */
+function CLASSIFIEDS_adCategoryOptions($selected = 0)
 {
-    global $_DB_table_prefix, $_TABLES;
+    global $_CONF, $_TABLES;
+
+    $selected = (int) $selected;
+    $result = DB_query(
+        "SELECT cid, pid, category FROM {$_TABLES['cl_cat']} "
+        . "WHERE catdeleted = 0 ORDER BY pid ASC, catorder ASC, category ASC"
+    );
 
     $retval = '';
+    while ($row = DB_fetchArray($result)) {
+        $cid = (int) $row['cid'];
+        $pid = (int) $row['pid'];
+        $label = htmlspecialchars(
+            $row['category'],
+            ENT_QUOTES,
+            $_CONF['default_charset']
+        );
 
-    $LangTableName = '';
-    if( substr( $table, 0, strlen( $_DB_table_prefix )) == $_DB_table_prefix )
-    {
-        $LangTableName = 'LANG_' . substr( $table, strlen( $_DB_table_prefix ));
-    }
-    else
-    {
-        $LangTableName = 'LANG_' . $table;
-    }
-
-    global $$LangTableName;
-
-    if( isset( $$LangTableName ))
-    {
-        $LangTable = $$LangTableName;
-    }
-    else
-    {
-        $LangTable = array();
-    }
-
-    $sql = "SELECT $selection  
-	        FROM $table
-			";
-
-    if( $where != '' )
-    {
-        $sql .= " WHERE $where";
-    }
-	if ($sortcol != '') {
-        $sql .= " ORDER BY {$sortcol} ASC";
-	}
-	$result = DB_query( $sql );
-    $nrows = DB_numRows( $result );
-
-    for( $i = 0; $i < $nrows; $i++ )
-    {
-        $A = DB_fetchArray( $result, true );
-		($A['pid'] != '0') ? $spacer = '&nbsp; &nbsp;' : $spacer ='';
-        $retval .= '<option value="' . $A[0] . '"';
-
-        if( is_array( $selected ) AND count( $selected ) > 0 )
-        {
-            foreach( $selected as $selected_item )
-            {
-                if( ($A[0] == $selected_item) && ( $A['pid'] != '0' ) )
-                {
-                    $retval .= ' selected="selected"';
-                }
-            }
-        }
-        elseif( !is_array( $selected ) AND $A[0] == $selected AND $A['pid'] != '0' )
-        {
-            $retval .= ' selected="selected"';
-        }
-		if( $A['pid'] == '0' )
-        {
-            $retval .= 'style="background-color: rgb(230, 230, 230);" disabled="disabled"';
-        }
-
-        $retval .= '>';
-        if( empty( $LangTable[$A[0]] ))
-        {
-            $retval .= $spacer . $A[1];
-        }
-        else
-        {
-            $retval .= $spacer . $LangTable[$A[0]];
+        if ($pid === 0) {
+            $retval .= '<option value="' . $cid . '" disabled="disabled">'
+                . $label . '</option>' . LB;
+        } else {
+            $retval .= '<option value="' . $cid . '"'
+                . ($cid === $selected ? ' selected="selected"' : '')
+                . '>&nbsp;&nbsp;' . $label . '</option>' . LB;
         }
     }
 
