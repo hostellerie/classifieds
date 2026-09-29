@@ -334,42 +334,59 @@ function plugin_searchtypes_classifieds()
 *
 */
 
-function plugin_dopluginsearch_classifieds($query, $datestart, $dateend, $topic, $type, $author, $keyType, $page, $perpage)
-{
+function plugin_dopluginsearch_classifieds(
+    $query,
+    $datestart,
+    $dateend,
+    $topic,
+    $type,
+    $author,
+    $keyType,
+    $page,
+    $perpage
+) {
     global $_TABLES, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_1;
 
-    // Make sure the query is SQL safe
-    $query = trim($query);
-	
-    //TODO image in search results
-    $sql = "SELECT clid AS id, title, text as description, UNIX_TIMESTAMP(created) AS date, owner_id AS uid, hits, ";
-    $sql .= "CONCAT('/{$_CLASSIFIEDS_CONF['classifieds_folder']}/index.php?mode=v&ad=', clid) AS url ";
-    $sql .= "FROM {$_TABLES['cl']} AS a ";
-    $sql .= "LEFT JOIN {$_TABLES['cl_pic']} AS i
-            ON i.pi_pid = a.clid AND i.pi_img_num IN (SELECT MIN(pi_img_num) FROM {$_TABLES['cl_pic']} WHERE pi_img_num = 1 AND pi_pid = a.clid) 	
-	        WHERE a.deleted = '0' 
-			AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= {$_CLASSIFIEDS_CONF['active_days']}
-            AND a.enable = '1' ";
-    $sql .= COM_getPermSQL('AND') . ' ';
+    $activeDays = max(0, (int) $_CLASSIFIEDS_CONF['active_days']);
+
+    $sql = "SELECT a.clid AS id, a.title, a.text AS description, "
+        . "UNIX_TIMESTAMP(a.created) AS date, a.owner_id AS uid, a.hits, "
+        . "CONCAT('/" . DB_escapeString($_CLASSIFIEDS_CONF['classifieds_folder'])
+        . "/index.php?mode=v&ad=', a.clid) AS url "
+        . "FROM {$_TABLES['cl']} AS a "
+        . "INNER JOIN {$_TABLES['cl_cat']} AS c ON c.cid = a.catid "
+        . "WHERE a.deleted = 0 "
+        . "AND a.enable = 1 "
+        . "AND c.catdeleted = 0 "
+        . "AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= " . $activeDays . " "
+        . COM_getPermSQL('AND', 0, 2, 'a') . ' ';
 
     if (!empty($datestart) && !empty($dateend)) {
         $delim = substr($datestart, 4, 1);
-        if (!empty($delim)) {
-            $DS = explode($delim, $datestart);
-            $DE = explode($delim, $dateend);
-            $startdate = mktime(0,0,0,$DS[1],$DS[2],$DS[0]);
-            $enddate = mktime(23,59,59,$DE[1],$DE[2],$DE[0]);
-            $sql .= "AND (UNIX_TIMESTAMP(created) BETWEEN '$startdate' AND '$enddate') ";
+        if ($delim !== '') {
+            $start = explode($delim, $datestart);
+            $end = explode($delim, $dateend);
+            if (count($start) === 3 && count($end) === 3) {
+                $startdate = mktime(0, 0, 0, (int) $start[1], (int) $start[2], (int) $start[0]);
+                $enddate = mktime(23, 59, 59, (int) $end[1], (int) $end[2], (int) $end[0]);
+                $sql .= "AND UNIX_TIMESTAMP(a.created) BETWEEN "
+                    . (int) $startdate . " AND " . (int) $enddate . " ";
+            }
         }
     }
-    if (!empty ($author)) {
-        $sql .= "AND (owner_id = '$author') ";
+
+    $author = (int) $author;
+    if ($author > 0) {
+        $sql .= "AND a.owner_id = " . $author . " ";
     }
 
     $search = new SearchCriteria('classifieds', $LANG_CLASSIFIEDS_1['plugin_name']);
-
-    $columns = array('title', 'text');
-    list($sql,$ftsql) = $search->buildSearchSQL($keyType, $query, $columns, $sql);
+    list($sql, $ftsql) = $search->buildSearchSQL(
+        $keyType,
+        trim($query),
+        array('a.title', 'a.text'),
+        $sql
+    );
 
     $search->setSQL($sql);
     $search->setFTSQL($ftsql);
@@ -391,25 +408,29 @@ function plugin_dopluginsearch_classifieds($query, $datestart, $dateend, $topic,
 
 function plugin_autotags_classifieds($op, $content = '', $autotag = '')
 {
-    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES, $LANG_CLASSIFIEDS_1;
-
-    if ($op == 'tagname') {
+    if ($op === 'tagname') {
         return 'classifieds';
-    } elseif ($op == 'parse') {
-        $cid = COM_applyFilter($autotag['parm1']);
-        if (! empty($cid)) {
-            $url = $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $cid;
-            if (empty($autotag['parm2'])) {
-                $linktext = DB_getItem($_TABLES['cl'], 'title', "clid = '$cid'"); // or get title from db
-            } else {
-                $linktext = $autotag['parm2'];
-            }
-            $link = COM_createLink($linktext, $url);
-            $content = str_replace($autotag['tagstr'], $link, $content);
-        }
+    }
 
+    if ($op !== 'parse' || !is_array($autotag)) {
         return $content;
     }
+
+    $clid = isset($autotag['parm1']) ? (int) $autotag['parm1'] : 0;
+    if ($clid <= 0) {
+        return $content;
+    }
+
+    $title = plugin_getiteminfo_classifieds($clid, 'title');
+    if ($title === '' || is_array($title)) {
+        return $content;
+    }
+
+    $linktext = !empty($autotag['parm2']) ? $autotag['parm2'] : $title;
+    $url = plugin_idToURL_classifieds('classifieds', $clid);
+    $link = COM_createLink($linktext, $url);
+
+    return str_replace($autotag['tagstr'], $link, $content);
 }
 
 
@@ -1079,15 +1100,16 @@ function plugin_autouninstall_classifieds()
 * Add a block on user profile to display ads posted by user
 *
 */
-function plugin_profileblocksdisplay_classifieds ($uid)
+function plugin_profileblocksdisplay_classifieds($uid)
 {
-    global $_TABLES, $LANG_CLASSIFIEDS_1;
-    
-    $retval .= COM_startBlock($LANG_CLASSIFIEDS_1['plugin_name']);
-    $retval .= CLASSIFIEDS_displayAds($uid,0,'','',1);
+    global $LANG_CLASSIFIEDS_1;
+
+    $uid = (int) $uid;
+    $retval = COM_startBlock($LANG_CLASSIFIEDS_1['plugin_name']);
+    $retval .= CLASSIFIEDS_displayAds($uid, 0, '', '', 1);
     $retval .= COM_endBlock();
-	
-	return $retval;
+
+    return $retval;
 }
 
 /**
