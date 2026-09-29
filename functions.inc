@@ -371,13 +371,14 @@ function plugin_displaycomment_classifieds($id, $cid, $title, $order, $format, $
 function plugin_getmenuitems_classifieds()
 {
     global $_CLASSIFIEDS_CONF;
-	
-	if ($_CLASSIFIEDS_CONF['hide_classifieds_menu'] == 1) return;
 
-    $url = $_CLASSIFIEDS_CONF['site_url'] . '/index.php';
-    $menuitems[$_CLASSIFIEDS_CONF['menulabel']] = $url;
+    if (!empty($_CLASSIFIEDS_CONF['hide_classifieds_menu'])) {
+        return false;
+    }
 
-    return $menuitems;
+    return array(
+        $_CLASSIFIEDS_CONF['menulabel'] => $_CLASSIFIEDS_CONF['site_url'] . '/index.php'
+    );
 }
 
 /**
@@ -868,7 +869,9 @@ function plugin_getadminoption_classifieds()
 function plugin_getuseroption_classifieds() {
     global $_CLASSIFIEDS_CONF, $_USER, $LANG_CLASSIFIEDS_1;
 
-    if (COM_isAnonUser()) return '';
+    if (COM_isAnonUser()) {
+        return array();
+    }
 
     $menuitems = array();
 
@@ -1666,22 +1669,28 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
  *  Increment hit counter for ad
  *
  */
-function hitAd ($ad)
+function hitAd($ad)
 {
     global $_TABLES;
-    
-    DB_query("UPDATE {$_TABLES['cl']} SET hits = hits + 1 WHERE clid = '$ad'");
+
+    $ad = (int) $ad;
+    if ($ad > 0) {
+        DB_query("UPDATE {$_TABLES['cl']} SET hits = hits + 1 WHERE clid = " . $ad);
+    }
 }
 
 /**
  *  Increment modification counter for ad
  *
  */
-function modifAd ($ad)
+function modifAd($ad)
 {
     global $_TABLES;
-    
-    DB_query("UPDATE {$_TABLES['cl']} SET modif = modif + 1 WHERE clid = '$ad'");
+
+    $ad = (int) $ad;
+    if ($ad > 0) {
+        DB_query("UPDATE {$_TABLES['cl']} SET modif = modif + 1 WHERE clid = " . $ad);
+    }
 }
 
 function CLASSIFIEDS_viewAd($clid)
