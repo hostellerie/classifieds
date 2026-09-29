@@ -1294,7 +1294,6 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
     $page = isset($_REQUEST['page']) ? (int) $_REQUEST['page'] : 1;
     $mode = isset($_REQUEST['mode']) ? (string) $_REQUEST['mode'] : '';
     $catid = isset($_REQUEST['catid']) ? (string) $_REQUEST['catid'] : '';
-    $message = isset($_GET['msg']) ? (string) $_GET['msg'] : '';
     $cookieCat = isset($_COOKIE['ads_cat']) ? (string) $_COOKIE['ads_cat'] : '';
     $checked_category = '';
 
@@ -1410,9 +1409,6 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
     // query
     $ad_res = DB_query($sql_index);
 
-	//if any message
-	if ($profile != 1 && $message !== '') $retval .= CLASSIFIEDS_message($message);
-	
     if ( ($user > 1) && ($my == 0) && ($profile == 0) ) {
 		    $retval = COM_startBlock($LANG_CLASSIFIEDS_1['all_ads_from'] . ' <a href="'. $_CLASSIFIEDS_CONF['site_url'] .
 	'/index.php?mode=p&amp;u=' . $user .  '">'. $username . '</a> ');
