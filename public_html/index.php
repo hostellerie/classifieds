@@ -161,20 +161,22 @@ switch ($_REQUEST['mode']) {
                 exit;
 
             case 'edit':
-                // Get the ad to edit and display the form
-                if (is_numeric($_REQUEST['ad'])) {
-				    if (CLASSIFIEDS_checkAdAccess($_REQUEST['ad']) == false ) {
-                        $display .= COM_refresh ($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
-						exit();
-					    break;
-                    }
-                    $sql = "SELECT * FROM {$_TABLES['cl']} WHERE clid = {$_REQUEST['ad']}";
-                    $res = DB_query($sql);
-                    $A = DB_fetchArray($res);
-                    $display .= CLASSIFIEDS_getAdForm($A);
-                } else {
-                    echo COM_refresh($_CLASSIFIEDS_CONF['site_url']);
+                $adId = (int) $_REQUEST['ad'];
+                if ($adId <= 0 || !CLASSIFIEDS_checkAdAccess($adId)) {
+                    echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
+                    exit;
                 }
+
+                $res = DB_query(
+                    "SELECT * FROM {$_TABLES['cl']} WHERE clid = " . $adId . " LIMIT 1"
+                );
+                $A = DB_fetchArray($res);
+                if (!is_array($A) || SEC_hasAccess2($A) < 3) {
+                    echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
+                    exit;
+                }
+
+                $display .= CLASSIFIEDS_getAdForm($A);
                 break;
 
             case 'repost':
@@ -187,7 +189,7 @@ switch ($_REQUEST['mode']) {
 
             case 'new':
             default:
-                $display .= CLASSIFIEDS_getAdForm($A = NULL);
+                $display .= CLASSIFIEDS_getAdForm();
                 break;
 
         }
