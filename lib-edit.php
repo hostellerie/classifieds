@@ -48,6 +48,31 @@ function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
 
     global $_CONF, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_2, $LANG_CLASSIFIEDS_ADMIN, $_TABLES, $LANG24, $LANG_ADMIN, $_USER;
 
+    $defaults = array(
+        'clid' => '',
+        'catid' => '',
+        'type' => '',
+        'title' => '',
+        'text' => '',
+        'price' => 0,
+        'status' => '',
+        'siren' => '',
+        'tel' => '',
+        'hide_tel' => 0,
+        'postcode' => '',
+        'city' => '',
+        'created' => '',
+        'modified' => '',
+        'deleted' => 0,
+        'owner_id' => isset($_USER['uid']) ? (int) $_USER['uid'] : 0,
+        'group_id' => 1,
+        'perm_owner' => 3,
+        'perm_group' => 2,
+        'perm_members' => 2,
+        'perm_anon' => 2
+    );
+    $ad = is_array($ad) ? array_merge($defaults, $ad) : $defaults;
+
 	if ($_USER['uid'] < 2) {
 	    return CLASSIFIEDS_loginRequiredForm();
 	}
@@ -67,9 +92,10 @@ function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
 	}
 	
 	$active = true;
-	if ($ad != '') {
-	    $created = COM_getUserDateTimeFormat($A['created']);
-	    $active_days = (time() - $created['1'])/(24*3600);
+	if ($ad['clid'] !== '' && $ad['created'] !== '') {
+	    $created = COM_getUserDateTimeFormat($ad['created']);
+        $createdTimestamp = isset($created[1]) ? (int) $created[1] : 0;
+	    $active_days = $createdTimestamp > 0 ? (time() - $createdTimestamp)/(24*3600) : 0;
 		if ( ($active_days > $_CLASSIFIEDS_CONF['active_days']) ) {
 			$active = false;
 		}
@@ -145,6 +171,10 @@ function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
 	$template->set_var('images', $LANG_CLASSIFIEDS_2['images']);
 	$fileinputs = '';
     $saved_images = '';
+    $icount = 0;
+    $size = isset($_CLASSIFIEDS_CONF['max_thumbnail_size'])
+        ? (int) $_CLASSIFIEDS_CONF['max_thumbnail_size']
+        : 75;
     if ($_CLASSIFIEDS_CONF['max_images_per_ad'] > 0) {
 	    if ($ad['clid'] != '') {
             $icount = DB_count($_TABLES['cl_pic'],'pi_pid', $ad['clid']);
@@ -156,7 +186,7 @@ function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
 					    . '<a class="lightbox" href="' .  $_CLASSIFIEDS_CONF['site_url'] . '/timthumb.php?src=' .
 			$_CLASSIFIEDS_CONF['url_images'] . $I['pi_filename'] . '&amp;w=640"><img src="' .
 			$_CLASSIFIEDS_CONF['site_url'] . '/timthumb.php?src=' .  $_CLASSIFIEDS_CONF['url_images'] .
-			$I['pi_filename'] . '&amp;w=' . $size . '&amp;h=' . $size . '" align="top" alt="' . $A['title'] . '" /></a>' .
+			$I['pi_filename'] . '&amp;w=' . $size . '&amp;h=' . $size . '" align="top" alt="' . htmlspecialchars($ad['title'], ENT_QUOTES, $_CONF['default_charset']) . '" /></a>' .
 			'&nbsp;&nbsp;&nbsp;' . $LANG_ADMIN['delete']
                         . ': <input type="checkbox" name="delete[' .$I['pi_img_num']
                         . ']"' . XHTML . '><br' . XHTML . '></p></div>';
@@ -183,11 +213,13 @@ function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
 			WHERE user_id = {$_USER['uid']}
 		");
 		$user_data = DB_fetchArray($data, true);
-	    $ad['status'] = $user_data['status'];
-		$ad['tel'] = $user_data['tel'];
-		$ad['postcode'] = $user_data['postcode'];
-		$ad['city'] = $user_data['city'];
-		$ad['siren'] = $user_data['siren'];
+        if (is_array($user_data)) {
+            foreach (array('status', 'tel', 'postcode', 'city', 'siren') as $field) {
+                if (isset($user_data[$field])) {
+                    $ad[$field] = $user_data[$field];
+                }
+            }
+        }
 	}
     $template->set_var('your_details', $LANG_CLASSIFIEDS_2['your_details']);
 
@@ -443,6 +475,15 @@ function CLASSIFIEDS_missingFieldCat ($field)
 function CLASSIFIEDS_getCatForm($catid = array()) {
 
     global $_CONF, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_2, $LANG_CLASSIFIEDS_ADMIN, $_TABLES, $LANG24, $LANG_ADMIN, $_USER;
+
+    $defaults = array(
+        'cid' => '',
+        'pid' => 0,
+        'category' => '',
+        'catorder' => 0,
+        'catdeleted' => 0
+    );
+    $catid = is_array($catid) ? array_merge($defaults, $catid) : $defaults;
 	
 	//Display form
 	($catid['cid'] == '') ? $retval = COM_startBlock($LANG_CLASSIFIEDS_ADMIN['insert_new_cat']) :
