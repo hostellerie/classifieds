@@ -1243,3 +1243,60 @@ Required runtime gate:
 - [ ] expiration scheduled task and all notification combinations;
 - [ ] republish success and failure rollback behavior;
 - [ ] Item Info, sitemap, lifecycle events and dashboard summary.
+
+
+---
+
+## Contextual FAQ / generic item-display interoperability
+
+Reviewed against the current:
+
+- `hostellerie/memorandum/plugin-content-interoperability-contract.md`;
+- FAQ 1.3.0 development contract on `hostellerie/faq:develop-1.3.0`.
+
+Classifieds now exposes all stable public resource families needed by FAQ and other provider-neutral consumers.
+
+### Stable provider-owned identities
+
+- [x] catalogue/home page: `root`, subtype `root`, container;
+- [x] category page: `category:<cid>`, subtype `category`, container;
+- [x] ad page: `ad:<clid>`, subtype `ad`, leaf item;
+- [x] positive legacy numeric ids remain accepted as aliases for `ad:<id>`;
+- [x] category and ad hierarchy is exposed with `parent-id` / `parent-subtype`;
+- [x] `type=classifieds` and explicit `subtype` are returned through Item Info;
+- [x] URL resolution supports all three identity families;
+- [x] collection discovery exposes root, readable categories and public ads;
+- [x] category and ad discovery is ACL-aware.
+
+### Generic rendering placement
+
+Classifieds owns one stable `PLG_itemDisplay()` insertion point for each public resource:
+
+- [x] `root`: after the main ad list and before the configured Classifieds footer;
+- [x] `category:<cid>`: after the category ad list and before the configured Classifieds footer;
+- [x] `ad:<clid>`: after the primary ad content and before comments.
+
+Returned fragments are wrapped only in the provider-owned neutral region:
+
+`classifieds-item-extensions`
+
+Classifieds does not query FAQ tables, call FAQ-specific functions, or require FAQ to be installed.
+
+### Category pages
+
+- [x] category filtering uses GET so `?catid=<cid>` is a stable, shareable URL;
+- [x] old cookie-only category state was removed;
+- [x] root categories aggregate ads from their direct child categories;
+- [x] category-page visibility respects category ACLs.
+
+### Runtime validation
+
+- [ ] FAQ Associations lists Classifieds `root`;
+- [ ] FAQ Associations lists readable `category:<cid>` resources with subtype `category`;
+- [ ] FAQ Associations lists public `ad:<clid>` resources with subtype `ad`;
+- [ ] association to `root` renders on the Classifieds landing page;
+- [ ] association to a category renders only on that category page;
+- [ ] association to an ad renders on the full ad page before comments;
+- [ ] a whole FAQ category associated with any of those resources renders dynamically;
+- [ ] disabling FAQ contextual rendering leaves Classifieds unchanged;
+- [ ] Classifieds behaves normally when FAQ is not installed.
