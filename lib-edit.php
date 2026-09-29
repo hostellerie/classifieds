@@ -182,12 +182,15 @@ function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
                 $result_pics = DB_query("SELECT * FROM {$_TABLES['cl_pic']} WHERE pi_pid = '". $ad['clid'] ."'");
                 for ($z = 1; $z <= $icount; $z++) {
                     $I = DB_fetchArray($result_pics);
+                    $filename = rawurlencode(basename($I['pi_filename']));
+                    $imageUrl = $_CLASSIFIEDS_CONF['url_images'] . $filename;
                     $saved_images .= '<div><p>' . $z . ') '
-					    . '<a class="lightbox" href="' .  $_CLASSIFIEDS_CONF['site_url'] . '/timthumb.php?src=' .
-			$_CLASSIFIEDS_CONF['url_images'] . $I['pi_filename'] . '&amp;w=640"><img src="' .
-			$_CLASSIFIEDS_CONF['site_url'] . '/timthumb.php?src=' .  $_CLASSIFIEDS_CONF['url_images'] .
-			$I['pi_filename'] . '&amp;w=' . $size . '&amp;h=' . $size . '" align="top" alt="' . htmlspecialchars($ad['title'], ENT_QUOTES, $_CONF['default_charset']) . '" /></a>' .
-			'&nbsp;&nbsp;&nbsp;' . $LANG_ADMIN['delete']
+                        . '<a class="lightbox" href="' . $imageUrl . '">'
+                        . '<img class="classifieds-gallery-thumb" loading="lazy" src="'
+                        . $imageUrl . '" alt="'
+                        . htmlspecialchars($ad['title'], ENT_QUOTES, $_CONF['default_charset'])
+                        . '" /></a>'
+                        . '&nbsp;&nbsp;&nbsp;' . $LANG_ADMIN['delete']
                         . ': <input type="checkbox" name="delete[' .$I['pi_img_num']
                         . ']"' . XHTML . '><br' . XHTML . '></p></div>';
                 }
@@ -428,9 +431,8 @@ function CLASSIFIEDS_deleteImage ($image)
 	$pi = $_CLASSIFIEDS_CONF['path_images'] . $image;
 			if (!@unlink ($pi)) {
                 // log the problem but don't abort the script
-                echo COM_errorLog ('Unable to remove the following image from the ad: ' . $image);
+                COM_errorLog('Classifieds: unable to remove image ' . basename($image));
             }
-    // Todo remove image from cache
 }
 
 function CLASSIFIEDS_checkCategory($cat)
