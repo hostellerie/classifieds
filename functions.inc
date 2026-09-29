@@ -1184,7 +1184,7 @@ function CLASSIFIEDS_viewAd ($clid)
     $pagetitle = $A['title'] . ' - ' . $A['category'] . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
 	$retval = COM_siteHeader('menu', $pagetitle);
 	$retval .= CLASSIFIEDS_user_menu();
-	$retval .= CLASSIFIEDS_message($_GET['msg']);
+	$retval .= CLASSIFIEDS_message(isset($_GET['msg']) ? $_GET['msg'] : '');
 
     $ad = new Template($_CONF['path'] . 'plugins/classifieds/templates');
     $ad->set_file(array('ad' => 'ad_detail.thtml'));
