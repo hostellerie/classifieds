@@ -62,15 +62,12 @@ $vars = array('mode'     => 'alpha',
               'status'   => 'number',
               'siren'    => 'text',
               'deleted'  => 'number',
-              'subject'  => 'text',
               'author'   => 'text',
               'authoremail' => 'text',
               'message'  => 'text',
-              'contact_mode' => 'alpha',
               'cc'       => 'number',
 			  'postcode' => 'alpha',
 			  'city'     => 'text',
-			  'uid'      => 'number',
 			  'u'        => 'number'
               );
 			  
@@ -372,21 +369,17 @@ switch ($_REQUEST['mode']) {
 	    break;
     // Contact advertiser
     case 'c':
-        $uid = (int) $_REQUEST['uid'];
         $ad = (int) $_REQUEST['ad'];
-        $subject = $_REQUEST['subject'];
         $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['contact_advertiser']);
 
-        if ($uid <= 1 || !CLASSIFIEDS_checkAdAccess($ad)) {
+        if (!CLASSIFIEDS_checkAdAccess($ad)) {
             echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
             exit;
         }
 
         if ($_REQUEST['op'] === 'send') {
             $sent = CLASSIFIEDS_sendContact(
-                $uid,
                 $ad,
-                $subject,
                 $_REQUEST['author'],
                 $_REQUEST['authoremail'],
                 $_REQUEST['message'],
@@ -408,9 +401,7 @@ switch ($_REQUEST['mode']) {
         }
 
         $display .= CLASSIFIEDS_contactForm(
-            $uid,
             $ad,
-            $subject,
             'contact',
             $_REQUEST['message']
         );
@@ -419,9 +410,7 @@ switch ($_REQUEST['mode']) {
 
     // Report ad / abuse
     case 'r':
-        $uid = 2;
         $ad = (int) $_REQUEST['ad'];
-        $subject = $LANG_CLASSIFIEDS_1['report'];
         $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['report']);
 
         if (!CLASSIFIEDS_checkAdAccess($ad)) {
@@ -431,9 +420,7 @@ switch ($_REQUEST['mode']) {
 
         if ($_REQUEST['op'] === 'send') {
             $sent = CLASSIFIEDS_sendContact(
-                $uid,
                 $ad,
-                $subject,
                 $_REQUEST['author'],
                 $_REQUEST['authoremail'],
                 $_REQUEST['message'],
@@ -455,9 +442,7 @@ switch ($_REQUEST['mode']) {
         }
 
         $display .= CLASSIFIEDS_contactForm(
-            $uid,
             $ad,
-            $subject,
             'report',
             $_REQUEST['message']
         );
