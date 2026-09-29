@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Classifieds Plugin 1.3.0                                                  |
+// | Classifieds Plugin 1.4.0-dev                                                  |
 // +---------------------------------------------------------------------------+
 // | french_france_utf-8.php                                                   |
 // |                                                                           |
@@ -99,8 +99,6 @@ $LANG_CLASSIFIEDS_1 = array(
 	'under_construction'      => 'En construction',
     'image_not_writable'      => 'Le dossier de stockage des images du plugin classifieds n\'existe pas ou n\'est pas accessible en écriture. Vous devez vérifier ce problème avant d\'utiliser le plugin classifieds.<br' . XHTML . '><br' . XHTML . '>Pour des raisons de compatibilité avec le plugin multi, le nom de dossier qui contient le dossier "classifieds" est paramétrable et doit être un sous dossier du dossier images. D\'autres plugins ayant recours au stockage d\'images utiliseront cette classification.<br' . XHTML . '><br' . XHTML . '>Vous pouvez modifier le nom du dossier dans la configuration du plugin.',
     'install_jquery'          => 'Pour permettre aux utilisateurs de votre site d\'afficher les images des petites annonces dans une lightbox, vous devez installer le plugin jQuery pour Geeklog.',
-    'limited_edition'         => 'Note : Vous utilisez la version limitée du plugin classifieds. Si vous souhaitez bénéficier de toutes les fonctions vous pouvez vous procurer la version <a href="http://geeklog.fr/wiki/plugins:classifieds#proversion" target="_blank">Classifieds Pro</a>.',
-    'upgrade_proversion'      => 'Passez à la version Pro',
 	'ad-list-active'          => 'Annonce active',
 	'ad-list-delete'          => 'Annonce effacée',
 	'ad-list-old'             => 'Annonce périmée',
@@ -234,7 +232,7 @@ $LANG_fs['classifieds'] = array(
     'fs_main'            => 'General Settings',
     'fs_images'          => 'Images settings',
 	'fs_display'         => 'Display settings',
-	'fs_email'           => 'Email settings (Version Pro)',
+	'fs_email'           => 'Paramètres des emails',
     'fs_permissions'     => 'Default Permissions'
  );
  
@@ -268,7 +266,7 @@ $LANG_confignames['classifieds'] = array(
     'date_format'  => 'Date format',
     'time_format'  => 'Time format',
     'maxPerPage'  => 'Max per page',
-	'allow_republish' => 'Permettre la republication des annonces (Version Pro)',
+	'allow_republish' => 'Permettre la republication des annonces',
 
     // Email settings
     'create_ad_email_user'  => 'Email user on ad creation',
