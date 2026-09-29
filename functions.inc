@@ -370,6 +370,135 @@ function plugin_autotags_classifieds($op, $content = '', $autotag = '')
 
 
 /**
+ * Return normalized Classifieds item information to generic Geeklog consumers.
+ *
+ * @param mixed  $id
+ * @param string $what
+ * @param int    $uid
+ * @param array  $options
+ * @return mixed
+ */
+function plugin_getiteminfo_classifieds($id, $what, $uid = 0, $options = array())
+{
+    global $_CLASSIFIEDS_CONF, $_TABLES;
+
+    $properties = explode(',', $what);
+    $fields = array('a.clid', 'a.deleted', 'a.enable');
+
+    foreach ($properties as $property) {
+        switch ($property) {
+            case 'date-created':
+                $fields[] = 'UNIX_TIMESTAMP(a.created) AS c_unixdate';
+                break;
+            case 'date-modified':
+                $fields[] = 'UNIX_TIMESTAMP(a.modified) AS m_unixdate';
+                break;
+            case 'title':
+                $fields[] = 'a.title';
+                break;
+            case 'description':
+            case 'excerpt':
+                $fields[] = 'a.text';
+                break;
+            case 'id':
+            case 'url':
+                $fields[] = 'a.clid';
+                break;
+        }
+    }
+
+    $fields = array_unique($fields);
+    $sql = 'SELECT ' . implode(',', $fields) . " FROM {$_TABLES['cl']} AS a";
+
+    if ($id === '*') {
+        $sql .= " WHERE a.deleted = 0 AND a.enable = 1"
+            . " AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= "
+            . (int) $_CLASSIFIEDS_CONF['active_days'];
+    } else {
+        $itemId = (int) $id;
+        if ($itemId <= 0) {
+            return array();
+        }
+        $sql .= ' WHERE a.clid = ' . $itemId . ' AND a.deleted = 0 AND a.enable = 1';
+    }
+
+    $sql .= COM_getPermSQL('AND', $uid, 2, 'a');
+
+    if ($id !== '*') {
+        $sql .= ' LIMIT 1';
+    }
+
+    $result = DB_query($sql);
+    $retval = array();
+
+    while ($A = DB_fetchArray($result)) {
+        $props = array();
+
+        foreach ($properties as $property) {
+            switch ($property) {
+                case 'date-created':
+                    $props['date-created'] = isset($A['c_unixdate']) ? (int) $A['c_unixdate'] : 0;
+                    break;
+                case 'date-modified':
+                    $props['date-modified'] = isset($A['m_unixdate']) ? (int) $A['m_unixdate'] : 0;
+                    break;
+                case 'id':
+                    $props['id'] = (int) $A['clid'];
+                    break;
+                case 'title':
+                    $props['title'] = isset($A['title']) ? $A['title'] : '';
+                    break;
+                case 'description':
+                    $props['description'] = isset($A['text'])
+                        ? trim(strip_tags($A['text']))
+                        : '';
+                    break;
+                case 'excerpt':
+                    $description = isset($A['text']) ? trim(strip_tags($A['text'])) : '';
+                    $props['excerpt'] = (strlen($description) > 255)
+                        ? substr($description, 0, 252) . '...'
+                        : $description;
+                    break;
+                case 'url':
+                    $props['url'] = plugin_idToURL_classifieds('classifieds', $A['clid']);
+                    break;
+                default:
+                    $props[$property] = '';
+                    break;
+            }
+        }
+
+        if ($id === '*') {
+            $retval[] = $props;
+        } else {
+            $values = array();
+            foreach ($properties as $property) {
+                $values[] = isset($props[$property]) ? $props[$property] : '';
+            }
+            $retval = (count($values) === 1) ? $values[0] : $values;
+            break;
+        }
+    }
+
+    return $retval;
+}
+
+/**
+ * Resolve a Classifieds item URL without requiring the item to exist.
+ *
+ * @param string $sub_type
+ * @param mixed  $item_id
+ * @return string
+ */
+function plugin_idToURL_classifieds($sub_type, $item_id)
+{
+    global $_CLASSIFIEDS_CONF;
+
+    return $_CLASSIFIEDS_CONF['site_url']
+        . '/index.php?mode=v&ad=' . (int) $item_id;
+}
+
+/**
 * Return plugin entry for "Command and Control" (moderation.php)
 *
 * @return  array  Array containing (plugin name, admin url, url of plugin icon)
