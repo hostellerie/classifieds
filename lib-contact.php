@@ -10,6 +10,31 @@ if (!defined('VERSION')) {
 }
 
 /**
+ * Return the contact data attached to an ad.
+ *
+ * @param int $ad
+ * @return array|false
+ */
+function CLASSIFIEDS_getContactTarget($ad)
+{
+    global $_TABLES;
+
+    $ad = (int) $ad;
+    if ($ad <= 0 || !CLASSIFIEDS_checkAdAccess($ad)) {
+        return false;
+    }
+
+    $result = DB_query(
+        "SELECT clid, owner_id, title "
+        . "FROM {$_TABLES['cl']} "
+        . "WHERE clid = " . $ad . " AND deleted = 0 LIMIT 1"
+    );
+    $row = DB_fetchArray($result);
+
+    return is_array($row) ? $row : false;
+}
+
+/**
  * Check whether the current visitor may contact a Classifieds user.
  *
  * @param int $uid
@@ -17,7 +42,7 @@ if (!defined('VERSION')) {
  */
 function CLASSIFIEDS_canContactUser($uid)
 {
-    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES;
+    global $_CONF, $_TABLES;
 
     $uid = (int) $uid;
     if ($uid <= 1) {
@@ -39,35 +64,31 @@ function CLASSIFIEDS_canContactUser($uid)
     }
 
     $isAdmin = SEC_inGroup('Root') || SEC_hasRights('user.mail');
-    if ($isAdmin) {
-        return !empty($prefs['emailfromadmin']);
-    }
 
-    return !empty($prefs['emailfromuser']);
+    return $isAdmin
+        ? !empty($prefs['emailfromadmin'])
+        : !empty($prefs['emailfromuser']);
 }
 
 /**
- * Build the contact/report form.
+ * Build the contact/report form for an ad.
  *
- * @param int    $uid
  * @param int    $ad
- * @param string $subject
  * @param string $mode contact|report
  * @param string $message
  * @return string
  */
-function CLASSIFIEDS_contactForm($uid, $ad, $subject, $mode = 'contact', $message = '')
+function CLASSIFIEDS_contactForm($ad, $mode = 'contact', $message = '')
 {
     global $_CONF, $_CLASSIFIEDS_CONF, $_USER, $LANG08;
 
-    $uid = (int) $uid;
-    $ad = (int) $ad;
     $mode = ($mode === 'report') ? 'report' : 'contact';
-
-    if ($ad <= 0 || !CLASSIFIEDS_checkAdAccess($ad)) {
+    $target = CLASSIFIEDS_getContactTarget($ad);
+    if ($target === false) {
         return COM_showMessageText($LANG08[35], $LANG08[10]);
     }
 
+    $uid = (int) $target['owner_id'];
     if ($mode === 'contact' && !CLASSIFIEDS_canContactUser($uid)) {
         return COM_showMessageText($LANG08[35], $LANG08[10]);
     }
@@ -85,11 +106,18 @@ function CLASSIFIEDS_contactForm($uid, $ad, $subject, $mode = 'contact', $messag
         $authoremail = isset($_USER['email']) ? $_USER['email'] : '';
     }
 
+    $subject = ($mode === 'report')
+        ? $LANG08[10] . ' #' . (int) $target['clid']
+        : $target['title'];
+
     $template = new Template($_CONF['path'] . 'plugins/classifieds/templates/contact');
     $template->set_file('form', 'contactuserform.thtml');
 
     $template->set_var('xhtml', XHTML);
     $template->set_var('action_url', $_CLASSIFIEDS_CONF['site_url'] . '/index.php');
+    $template->set_var('route_mode', $mode === 'report' ? 'r' : 'c');
+    $template->set_var('ad', (int) $target['clid']);
+
     $template->set_var('lang_description', $LANG08[26]);
     $template->set_var('lang_username', $LANG08[11]);
     $template->set_var('lang_useremail', $LANG08[12]);
@@ -99,15 +127,23 @@ function CLASSIFIEDS_contactForm($uid, $ad, $subject, $mode = 'contact', $messag
     $template->set_var('lang_cc_description', $LANG08[37]);
     $template->set_var('lang_submit', $LANG08[16]);
 
-    $template->set_var('username', htmlspecialchars($author, ENT_QUOTES, $_CONF['default_charset']));
-    $template->set_var('useremail', htmlspecialchars($authoremail, ENT_QUOTES, $_CONF['default_charset']));
-    $template->set_var('subject', htmlspecialchars($subject, ENT_QUOTES, $_CONF['default_charset']));
-    $template->set_var('message', htmlspecialchars($message, ENT_QUOTES, $_CONF['default_charset']));
+    $template->set_var(
+        'username',
+        htmlspecialchars($author, ENT_QUOTES, $_CONF['default_charset'])
+    );
+    $template->set_var(
+        'useremail',
+        htmlspecialchars($authoremail, ENT_QUOTES, $_CONF['default_charset'])
+    );
+    $template->set_var(
+        'subject',
+        htmlspecialchars($subject, ENT_QUOTES, $_CONF['default_charset'])
+    );
+    $template->set_var(
+        'message',
+        htmlspecialchars($message, ENT_QUOTES, $_CONF['default_charset'])
+    );
 
-    $template->set_var('uid', $uid);
-    $template->set_var('ad', $ad);
-    $template->set_var('contact_mode', $mode);
-    $template->set_var('route_mode', $mode === 'report' ? 'r' : 'c');
     $template->set_var('gltoken_name', CSRF_TOKEN);
     $template->set_var('gltoken', SEC_createToken());
 
@@ -119,11 +155,9 @@ function CLASSIFIEDS_contactForm($uid, $ad, $subject, $mode = 'contact', $messag
 }
 
 /**
- * Send a contact or abuse-report message.
+ * Send a contact or abuse-report message for an ad.
  *
- * @param int    $uid
  * @param int    $ad
- * @param string $subject
  * @param string $author
  * @param string $authoremail
  * @param string $message
@@ -132,22 +166,22 @@ function CLASSIFIEDS_contactForm($uid, $ad, $subject, $mode = 'contact', $messag
  * @return bool
  */
 function CLASSIFIEDS_sendContact(
-    $uid,
     $ad,
-    $subject,
     $author,
     $authoremail,
     $message,
     $mode = 'contact',
     $copySender = false
 ) {
-    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES;
+    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES, $LANG_CLASSIFIEDS_1;
 
-    $uid = (int) $uid;
-    $ad = (int) $ad;
+    if (!SEC_checkToken()) {
+        return false;
+    }
+
     $mode = ($mode === 'report') ? 'report' : 'contact';
-
-    if (!SEC_checkToken() || $ad <= 0 || !CLASSIFIEDS_checkAdAccess($ad)) {
+    $target = CLASSIFIEDS_getContactTarget($ad);
+    if ($target === false) {
         return false;
     }
 
@@ -158,14 +192,12 @@ function CLASSIFIEDS_sendContact(
 
     $author = trim(strip_tags((string) $author));
     $authoremail = trim((string) $authoremail);
-    $subject = trim(strip_tags((string) $subject));
     $message = trim(strip_tags((string) $message));
 
     $author = substr($author, 0, strcspn($author, "\r\n"));
     $authoremail = substr($authoremail, 0, strcspn($authoremail, "\r\n"));
-    $subject = substr($subject, 0, strcspn($subject, "\r\n"));
 
-    if ($author === '' || $subject === '' || $message === '' || !COM_isemail($authoremail)) {
+    if ($author === '' || $message === '' || !COM_isemail($authoremail)) {
         return false;
     }
 
@@ -173,6 +205,10 @@ function CLASSIFIEDS_sendContact(
     if (COM_checkSpeedlimit('mail') > 0) {
         return false;
     }
+
+    $subject = ($mode === 'report')
+        ? $LANG_CLASSIFIEDS_1['report']
+        : $target['title'];
 
     $spam = PLG_checkforSpam($subject . "\n" . $message, $_CONF['spamx']);
     if ($spam > 0) {
@@ -188,12 +224,14 @@ function CLASSIFIEDS_sendContact(
     if ($mode === 'report') {
         $to = $_CONF['site_mail'];
     } else {
+        $uid = (int) $target['owner_id'];
         if (!CLASSIFIEDS_canContactUser($uid)) {
             return false;
         }
 
         $result = DB_query(
-            "SELECT username, fullname, email FROM {$_TABLES['users']} WHERE uid = " . $uid
+            "SELECT username, fullname, email "
+            . "FROM {$_TABLES['users']} WHERE uid = " . $uid
         );
         $recipient = DB_fetchArray($result);
         if (!is_array($recipient) || empty($recipient['email'])) {
@@ -203,14 +241,19 @@ function CLASSIFIEDS_sendContact(
         $recipientName = !empty($recipient['fullname'])
             ? $recipient['fullname']
             : $recipient['username'];
+
         $to = COM_formatEmailAddress($recipientName, $recipient['email']);
     }
 
     $from = COM_formatEmailAddress($author, $authoremail);
-    $mailSubject = '[' . $_CONF['site_name'] . '] Classifieds #' . $ad . ' - ' . $subject;
+    $mailSubject = '[' . $_CONF['site_name'] . '] '
+        . $LANG_CLASSIFIEDS_1['plugin_name']
+        . ' #' . (int) $target['clid']
+        . ' - ' . $subject;
+
     $mailBody = $message . "\n\n"
-        . 'Classified ad: #' . $ad . "\n"
-        . $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $ad . "\n";
+        . $_CLASSIFIEDS_CONF['site_url']
+        . '/index.php?mode=v&ad=' . (int) $target['clid'] . "\n";
 
     $sent = COM_mail($to, $mailSubject, $mailBody, $from);
 
