@@ -89,8 +89,6 @@ $_CLASSIFIEDS_DEFAULT['classifieds_main_footer'] = 'Customise this footer in the
 $_CLASSIFIEDS_DEFAULT['classifieds_edit_header'] = '';
 $_CLASSIFIEDS_DEFAULT['help_page'] = $LANG_CLASSIFIEDS_1['under_construction']; // Static page ID
 $_CLASSIFIEDS_DEFAULT['currency'] = '$';
-$_CLASSIFIEDS_DEFAULT['date_format'] = '%d %B %Y';
-$_CLASSIFIEDS_DEFAULT['time_format'] = '%H:%M';
 $_CLASSIFIEDS_DEFAULT['maxPerPage'] = 50;
 
  /**
@@ -166,10 +164,6 @@ function plugin_initconfig_classifieds()
                 'text', 0, 2, NULL, 206, true, 'classifieds', 0);
 		$c->add('currency', $_CLASSIFIEDS_DEFAULT['currency'],
                 'text', 0, 2, NULL, 207, true, 'classifieds', 0);
-		$c->add('date_format', $_CLASSIFIEDS_DEFAULT['date_format'],
-                'text', 0, 2, NULL, 208, true, 'classifieds', 0);
-		$c->add('time_format', $_CLASSIFIEDS_DEFAULT['time_format'],
-                'text', 0, 2, NULL, 209, true, 'classifieds', 0);
 		$c->add('maxPerPage', $_CLASSIFIEDS_DEFAULT['maxPerPage'],
                 'text', 0, 2, NULL, 210, true, 'classifieds', 0);
 		$c->add('allow_republish', 0,
