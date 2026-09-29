@@ -1217,7 +1217,13 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
         $where[] = 'a.deleted = 0';
         $where[] = 'a.enable = 1';
         $where[] = 'TO_DAYS(NOW()) - TO_DAYS(a.created) <= ' . $activeDays;
-        $where[] = ltrim(COM_getPermSQL('AND', 0, 2, 'a'), ' AND');
+        $permSql = trim(COM_getPermSQL('AND', 0, 2, 'a'));
+        if (stripos($permSql, 'AND ') === 0) {
+            $permSql = trim(substr($permSql, 4));
+        }
+        if ($permSql !== '') {
+            $where[] = $permSql;
+        }
 
         if ($user > 1) {
             $where[] = 'a.owner_id = ' . $user;
