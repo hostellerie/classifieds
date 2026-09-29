@@ -53,7 +53,9 @@ if (! SEC_hasRights('classifieds.admin')) {
     exit;
 }
 
-$vars = array('msg'        => 'text',
+$vars = array('mode'       => 'alpha',
+              'op'         => 'alpha',
+              'msg'        => 'text',
               'cid'        => 'number',
 			  'pid'        => 'number',
 			  'category'   => 'text',
@@ -306,16 +308,16 @@ switch ($_REQUEST['mode']) {
 
                 if ( (!empty($_REQUEST['cid'])) && (is_numeric($_REQUEST['cid'])) ) {
 				    //Edit mode 
-				    $sql = "pid = '{$_REQUEST['pid']}', "
-                     . "category = '{$_REQUEST['category']}', "
-					 . "catorder = '{$_REQUEST['catorder']}', "
+				    $sql = "pid = '{$pid}', "
+                     . "category = '{$category}', "
+					 . "catorder = '{$catorder}', "
 			         . "catdeleted = '{$_REQUEST['catdeleted']}'
 			         ";
                     $sql = "UPDATE {$_TABLES['cl_cat']} SET $sql "
                          . "WHERE cid = {$_REQUEST['cid']}";
                 } else {
 				    //Create mode
-                    $catorder = DB_getItem($_TABLES['cl_cat'], 'catorder', "cid = {$_REQUEST['pid']}") + 1;
+                    $catorder = (int) DB_getItem($_TABLES['cl_cat'], 'catorder', "cid = " . $pid) + 1;
 				    $sql = "pid = '{$_REQUEST['pid']}', "
                      . "category = '{$_REQUEST['category']}', "
 					 . "catorder = '{$catorder}', "
