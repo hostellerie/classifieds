@@ -1,38 +1,42 @@
-<p>{lang_description}</p>
-<form action="{site_url}/profiles.php" method="post" name="contact" class="classifieds-contact">
-    <table cellspacing="0" cellpadding="3" width="100%">
-        <tr>
-            <td class="classifieds-alignright"><b>{lang_username}</b></td>
-            <td><input type="text" name="author" size="40" maxlength="96" value="{username}"{xhtml}></td>
-        </tr>
-        <tr>
-            <td class="classifieds-alignright"><b>{lang_useremail}</b></td>
-            <td><input type="text" name="authoremail" size="40" maxlength="96" value="{useremail}"{xhtml}></td>
-        </tr>
-        <tr>
-            <td class="classifieds-alignright"><b>{lang_subject}</b></td>
-            <td><input type="text" name="subject" size="80" maxlength="96" value="{subject}" readonly="readonly" {xhtml}></td>
-        </tr>
-        <tr>
-            <td class="classifieds-alignright" style="vertical-align:top;"><b>{lang_message}</b></td>
-            <td><textarea name="message" rows="10" style="width:100%">{message}</textarea></td>
-        </tr>
-        <tr>
-            <td class="classifieds-alignright"><b>{lang_cc}</b></td>
-            <td><input type="checkbox" name="cc" checked="checked"{xhtml}>&nbsp;{lang_cc_description}</td>
-        </tr>
-        {captcha}
-        <tr>
-            <td>
-			    &nbsp;
-			</td>
-			<td colspan="2" style="padding-top:10px;">
-                <div style="padding:5px;">
-                    <input type="hidden" name="what" value="contact"{xhtml}>
-                    <input type="hidden" name="uid" value="{uid}"{xhtml}>
-                    <input type="submit" value="{lang_submit}"{xhtml}>
-                </div>
-            </td>
-        </tr>
-    </table>
+<form action="{action_url}" method="post" class="classifieds-contact">
+    <p>{lang_description}</p>
+
+    <p>
+        <label for="classifieds-contact-author"><strong>{lang_username}</strong></label><br{xhtml}>
+        <input id="classifieds-contact-author" type="text" name="author" size="40" maxlength="96" value="{username}" required{xhtml}>
+    </p>
+
+    <p>
+        <label for="classifieds-contact-email"><strong>{lang_useremail}</strong></label><br{xhtml}>
+        <input id="classifieds-contact-email" type="email" name="authoremail" size="40" maxlength="96" value="{useremail}" required{xhtml}>
+    </p>
+
+    <p>
+        <label for="classifieds-contact-subject"><strong>{lang_subject}</strong></label><br{xhtml}>
+        <input id="classifieds-contact-subject" type="text" name="subject" size="80" maxlength="96" value="{subject}" readonly="readonly"{xhtml}>
+    </p>
+
+    <p>
+        <label for="classifieds-contact-message"><strong>{lang_message}</strong></label><br{xhtml}>
+        <textarea id="classifieds-contact-message" name="message" rows="10" style="width:100%" required>{message}</textarea>
+    </p>
+
+    <p>
+        <label>
+            <input type="checkbox" name="cc" value="1"{xhtml}>
+            <strong>{lang_cc}</strong> — {lang_cc_description}
+        </label>
+    </p>
+
+    {captcha}
+
+    <p>
+        <input type="hidden" name="mode" value="{route_mode}"{xhtml}>
+        <input type="hidden" name="op" value="send"{xhtml}>
+        <input type="hidden" name="contact_mode" value="{contact_mode}"{xhtml}>
+        <input type="hidden" name="uid" value="{uid}"{xhtml}>
+        <input type="hidden" name="ad" value="{ad}"{xhtml}>
+        <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
+        <input type="submit" value="{lang_submit}"{xhtml}>
+    </p>
 </form>
