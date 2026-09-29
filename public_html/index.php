@@ -60,6 +60,9 @@ $vars = array('mode'     => 'alpha',
 			  'tel'      => 'alpha',
 			  'hide_tel' => 'number',
               'status'   => 'number',
+              'siren'    => 'text',
+              'deleted'  => 'number',
+              'subject'  => 'text',
 			  'postcode' => 'alpha',
 			  'city'     => 'text',
 			  'uid'      => 'number',
@@ -88,6 +91,10 @@ switch ($_REQUEST['mode']) {
 
         switch ($_REQUEST['op']) {
             case 'del':
+                if (!SEC_checkToken()) {
+                    echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
+                    exit;
+                }
 			    if (is_numeric($_REQUEST['ad'])) {
 				    if (CLASSIFIEDS_checkAdAccess($_REQUEST['ad']) == false ) {
                         echo COM_refresh ($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
@@ -130,6 +137,10 @@ switch ($_REQUEST['mode']) {
                 break;
         
             case 'save':
+                if (!SEC_checkToken()) {
+                    $display .= COM_showMessageText($LANG_CLASSIFIEDS_2['save_fail'], $LANG_CLASSIFIEDS_2['error']);
+                    break;
+                }
 			    $missingfields = CLASSIFIEDS_missingField($_REQUEST);
                 if ($missingfields != '') {
                     $display .= COM_startBlock($LANG_CLASSIFIEDS_2['error']);
@@ -179,19 +190,19 @@ switch ($_REQUEST['mode']) {
 						break;
 	                }
 					
-				    $sql = "catid = '{$_REQUEST['catid']}', "
+				    $sql = "catid = '{$catid}', "
                      . "status = '{$status}', "
-                     . "type = '{$_REQUEST['type']}', "
+                     . "type = '{$type}', "
                      . "tel = '{$clean_tel}', "
                      . "hide_tel = '{$hide_tel}', "
 			         . "title = '{$title}', "
 			         . "text = '{$text}', "
 			         . "price = '{$price}', "
-					 . "postcode = '{$_REQUEST['postcode']}', "
+					 . "postcode = '{$postcode}', "
 					 . "city = '{$city}', "
-                     . "siren = '{$_REQUEST['siren']}', "
+                     . "siren = '{$siren}', "
 			         . "modified = '{$modified}', "
-			         . "deleted = '{$_REQUEST['deleted']}'
+			         . "deleted = '{$deleted}'
 			         ";
                     $sql = "UPDATE {$_TABLES['cl']} SET $sql "
                          . "WHERE clid = {$_REQUEST['clid']}";
@@ -247,14 +258,13 @@ switch ($_REQUEST['mode']) {
 						
 						// Populate user data
 						if (DB_count($_TABLES['cl_users'],'user_id',$_USER['uid']) > 0) {
-						    DB_query("UPDATE {$_TABLES['cl_users']} SET tel = '{$clean_tel}', postcode = '{$_REQUEST['postcode']}',
-							city = '{$city}', status = '{$status}', siren = '{$_REQUEST['siren']}' WHERE user_id = '{$_USER['uid']}'");
+						    DB_query("UPDATE {$_TABLES['cl_users']} SET tel = '{$clean_tel}', postcode = '{$postcode}',
+                            city = '{$city}', status = '{$status}', siren = '{$siren}' WHERE user_id = " . (int) $_USER['uid']);
 						} else {
-						    DB_query("INSERT INTO {$_TABLES['cl_users']} SET user_id = '{$_USER['uid']}', 
-							tel = '{$clean_tel}', postcode = '{$_REQUEST['postcode']}',
-							city = '{$city}', status = '{$status}',
-							siren = '{$_REQUEST['siren']}'
-							");
+						    DB_query("INSERT INTO {$_TABLES['cl_users']} SET user_id = " . (int) $_USER['uid'] . ",
+                            tel = '{$clean_tel}', postcode = '{$postcode}',
+                            city = '{$city}', status = '{$status}',
+                            siren = '{$siren}'");
 						}
                     }
                 }
@@ -291,6 +301,10 @@ switch ($_REQUEST['mode']) {
                 break;
 
             case 'copy':
+                if (!SEC_checkToken()) {
+                    $display .= COM_showMessageText($LANG_CLASSIFIEDS_2['save_fail'], $LANG_CLASSIFIEDS_2['error']);
+                    break;
+                }
                 $copiedId = CLASSIFIEDS_adCopy($_REQUEST, $_FILES);
                 if ($copiedId > 0) {
                     echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $copiedId);
@@ -300,6 +314,10 @@ switch ($_REQUEST['mode']) {
                 break;
 
             case 'repost':
+                if (!SEC_checkToken()) {
+                    echo COM_refresh($_CLASSIFIEDS_CONF['site_url']);
+                    exit;
+                }
                 CLASSIFIEDS_repost($_REQUEST['ad']);
                 break;
 
