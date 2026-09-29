@@ -244,7 +244,9 @@ function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
             $admin_select .= '<option value="save" selected="selected">' . $LANG_CLASSIFIEDS_2['save_button'] . '</option>' . LB;
             if ($ad['clid'] != '') $admin_select .= '<option value="delete">' . $LANG_CLASSIFIEDS_2['delete_button'] . '</option>'  . LB;
         }
-        if (function_exists('CLASSIFIEDS_getBonusAdminButton') && ($ad['clid'] != '')) $admin_select .= CLASSIFIEDS_getBonusAdminButton(); 
+        if (($ad['clid'] != '') && !empty($_CLASSIFIEDS_CONF['allow_republish'])) {
+            $admin_select .= CLASSIFIEDS_getBonusAdminButton();
+        }
         $admin_select .= LB . '</select>' . LB;
 	    $template->set_var('admin_options', $admin_select);
 		$datecreated = COM_getUserDateTimeFormat($ad['created']);
