@@ -862,8 +862,6 @@ function CLASSIFIEDS_upgradeConfiguration()
         'classifieds_edit_header' => array($_CLASSIFIEDS_DEFAULT['classifieds_edit_header'], 'text', 0, 2, NULL, 205, true),
         'help_page' => array($_CLASSIFIEDS_DEFAULT['help_page'], 'text', 0, 2, NULL, 206, true),
         'currency' => array($_CLASSIFIEDS_DEFAULT['currency'], 'text', 0, 2, NULL, 207, true),
-        'date_format' => array($_CLASSIFIEDS_DEFAULT['date_format'], 'text', 0, 2, NULL, 208, true),
-        'time_format' => array($_CLASSIFIEDS_DEFAULT['time_format'], 'text', 0, 2, NULL, 209, true),
         'maxPerPage' => array($_CLASSIFIEDS_DEFAULT['maxPerPage'], 'text', 0, 2, NULL, 210, true),
         'allow_republish' => array(0, 'select', 0, 2, 3, 220, true),
 
@@ -930,7 +928,13 @@ function CLASSIFIEDS_upgradeConfiguration()
     }
 
     // Remove settings that existed only for the deleted TimThumb component.
-    foreach (array('thumb_width', 'thumb_height', 'max_thumbnail_size') as $obsolete) {
+    foreach (array(
+        'thumb_width',
+        'thumb_height',
+        'max_thumbnail_size',
+        'date_format',
+        'time_format'
+    ) as $obsolete) {
         if ((int) DB_getItem(
             $_TABLES['conf_values'],
             'COUNT(*)',
@@ -1403,13 +1407,11 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 		}
 	
 	    //Date
-	    $date = strftime( $_CLASSIFIEDS_CONF['date_format'], $created['1']);
-		
-	    $ad->set_var('date', $date);
-	
-	    //Time
-	    $time = strftime( $_CLASSIFIEDS_CONF['time_format'], $created['1']);
-	    $ad->set_var('time', $time);
+        list($date, ) = COM_getUserDateTimeFormat($createdTimestamp, 'dateonly');
+        list($time, ) = COM_getUserDateTimeFormat($createdTimestamp, 'timeonly');
+
+        $ad->set_var('date', $date);
+        $ad->set_var('time', $time);
 
 	    $title = ucfirst(mb_strtolower($A['title'], $_CONF['default_charset']));
 		
@@ -1694,12 +1696,13 @@ function CLASSIFIEDS_viewAd($clid)
         $ad->set_var('edit', '');
     }
 
-    $date = $createdTimestamp > 0
-        ? strftime($_CLASSIFIEDS_CONF['date_format'], $createdTimestamp)
-        : '';
-    $time = $createdTimestamp > 0
-        ? strftime($_CLASSIFIEDS_CONF['time_format'], $createdTimestamp)
-        : '';
+    if ($createdTimestamp > 0) {
+        list($date, ) = COM_getUserDateTimeFormat($createdTimestamp, 'dateonly');
+        list($time, ) = COM_getUserDateTimeFormat($createdTimestamp, 'timeonly');
+    } else {
+        $date = '';
+        $time = '';
+    }
 
     $username = isset($A['username']) ? (string) $A['username'] : '';
     $ad->set_var(
