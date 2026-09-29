@@ -788,54 +788,123 @@ function plugin_getconfigtooltip_classifieds($id)
  */
 function CLASSIFIEDS_upgradeConfiguration()
 {
-    global $_TABLES;
+    global $_TABLES, $_CLASSIFIEDS_DEFAULT;
 
     require_once dirname(__FILE__) . '/install_defaults.php';
 
     $c = config::get_instance();
 
-    // Add the explicit tab required by modern Geeklog configuration UI.
-    $c->add('tab_main', NULL, 'tab', 0, 0, NULL, 0, true, 'classifieds', 0);
+    // config::add() deletes/recreates an existing row, so never call it
+    // blindly during an upgrade. Only create genuinely missing entries.
+    $definitions = array(
+        'sg_main' => array(NULL, 'subgroup', 0, 0, NULL, 0, false),
+        'tab_main' => array(NULL, 'tab', 0, 0, NULL, 0, false),
 
-    // Remove settings that existed only for TimThumb rendering.
-    $c->del('thumb_width', 'classifieds');
-    $c->del('thumb_height', 'classifieds');
-    $c->del('max_thumbnail_size', 'classifieds');
+        'fs_main' => array(NULL, 'fieldset', 0, 0, NULL, 0, false),
+        'classifieds_folder' => array($_CLASSIFIEDS_DEFAULT['classifieds_folder'], 'text', 0, 0, NULL, 10, true),
+        'active_days' => array($_CLASSIFIEDS_DEFAULT['active_days'], 'text', 0, 0, NULL, 20, true),
 
-    // These are plain text settings. Existing installations may have stored
-    // selectionArray=0, which makes Geeklog expect a language-backed select.
-    $textSettings = array(
-        'classifieds_folder',
-        'active_days',
-        'max_image_width',
-        'max_image_height',
-        'max_image_size',
-        'max_images_per_ad',
-        'menulabel',
-        'classifieds_main_header',
-        'classifieds_main_footer',
-        'classifieds_edit_header',
-        'help_page',
-        'currency',
-        'date_format',
-        'time_format',
-        'maxPerPage'
+        'fs_images' => array(NULL, 'fieldset', 0, 1, NULL, 0, false),
+        'max_image_width' => array($_CLASSIFIEDS_DEFAULT['max_image_width'], 'text', 0, 1, NULL, 101, true),
+        'max_image_height' => array($_CLASSIFIEDS_DEFAULT['max_image_height'], 'text', 0, 1, NULL, 102, true),
+        'max_image_size' => array($_CLASSIFIEDS_DEFAULT['max_image_size'], 'text', 0, 1, NULL, 103, true),
+        'max_images_per_ad' => array($_CLASSIFIEDS_DEFAULT['max_images_per_ad'], 'text', 0, 1, NULL, 107, true),
+
+        'fs_display' => array(NULL, 'fieldset', 0, 2, NULL, 0, false),
+        'menulabel' => array($_CLASSIFIEDS_DEFAULT['menulabel'], 'text', 0, 2, NULL, 201, true),
+        'hide_classifieds_menu' => array($_CLASSIFIEDS_DEFAULT['hide_classifieds_menu'], 'select', 0, 2, 3, 202, true),
+        'classifieds_main_header' => array($_CLASSIFIEDS_DEFAULT['classifieds_main_header'], 'text', 0, 2, NULL, 203, true),
+        'classifieds_main_footer' => array($_CLASSIFIEDS_DEFAULT['classifieds_main_footer'], 'text', 0, 2, NULL, 204, true),
+        'classifieds_edit_header' => array($_CLASSIFIEDS_DEFAULT['classifieds_edit_header'], 'text', 0, 2, NULL, 205, true),
+        'help_page' => array($_CLASSIFIEDS_DEFAULT['help_page'], 'text', 0, 2, NULL, 206, true),
+        'currency' => array($_CLASSIFIEDS_DEFAULT['currency'], 'text', 0, 2, NULL, 207, true),
+        'date_format' => array($_CLASSIFIEDS_DEFAULT['date_format'], 'text', 0, 2, NULL, 208, true),
+        'time_format' => array($_CLASSIFIEDS_DEFAULT['time_format'], 'text', 0, 2, NULL, 209, true),
+        'maxPerPage' => array($_CLASSIFIEDS_DEFAULT['maxPerPage'], 'text', 0, 2, NULL, 210, true),
+        'allow_republish' => array(0, 'select', 0, 2, 3, 220, true),
+
+        'fs_email' => array(NULL, 'fieldset', 0, 3, NULL, 0, false),
+        'create_ad_email_user' => array($_CLASSIFIEDS_DEFAULT['create_ad_email_user'], 'select', 0, 3, 3, 301, true),
+        'mod_ad_email_user' => array($_CLASSIFIEDS_DEFAULT['mod_ad_email_user'], 'select', 0, 3, 3, 302, true),
+        'delete_ad_email_user' => array($_CLASSIFIEDS_DEFAULT['delete_ad_email_user'], 'select', 0, 3, 3, 303, true),
+        'expire_ad_email_user' => array($_CLASSIFIEDS_DEFAULT['expire_ad_email_user'], 'select', 0, 3, 3, 304, true),
+        'create_ad_email_admin' => array($_CLASSIFIEDS_DEFAULT['create_ad_email_admin'], 'select', 0, 3, 3, 305, true),
+        'mod_ad_email_admin' => array($_CLASSIFIEDS_DEFAULT['mod_ad_email_admin'], 'select', 0, 3, 3, 306, true),
+        'delete_ad_email_admin' => array($_CLASSIFIEDS_DEFAULT['delete_ad_email_admin'], 'select', 0, 3, 3, 307, true),
+        'expire_ad_email_admin' => array($_CLASSIFIEDS_DEFAULT['expire_ad_email_admin'], 'select', 0, 3, 3, 308, true),
+
+        'fs_permissions' => array(NULL, 'fieldset', 0, 4, NULL, 0, false),
+        'classifieds_login_required' => array($_CLASSIFIEDS_DEFAULT['classifieds_login_required'], 'select', 0, 4, 3, 401, true),
+        'default_permissions' => array($_CLASSIFIEDS_DEFAULT['default_permissions'], '@select', 0, 4, 12, 402, true)
     );
 
-    foreach ($textSettings as $name) {
+    foreach ($definitions as $name => $definition) {
+        $exists = (int) DB_getItem(
+            $_TABLES['conf_values'],
+            'COUNT(*)',
+            "group_name = 'classifieds' AND name = '" . DB_escapeString($name) . "'"
+        );
+
+        if ($exists === 0) {
+            $c->add(
+                $name,
+                $definition[0],
+                $definition[1],
+                $definition[2],
+                $definition[3],
+                $definition[4],
+                $definition[5],
+                $definition[6],
+                'classifieds',
+                0
+            );
+        }
+    }
+
+    // Repair metadata only. Never touch the persisted administrator value.
+    foreach ($definitions as $name => $definition) {
+        $selectionArray = ($definition[4] === NULL) ? -1 : (int) $definition[4];
+
         DB_query(
-            "UPDATE {$_TABLES['conf_values']} "
-            . "SET type = 'text', selectionArray = -1, tab = 0 "
+            "UPDATE {$_TABLES['conf_values']} SET "
+            . "type = '" . DB_escapeString($definition[1]) . "', "
+            . "subgroup = " . (int) $definition[2] . ", "
+            . "fieldset = " . (int) $definition[3] . ", "
+            . "selectionArray = " . $selectionArray . ", "
+            . "sort_order = " . (int) $definition[5] . ", "
+            . "tab = 0 "
             . "WHERE group_name = 'classifieds' "
             . "AND name = '" . DB_escapeString($name) . "'"
         );
+
+        if (DB_error()) {
+            COM_errorLog(
+                'Classifieds: unable to repair configuration metadata for ' . $name
+            );
+            return false;
+        }
     }
 
-    // Keep every maintained Classifieds setting on the explicit main tab.
-    DB_query(
-        "UPDATE {$_TABLES['conf_values']} SET tab = 0 "
-        . "WHERE group_name = 'classifieds' AND type <> 'subgroup'"
-    );
+    // Remove settings that existed only for the deleted TimThumb component.
+    foreach (array('thumb_width', 'thumb_height', 'max_thumbnail_size') as $obsolete) {
+        if ((int) DB_getItem(
+            $_TABLES['conf_values'],
+            'COUNT(*)',
+            "group_name = 'classifieds' AND name = '" . $obsolete . "'"
+        ) > 0) {
+            $c->del($obsolete, 'classifieds');
+        }
+    }
+
+    // Verify that the native configuration group can be read after migration.
+    $migrated = $c->get_config('classifieds');
+    if (!is_array($migrated)
+        || !isset($migrated['active_days'])
+        || !isset($migrated['max_images_per_ad'])
+        || !isset($migrated['default_permissions'])) {
+        COM_errorLog('Classifieds: configuration migration verification failed.');
+        return false;
+    }
 
     return true;
 }
