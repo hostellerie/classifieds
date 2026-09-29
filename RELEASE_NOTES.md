@@ -167,3 +167,20 @@ Before changing the version from `1.4.0-dev` to `1.4.0`, run the complete runtim
 - Item Info, sitemap, lifecycle events and dashboard summary.
 
 A local `php -l`/runtime pass could not be executed from the current tool container because its GitHub clone attempt had no DNS access. No claim of runtime validation is made by these release notes.
+
+
+## Memorandum administration/configuration alignment
+
+The administration and configuration implementation was re-audited against the current `hostellerie/memorandum` guidance.
+
+Administration now follows the documented separation of responsibilities:
+
+- Geeklog global admin discovery: `plugin_getadminoption_classifieds()`;
+- Command & Control discovery: `plugin_cclabel_classifieds()`;
+- page actions: `ADMIN_createMenu()`;
+- persistent peer sections: shared `plugin-admin-nav*` markup;
+- plugin settings: Geeklog native Configuration via POST `conf_group=classifieds`.
+
+Configuration migration was also hardened after checking Geeklog Core's `config::add()` implementation. Since `config::add()` deletes and recreates an existing row, the 1.4.0 upgrade now calls it only for genuinely missing configuration entries. Existing administrator values are preserved while metadata such as type, fieldset, selection array, sort order and tab assignment is repaired in place.
+
+The migration verifies the resulting group through `get_config('classifieds')` before completing.
