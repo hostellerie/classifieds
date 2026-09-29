@@ -38,10 +38,31 @@ $_TABLES['cl_users'] = $_DB_table_prefix . 'cl_users';
 /**
 * Classifieds Configuration.
  */
-$_CLASSIFIEDS_CONF['path_html']  = $_CONF['path_html'] . $_CLASSIFIEDS_CONF['classifieds_folder'] . '/';
-$_CLASSIFIEDS_CONF['site_url']   = $_CONF['site_url'] . '/' . $_CLASSIFIEDS_CONF['classifieds_folder'];
+$classifiedsFolder = isset($_CLASSIFIEDS_CONF['classifieds_folder'])
+    ? trim((string) $_CLASSIFIEDS_CONF['classifieds_folder'], '/\\')
+    : 'classifieds';
+$classifiedsFolder = preg_replace('/[^A-Za-z0-9_-]/', '', $classifiedsFolder);
+if ($classifiedsFolder === '') {
+    $classifiedsFolder = 'classifieds';
+}
+
+$_CLASSIFIEDS_CONF['classifieds_folder'] = $classifiedsFolder;
+$_CLASSIFIEDS_CONF['path_html'] = rtrim($_CONF['path_html'], '/\\')
+    . '/' . $classifiedsFolder . '/';
+$_CLASSIFIEDS_CONF['site_url'] = rtrim($_CONF['site_url'], '/')
+    . '/' . $classifiedsFolder;
 $_CLASSIFIEDS_CONF['debug'] = false;
-$_CLASSIFIEDS_CONF['path_images']  = $_CONF['path_images'] . 'classifieds/';
-$_CLASSIFIEDS_CONF['url_images']  = $_CONF['site_url'] . '/'. substr($_CONF['path_images'], strlen($_CONF['path_html']), -1) . '/classifieds/';
+$_CLASSIFIEDS_CONF['path_images'] = rtrim($_CONF['path_images'], '/\\')
+    . '/classifieds/';
+
+$imagesRelativePath = substr(
+    rtrim($_CONF['path_images'], '/\\'),
+    strlen(rtrim($_CONF['path_html'], '/\\'))
+);
+$imagesRelativePath = trim(str_replace('\\', '/', $imagesRelativePath), '/');
+
+$_CLASSIFIEDS_CONF['url_images'] = rtrim($_CONF['site_url'], '/')
+    . ($imagesRelativePath !== '' ? '/' . $imagesRelativePath : '')
+    . '/classifieds/';
 
 ?>
