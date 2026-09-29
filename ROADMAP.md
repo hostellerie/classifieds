@@ -1175,3 +1175,22 @@ A source-level consistency check was run after the Memorandum audit:
 - `plugin_getadminoption_classifieds()`, `plugin_cclabel_classifieds()`, and `plugin_getconfigtooltip_classifieds()` are present.
 
 No additional administration/configuration compatibility layer should be added unless runtime testing demonstrates a concrete need.
+
+
+### Consolidation pass after Memorandum audit
+
+Additional cleanup completed before runtime testing:
+
+- [x] replaced the copied Classifieds login form with Geeklog Core `SEC_loginRequiredForm()`;
+- [x] removed dead Pro/save/relay UI variables and language strings;
+- [x] separated republish business logic from redirects;
+- [x] made republish notifications/lifecycle fire only after the source ad is successfully retired;
+- [x] remove provisional republished copies if the source transition fails;
+- [x] make expiration notifications one-shot per ad to avoid duplicate mail after partial recipient failures;
+- [x] unify list/count visibility filters so pagination respects category, type, publication state and ACLs;
+- [x] public lists now explicitly require enabled, non-deleted, non-expired ads in active categories;
+- [x] removed obsolete type cookies and the dead public save route;
+- [x] fixed the `classifieds_main_footer` configuration key typo;
+- [x] replaced generic category SQL/option builders with two purpose-built helpers;
+- [x] removed read-time category reordering and other GET side effects;
+- [x] modernized comment callbacks and removed references to nonexistent `classifieds.edit`.
