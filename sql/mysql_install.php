@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Classifieds Plugin 1.0                                                    |
+// | Classifieds Plugin 1.4.0-dev                                                    |
 // +---------------------------------------------------------------------------+
 // | mysql_install.php                                                         |
 // |                                                                           |
@@ -60,7 +60,7 @@ CREATE TABLE {$_TABLES['cl']} (
   INDEX cl_cat(clid),
   INDEX cl_date(modified),
   PRIMARY KEY (clid)
-) ENGINE=MyISAM
+) ENGINE=InnoDB
 ";
 
 $_SQL[] = "CREATE TABLE {$_TABLES['cl_pic']} (
@@ -68,7 +68,7 @@ $_SQL[] = "CREATE TABLE {$_TABLES['cl_pic']} (
     pi_img_num tinyint(2) unsigned NOT NULL,
     pi_filename varchar(128) NOT NULL,
     PRIMARY KEY (pi_pid,pi_img_num)
-) ENGINE=MyISAM
+) ENGINE=InnoDB
 	";
 
 $_SQL[] = "
@@ -86,7 +86,7 @@ CREATE TABLE {$_TABLES['cl_cat']} (
   perm_anon tinyint(1) unsigned NOT NULL DEFAULT '2',
   PRIMARY KEY (cid),
   KEY cl_pid (pid)
-) ENGINE=MyISAM
+) ENGINE=InnoDB
 ";
 
 $_SQL[] = "CREATE TABLE {$_TABLES['cl_users']} (
@@ -97,18 +97,7 @@ $_SQL[] = "CREATE TABLE {$_TABLES['cl_users']} (
   status tinyint(1) DEFAULT '0',
   siren varchar(20),
   PRIMARY KEY (user_id)
-) ENGINE=MyISAM
+) ENGINE=InnoDB
 ";
 
-$plugin_path = $_CONF['path'] . 'plugins/classifieds/';
-
-$catfile = $plugin_path . 'plugins/catsql_' . $_CONF['language'] . '.php';
-if (file_exists($catfile)) {
-    require_once $catfile;
-} else {
-    if (file_exists($plugin_path . 'plugins/catsql_english.php')) {
-        require_once $plugin_path . 'plugins/catsql_english.php';
-		$insertcat = 1;
-	}
-}
 ?>
