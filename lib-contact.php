@@ -141,7 +141,7 @@ function CLASSIFIEDS_sendContact(
     $mode = 'contact',
     $copySender = false
 ) {
-    global $_CONF, $_TABLES;
+    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES;
 
     $uid = (int) $uid;
     $ad = (int) $ad;
