@@ -206,3 +206,22 @@ A further source-level cleanup removed remaining legacy behavior before the runt
 ## Native date/time formatting
 
 Date/time rendering now follows Geeklog user preferences through `COM_getUserDateTimeFormat()` using Core `dateonly` and `timeonly` modes. The plugin-specific `date_format` and `time_format` settings and all direct `strftime()` calls were removed. Existing upgrade rows for those two obsolete settings are deleted during the 1.4.0 migration.
+
+
+## Final source consolidation
+
+Before entering runtime validation, the maintained PHP code was scanned for the targeted legacy patterns. The scan found no remaining TODO/FIXME markers, PHP 8-incompatible `each()`, direct `strftime()`, application `addslashes()`/`stripslashes()`, generic `SELECT *`, no-op `WHERE 1=1`, or direct `$_GET`/`$_POST` access.
+
+Additional final corrections:
+
+- persisted configuration is merged over in-memory defaults before derived paths are built;
+- new ads now apply the configured Geeklog default ACLs instead of SQL-table defaults;
+- republished ads preserve source ACLs;
+- Classifieds administrators have a consistent item-management override;
+- comment availability follows ad publication/expiration state;
+- category hierarchy/deletion rules prevent orphaned ads and child categories;
+- image metadata changes participate in the database transaction while physical deletion is deferred until after commit;
+- hard-delete database work completes before image files are removed;
+- legacy CSS conflicting with the responsive list markup was removed.
+
+The source is now intentionally at a **runtime validation gate**. Further changes should be driven by reproducible test failures rather than additional speculative refactoring.
