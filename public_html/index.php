@@ -97,47 +97,37 @@ switch ($_REQUEST['mode']) {
                     echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
                     exit;
                 }
-			    if (is_numeric($_REQUEST['ad'])) {
-				    if (CLASSIFIEDS_checkAdAccess($_REQUEST['ad']) == false ) {
-                        echo COM_refresh ($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
-						exit();
-					    break;
-                    }
-                    $sql = "SELECT * FROM {$_TABLES['cl']} WHERE clid = {$_REQUEST['ad']}";
-                    $res = DB_query($sql);
-                    $A = DB_fetchArray($res);
-					if (SEC_hasAccess2($A) < 3) {
-	                    echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . "/index.php");
-		                exit();
-					    break;
-					}
-					
-					DB_change($_TABLES['cl'],'deleted',1,'clid',$_REQUEST['ad']);
-					
-					if (DB_error()) {
-                        $msg = $LANG_CLASSIFIEDS_2['save_fail'];
-                    } else {
-                        $msg = $LANG_CLASSIFIEDS_2['deletion_succes'];
-						CLASSIFIEDS_emailDeleteAd($A['title'], '', (int) $_REQUEST['ad'], $_USER['uid'], $A['price']);
-                    }
-					echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . "/index.php?mode=my&amp;msg=$msg");
-					exit();
-				}
-			    break;
-			case 'delete':
-			    if (SEC_hasRights('classifieds.admin')) {
-    	            DB_delete($_TABLES['cl'], 'clid', $_REQUEST['clid']);
-                    if (DB_affectedRows('') == 1) {
-                        $msg = $LANG_CLASSIFIEDS_2['deletion_succes'];
-                    } else {
-                        $msg = $LANG_CLASSIFIEDS_2['deletion_fail'];
-                    }
-		            // delete complete, return to ad list
-                    echo COM_refresh($_CONF['site_url'] . "/admin/plugins/classifieds/index.php?msg=$msg");
-				}
-                exit();
-                break;
-        
+
+                $adId = (int) $_REQUEST['ad'];
+                $deleted = CLASSIFIEDS_deleteAd($adId, false);
+                $msg = $deleted
+                    ? $LANG_CLASSIFIEDS_2['deletion_succes']
+                    : $LANG_CLASSIFIEDS_2['deletion_fail'];
+
+                echo COM_refresh(
+                    $_CLASSIFIEDS_CONF['site_url']
+                    . '/index.php?mode=my&amp;msg=' . urlencode($msg)
+                );
+                exit;
+
+            case 'delete':
+                if (!SEC_checkToken() || !SEC_hasRights('classifieds.admin')) {
+                    echo COM_refresh($_CONF['site_admin_url'] . '/plugins/classifieds/index.php');
+                    exit;
+                }
+
+                $adId = (int) $_REQUEST['clid'];
+                $deleted = CLASSIFIEDS_deleteAd($adId, true);
+                $msg = $deleted
+                    ? $LANG_CLASSIFIEDS_2['deletion_succes']
+                    : $LANG_CLASSIFIEDS_2['deletion_fail'];
+
+                echo COM_refresh(
+                    $_CONF['site_admin_url']
+                    . '/plugins/classifieds/index.php?msg=' . urlencode($msg)
+                );
+                exit;
+
             case 'save':
                 $saveResult = CLASSIFIEDS_saveAd($_REQUEST, $_FILES);
 
@@ -169,11 +159,6 @@ switch ($_REQUEST['mode']) {
                     . '&amp;mode=v&amp;ad=' . (int) $saveResult['id']
                 );
                 exit;
-
-            /* this case is currently not used... future expansion? */
-            case 'preview':
-                $display .= CLASSIFIEDS_getAdForm($_REQUEST);
-                break;
 
             case 'edit':
                 // Get the ad to edit and display the form
