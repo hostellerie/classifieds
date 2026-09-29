@@ -308,18 +308,14 @@ function CLASSIFIEDS_deleteAd($clid, $hard = false)
             return false;
         }
 
+        $filesToDelete = array();
         $pictures = DB_query(
             "SELECT pi_filename FROM {$_TABLES['cl_pic']} "
             . "WHERE pi_pid = '" . $clid . "'"
         );
-
         while ($picture = DB_fetchArray($pictures)) {
-            if (!CLASSIFIEDS_deleteImage($picture['pi_filename'])) {
-                COM_errorLog(
-                    'Classifieds: hard delete aborted; unable to remove image '
-                    . basename($picture['pi_filename'])
-                );
-                return false;
+            if (!empty($picture['pi_filename'])) {
+                $filesToDelete[] = basename($picture['pi_filename']);
             }
         }
 
@@ -337,6 +333,18 @@ function CLASSIFIEDS_deleteAd($clid, $hard = false)
         }
 
         DB_query('COMMIT');
+        if (DB_error()) {
+            return false;
+        }
+
+        foreach ($filesToDelete as $fileToDelete) {
+            if (!CLASSIFIEDS_deleteImage($fileToDelete)) {
+                COM_errorLog(
+                    'Classifieds: hard delete committed but image '
+                    . $fileToDelete . ' could not be removed.'
+                );
+            }
+        }
 
         require_once $_CONF['path_system'] . 'lib-comment.php';
         CMT_deleteComment('', (string) $clid, 'classifieds', false);
