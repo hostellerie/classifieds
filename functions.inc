@@ -1029,9 +1029,23 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	    if ($A['pi_filename'] == '') {
 		    $ad->set_var('small_pic', '');
 	    } else if( is_numeric($limit) ) {
-		    $ad->set_var('small_pic', '<a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&amp;ad=' . $A['clid'] . '&amp;seo=' . str_replace(' ', '-', $title) .  '"><img src="'. $_CLASSIFIEDS_CONF['site_url'] . '/timthumb.php?src=' . $_CLASSIFIEDS_CONF['url_images'] . $A['pi_filename'] . '&amp;w=15&amp;h=15" alt="' . $A['name'] . '" /></a>');
+		    $ad->set_var(
+                'small_pic',
+                '<a href="' . $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&amp;ad='
+                . (int) $A['clid'] . '&amp;seo=' . rawurlencode(str_replace(' ', '-', $title)) . '">'
+                . '<img class="classifieds-thumb classifieds-thumb--small" loading="lazy" src="'
+                . $_CLASSIFIEDS_CONF['url_images'] . rawurlencode($A['pi_filename'])
+                . '" alt="' . htmlspecialchars($title, ENT_QUOTES, $_CONF['default_charset']) . '" /></a>'
+            );
 	    } else {
-		    $ad->set_var('small_pic', '<a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&amp;ad=' . $A['clid'] . '&amp;seo=' . str_replace(' ', '-', $title) . '"><img src="'. $_CLASSIFIEDS_CONF['site_url'] . '/timthumb.php?src=' . $_CLASSIFIEDS_CONF['url_images'] . $A['pi_filename'] . '&amp;w='. $_CLASSIFIEDS_CONF['thumb_width'] . '&amp;h='. $_CLASSIFIEDS_CONF['thumb_height'] . '" alt="' . $A['name'] . '" /></a>');
+		    $ad->set_var(
+                'small_pic',
+                '<a href="' . $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&amp;ad='
+                . (int) $A['clid'] . '&amp;seo=' . rawurlencode(str_replace(' ', '-', $title)) . '">'
+                . '<img class="classifieds-thumb" loading="lazy" src="'
+                . $_CLASSIFIEDS_CONF['url_images'] . rawurlencode($A['pi_filename'])
+                . '" alt="' . htmlspecialchars($title, ENT_QUOTES, $_CONF['default_charset']) . '" /></a>'
+            );
 	    }
 	
 	    //Title
@@ -1209,45 +1223,50 @@ function CLASSIFIEDS_viewAd ($clid)
 	'/index.php?mode=p&amp;u=' . $A['owner_id'] .  '">'. $A['username'] . '</a> ' .
 	$LANG_CLASSIFIEDS_1['on'] . ' ' . $date . ' ' . $LANG_CLASSIFIEDS_1['at'] . ' ' . $time . '</p>');
 	
-	//pictures
-	$icount = DB_count($_TABLES['cl_pic'],'pi_pid', $clid);
-    $size = $_CLASSIFIEDS_CONF['max_thumbnail_size'];
+    // Pictures
+    $icount = DB_count($_TABLES['cl_pic'], 'pi_pid', $clid);
+    $saved_images = '';
+
     if ($icount > 0) {
-	    $result_pic = DB_query("SELECT * FROM {$_TABLES['cl_pic']} WHERE pi_pid = '". $clid ."' ORDER BY pi_img_num");
-	    for ($z = 1; $z <= $icount; $z++) {
-		    $I = DB_fetchArray($result_pic);
-			//Big picture
-	        if ($z == 1) {
-                $big_picture = '<img src="' . $_CLASSIFIEDS_CONF['site_url'] . '/timthumb.php?src=' .
-				$_CLASSIFIEDS_CONF['url_images'] . $I['pi_filename'] . '&amp;w=480" alt="' . $A['title'] . '" />';
-	            $ad->set_var('big_picture', $big_picture);
+        $result_pic = DB_query(
+            "SELECT pi_filename FROM {$_TABLES['cl_pic']} "
+            . "WHERE pi_pid = '" . (int) $clid . "' ORDER BY pi_img_num"
+        );
+
+        $z = 0;
+        while ($I = DB_fetchArray($result_pic)) {
+            $z++;
+            $filename = rawurlencode(basename($I['pi_filename']));
+            $imageUrl = $_CLASSIFIEDS_CONF['url_images'] . $filename;
+            $alt = htmlspecialchars($A['title'], ENT_QUOTES, $_CONF['default_charset']);
+
+            if ($z === 1) {
+                $ad->set_var(
+                    'big_picture',
+                    '<img class="classifieds-main-image" loading="eager" src="'
+                    . $imageUrl . '" alt="' . $alt . '" />'
+                );
             }
 
-		    $saved_images .= '<a class="lightbox" href="' .  $_CLASSIFIEDS_CONF['site_url'] . '/timthumb.php?src=' .
-			$_CLASSIFIEDS_CONF['url_images'] . $I['pi_filename'] . '&amp;w=640"><img src="' .
-			$_CLASSIFIEDS_CONF['site_url'] . '/timthumb.php?src=' .  $_CLASSIFIEDS_CONF['url_images'] .
-			$I['pi_filename'] . '&amp;w=' . $size . '&amp;h=' . $size . '" alt="' . $A['title'] . '" /></a>';
-
-	    }
+            $saved_images .= '<a class="lightbox" href="' . $imageUrl . '">'
+                . '<img class="classifieds-gallery-thumb" loading="lazy" src="'
+                . $imageUrl . '" alt="' . $alt . '" /></a>';
+        }
     }
+
     if ($icount == 0) {
-	    $ad->set_var('big_picture', '');
-	    $ad->set_var('pictures', '');
+        $ad->set_var('big_picture', '');
+        $ad->set_var('pictures', '');
     } else {
-        $info_picture = '<p class="info_picture"><img src="' .  $_CLASSIFIEDS_CONF['site_url'] .
-		'/images/enlarge.png" alt="" align="absmiddle" /> ' . $LANG_CLASSIFIEDS_1['enlarge_picture'] .'</p>';
-	    $ad->set_var('pictures', '<div id="ad-pictures">' . $saved_images . $info_picture . '</div>');
+        $info_picture = '<p class="info_picture"><img src="'
+            . $_CLASSIFIEDS_CONF['site_url']
+            . '/images/enlarge.png" alt="" /> '
+            . $LANG_CLASSIFIEDS_1['enlarge_picture'] . '</p>';
+        $ad->set_var(
+            'pictures',
+            '<div id="ad-pictures">' . $saved_images . $info_picture . '</div>'
+        );
     }
-		
-    // Contact advertiser
-    $contactUrl = $_CLASSIFIEDS_CONF['site_url']
-        . '/index.php?mode=c&amp;ad=' . (int) $A['clid'];
-
-    $ad->set_var(
-        'contact',
-        '<h3>' . $LANG_CLASSIFIEDS_1['contact_advertiser'] . '</h3><p>'
-        . '<a href="' . $contactUrl . '">' . $LANG_CLASSIFIEDS_1['send_email'] . '</a></p>'
-    );
 
 	//Tel
 	if (($A['hide_tel'] == 0) && ($A['tel'] != '')) {
