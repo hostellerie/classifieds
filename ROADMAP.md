@@ -1166,9 +1166,9 @@ Source-level compliance is complete, but final release still requires:
 
 A source-level consistency check was run after the Memorandum audit:
 
-- 27 maintained configuration settings are declared in `install_defaults.php`;
-- all 27 have matching `$LANG_confignames['classifieds']` entries in English;
-- all 27 have matching `$LANG_confignames['classifieds']` entries in French;
+- 25 maintained configuration settings are declared in `install_defaults.php`;
+- all 25 have matching `$LANG_confignames['classifieds']` entries in English;
+- all 25 have matching `$LANG_confignames['classifieds']` entries in French;
 - symbolic `tab_main` exists in both languages;
 - selection arrays `3` and `12` exist in both languages;
 - all required shared admin navigation classes are present;
@@ -1194,3 +1194,5 @@ Additional cleanup completed before runtime testing:
 - [x] replaced generic category SQL/option builders with two purpose-built helpers;
 - [x] removed read-time category reordering and other GET side effects;
 - [x] modernized comment callbacks and removed references to nonexistent `classifieds.edit`.
+
+- [x] date/time display now follows Geeklog user preferences through `COM_getUserDateTimeFormat()`; plugin-specific `strftime()` settings were removed.
