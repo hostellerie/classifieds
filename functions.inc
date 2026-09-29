@@ -419,7 +419,10 @@ function plugin_getiteminfo_classifieds($id, $what, $uid = 0, $options = array()
         if ($itemId <= 0) {
             return array();
         }
-        $sql .= ' WHERE a.clid = ' . $itemId . ' AND a.deleted = 0 AND a.enable = 1';
+        $sql .= ' WHERE a.clid = ' . $itemId
+            . ' AND a.deleted = 0 AND a.enable = 1'
+            . ' AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= '
+            . (int) $_CLASSIFIEDS_CONF['active_days'];
     }
 
     $sql .= COM_getPermSQL('AND', $uid, 2, 'a');
@@ -481,6 +484,48 @@ function plugin_getiteminfo_classifieds($id, $what, $uid = 0, $options = array()
     }
 
     return $retval;
+}
+
+/**
+ * Return public Classifieds URLs for Geeklog XML sitemap generation.
+ *
+ * @param int $uid
+ * @param int $limit
+ * @return array
+ */
+function plugin_collectSitemapItems_classifieds($uid = 1, $limit = 0)
+{
+    global $_CLASSIFIEDS_CONF, $_TABLES;
+
+    $uid = (int) $uid;
+    $limit = (int) $limit;
+
+    $sql = "SELECT a.clid, UNIX_TIMESTAMP(a.modified) AS modified "
+        . "FROM {$_TABLES['cl']} AS a "
+        . "WHERE a.deleted = 0 "
+        . "AND a.enable = 1 "
+        . "AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= "
+        . (int) $_CLASSIFIEDS_CONF['active_days']
+        . COM_getPermSQL('AND', $uid, 2, 'a')
+        . " ORDER BY a.modified DESC";
+
+    if ($limit > 0) {
+        $sql .= ' LIMIT ' . $limit;
+    }
+
+    $result = DB_query($sql);
+    $items = array();
+
+    while ($A = DB_fetchArray($result)) {
+        $items[] = array(
+            'url' => plugin_idToURL_classifieds('classifieds', $A['clid']),
+            'date-modified' => isset($A['modified']) ? (int) $A['modified'] : 0,
+            'change-freq' => 'weekly',
+            'priority' => 0.6
+        );
+    }
+
+    return $items;
 }
 
 /**
