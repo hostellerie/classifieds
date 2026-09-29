@@ -182,8 +182,20 @@ switch ($_REQUEST['mode']) {
                     echo COM_refresh($_CLASSIFIEDS_CONF['site_url']);
                     exit;
                 }
-                CLASSIFIEDS_repost($_REQUEST['ad']);
-                break;
+
+                $repost = CLASSIFIEDS_repost((int) $_REQUEST['ad']);
+                if (!empty($repost['ok'])) {
+                    echo COM_refresh(
+                        $_CLASSIFIEDS_CONF['site_url']
+                        . '/index.php?mode=v&ad=' . (int) $repost['new_id']
+                    );
+                } else {
+                    echo COM_refresh(
+                        $_CLASSIFIEDS_CONF['site_url']
+                        . '/index.php?mode=v&ad=' . (int) $_REQUEST['ad']
+                    );
+                }
+                exit;
 
             case 'new':
             default:
@@ -309,21 +321,6 @@ switch ($_REQUEST['mode']) {
         $display .= COM_siteFooter(1);
         break;
 
-	//save
-	case 's':
-	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['save_ad']);
-		$display .= CLASSIFIEDS_user_menu();
-		if (CLASSIFIEDS_checkAdAccess($_REQUEST['ad']) == false ) {
-            $display .= COM_refresh ($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
-			exit();
-			break;
-        }
-		if ( COM_isAnonUser()) {
-	        $display .= CLASSIFIEDS_loginRequiredForm();
-	    } else {
-		}
-		$display .= COM_siteFooter(1);
-		break;
 	//profile
 	case 'p' :
 	    require_once ($_CONF['path_system']  . 'lib-user.php');
@@ -335,17 +332,25 @@ switch ($_REQUEST['mode']) {
 		break;
 	//Offert
 	case 'o':
-	    ($_REQUEST['mode'] == 'o') ? SEC_setCookie('ads_type', 'o') : 0;
 	//Demand
 	case 'd':	
 	//Ads list
-	    ($_REQUEST['mode'] == 'd') ? SEC_setCookie('ads_type', 'd') : 0;
 	default :
 	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name']);
 		$display .= CLASSIFIEDS_user_menu();
-	    if ($_CLASSIFIEDS_CONF['classifieds_main_header'] != '') $display .= '<div>' . PLG_replaceTags($_CLASSIFIEDS_CONF['classifieds_main_header']) . '</div>';
-	    $display .= CLASSIFIEDS_displayAds(1);
-		if ($_CLASSIFIEDS_CONF['clasifieds_main_footer'] != '') $display .= '<div>' . PLG_replaceTags($_CLASSIFIEDS_CONF['classifieds_main_footer']) . '</div>';
+        if (!empty($_CLASSIFIEDS_CONF['classifieds_main_header'])) {
+            $display .= '<div>'
+                . PLG_replaceTags($_CLASSIFIEDS_CONF['classifieds_main_header'])
+                . '</div>';
+        }
+
+        $display .= CLASSIFIEDS_displayAds(1);
+
+        if (!empty($_CLASSIFIEDS_CONF['classifieds_main_footer'])) {
+            $display .= '<div>'
+                . PLG_replaceTags($_CLASSIFIEDS_CONF['classifieds_main_footer'])
+                . '</div>';
+        }
         $display .= COM_siteFooter(1);
 }
 
