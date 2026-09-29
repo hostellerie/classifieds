@@ -2,70 +2,168 @@
 
 Development branch: `classifieds_1.4.0`
 
-## Integrated in the current development snapshot
+Classifieds 1.4.0 is a modernization release built from the last public 1.3.2 codebase. It keeps the existing content model and public URL structure while removing historical edition, telemetry, image-proxy and compatibility debt.
 
-- Removed installation telemetry that emailed site URL, site name, plugin version and edition information to the former developer address.
-- Removed equivalent telemetry from the plugin upgrade path.
-- Integrated the historical Pro lifecycle notification functions into the standard plugin.
-- User and administrator lifecycle notifications are now independent; disabling user mail no longer suppresses enabled administrator mail.
-- Integrated the scheduled expiration task.
-- Expiration state is only marked notified after the enabled notification path completes successfully; failures remain retryable.
-- Integrated republish/copy functionality into the standard plugin.
-- Integrated image copying used when republishing an ad.
-- The original ad is preserved when creation or image copy of the replacement fails.
+## Privacy and edition unification
+
+- Removed installation telemetry.
+- Removed upgrade telemetry.
+- Removed all automatic reporting of site URL, site name, plugin version or edition status to the former developer address.
+- Integrated the historical Pro lifecycle email functions into the standard plugin.
+- Integrated scheduled expiration notifications.
+- Integrated expired-ad republishing and image copying.
 - Removed runtime loading of `{path_data}/classifieds_data/proversion/proversion.php`.
-- Existing legacy Pro files are intentionally left untouched and ignored, avoiding destructive migration.
-- Removed "limited edition" / "Pro version" labels from maintained English and French language files.
-- Set development code version to `1.4.0-dev`.
-- Protected the normal 1.3.2 -> 1.4.0 upgrade from the old public-folder rename/delete path so shared-files deployments do not mutate shared public files during a normal modern upgrade.
+- Removed "limited edition" / "Pro version" UI and feature detection.
+- Existing legacy Pro files are ignored and intentionally not deleted automatically.
+- Historical Pro category seed data is not auto-imported.
 
-## Historical Pro category seed
+There is now one Classifieds edition.
 
-The supplied `catsql_english.php` was reviewed but is not imported automatically in this development snapshot. Despite its filename, most category labels are French and the list is a broad opinionated marketplace taxonomy. Automatically inserting it would be inappropriate for existing sites and questionable as a default for new sites.
+## Upgrade contract
 
-A later installer cleanup may expose category seed data as an explicit optional choice.
+The explicit in-place modernization baseline is:
 
-## Still pending before 1.4.0 final
+`Classifieds 1.3.2 → Classifieds 1.4.0`
 
-See `ROADMAP.md`. Major remaining work includes:
+Older installations should first use the historical 1.3.2 upgrade path. This avoids carrying the 1.0–1.3 migration chain and obsolete filesystem mutations in modern runtime code.
 
-- PHP 8 compatibility audit of the base plugin;
-- input/SQL/output security pass;
-- TimThumb removal;
-- configuration metadata modernization for Geeklog 2.2.2;
-- admin and frontend modernization;
-- interoperability APIs, sitemap and metadata;
-- database/install modernization;
-- complete fresh-install, upgrade and shared-files test matrix.
+The 1.4 upgrade:
 
-This development snapshot is not yet a final release.
+- repairs native Geeklog configuration metadata while preserving administrator values;
+- removes obsolete TimThumb settings;
+- converts the four Classifieds tables to InnoDB;
+- verifies/creates the site-scoped image directory;
+- does not rename, delete or sleep on shared public plugin folders.
 
+## PHP and security modernization
 
-## PHP 8 and write-path hardening
+- Removed PHP 8-incompatible `each()`.
+- Removed magic-quotes-era transformations.
+- Removed application `addslashes()` persistence from maintained write paths.
+- Normalizes scalar request parameters and rejects unexpected array values.
+- Adds CSRF enforcement to ad/category state-changing operations.
+- Centralizes ACL checks through Geeklog permissions.
+- Fixes undefined-key/undefined-variable paths in forms, profiles, routing and pagination.
+- Fixes the historical COUNT/pagination integer-as-array error.
+- Rewrites the ad-detail path around explicit ID validation, ACL and publication state.
+- Removes inline JavaScript from delete actions.
+- Removes duplicated Geeklog user-profile code and uses `USER_showProfile()` directly.
 
-The current development snapshot also includes the first compatibility/security pass:
+## Contact and reporting
 
-- removed PHP 8-incompatible `each()` use;
-- removed legacy magic-quotes-era argument rewriting from image handling;
-- request filtering now tolerates absent keys and rejects unexpected array values for scalar fields;
-- ad create/edit/delete/copy/republish state changes now enforce Geeklog CSRF tokens;
-- category create/edit/delete state changes now enforce Geeklog CSRF tokens;
-- category forms now submit the native Geeklog CSRF token;
-- ad/category persistence now uses validated numeric values and `DB_escapeString()` instead of `addslashes()`;
-- fixed undefined form data and route variables that produced PHP 8 warnings;
-- fixed the active-ad pagination count implementation, which could fail on PHP 8 because an integer was treated as an array;
-- removed the final runtime/admin check for the old Pro file.
+- Replaced copied legacy `profiles.php` mail code with a Classifieds-specific contact/report flow.
+- Contact URLs carry only the ad ID.
+- Recipient and subject are derived server-side from the ad record.
+- Removed the unused "advise to a friend" route and story-based mail code.
+- Contact/report sending enforces CSRF, speed-limit, spam and user email-preference checks.
+- Report messages go to the site's configured administrator address.
 
-The broader security/PHP audit is still in progress; this is not yet the final 1.4.0 release.
+## Ad persistence and lifecycle
 
+New focused modules:
 
-## Legacy contact/profile cleanup
+- `lib-ads.php` — transactional ad persistence, profile synchronization and deletion;
+- `lib-images.php` — local image persistence;
+- `lib-notifications.php` — lifecycle notifications and scheduled expiration;
+- `lib-republish.php` — republishing/copy behavior;
+- `lib-contact.php` — contact/report workflow.
 
-- Replaced the copied Geeklog `profiles.php` mail logic with a small Classifieds-specific contact/report workflow.
-- Contact URLs now carry only the ad id; owner and subject are derived server-side from the ad record.
-- Removed the unused "advise to a friend" route and its broken story-based mail code.
-- Removed the duplicated user-profile renderer from `functions.inc`; Classifieds now uses Geeklog core `USER_showProfile()`.
-- Simplified contact form markup and made the subject display-only.
-- Added server-side CSRF, speed-limit, spam and user-preference checks to contact/report sending.
-- Strengthened `CLASSIFIEDS_checkAdAccess()` so it enforces Geeklog ACL permissions.
-- Fixed category/ad validators that could trigger PHP 8 string/array warnings.
+Ad saves now follow:
+
+`validate → persist → images → commit → profile/notification → lifecycle event`
+
+- Create/edit emits `PLG_itemSaved()` after successful persistence.
+- Soft/hard deletion emits `PLG_itemDeleted()`.
+- Republishing emits save/delete lifecycle events.
+- Existing images are not deleted before replacement uploads succeed.
+- A failed replacement upload preserves the existing ad media.
+
+## Images
+
+- Removed `timthumb.php`.
+- Removed `timthumb-config.php`.
+- Removed TimThumb-only configuration values.
+- Images continue to use the existing `images/classifieds/` storage.
+- Geeklog upload/image support performs upload validation and optional resize.
+- Frontend display uses the local image files directly with responsive CSS and lazy loading.
+- No remote image proxy is used.
+
+## Configuration and administration
+
+- Added explicit native configuration tab hierarchy.
+- Corrected text settings to use no selection array.
+- Changed currency to a normal text setting instead of a nonexistent select-list ID.
+- Added English/French tab metadata and configuration tooltips.
+- Added upgrade repair for persisted `conf_values` metadata.
+- Replaced the old admin-menu template with the shared `plugin-admin-nav*` contract.
+- Uses `ADMIN_createMenu()` for page-level administration actions.
+- Configuration opens Geeklog's native Configuration UI.
+- Removed the obsolete external documentation/jQuery-plugin warnings from the admin page.
+- Removed the forced jQuery library dependency.
+
+## Frontend
+
+- Removed Google+, Facebook SDK and Twitter widget scripts.
+- Replaced the ad-detail presentation table with semantic responsive markup.
+- Replaced list tables with responsive article/card markup.
+- Rebuilt ad/category/contact forms with labels, required fields and responsive controls.
+- Removed legacy `<font>` markup and fixed-width image/detail assumptions.
+- Renamed the stylesheet to stable `classifieds.css`.
+- Added asset cache busting based on the deployed stylesheet modification time.
+
+## Database and installation
+
+- Fresh installs use InnoDB.
+- Existing 1.3.2 tables are converted to InnoDB during upgrade.
+- Fresh installs no longer run the broken/obsolete automatic category seed loader.
+- The image directory is explicitly created/validated on install and upgrade.
+- Existing table names, ad IDs and public ad URLs are preserved.
+
+## Geeklog interoperability
+
+Added:
+
+- `plugin_getiteminfo_classifieds()`;
+- `plugin_idToURL_classifieds()`;
+- `plugin_collectSitemapItems_classifieds()`;
+- page description/robots metadata and canonical URL;
+- `plugin_getcapabilities_classifieds()`;
+- `content.read`;
+- `content.collection`;
+- `content.search`;
+- `content.url.resolve`;
+- `content.lifecycle`;
+- `dashboard.summary`;
+- admin-only `service_dashboard_summary_classifieds()`.
+
+The dashboard service owns its own metrics and storage warning logic; consumers such as Eclipse do not need to query Classifieds tables.
+
+## Compatibility target
+
+- Geeklog 2.1.1 through 2.2.2
+- PHP 5.6 through PHP 8.1
+
+This remains a **development snapshot**, not a final release.
+
+## Validation still required
+
+Before changing the version from `1.4.0-dev` to `1.4.0`, run the complete runtime matrix, including:
+
+- fresh install;
+- upgrade from 1.3.2;
+- upgrade where an old Pro file remains in `path_data`;
+- Geeklog 2.1.1 / PHP 5.6;
+- Geeklog 2.2.2 / PHP 8.1;
+- shared-files multisite with one site upgraded and another still on 1.3.2;
+- create/edit/soft-delete/hard-delete;
+- image add/delete/replacement;
+- scheduled expiration notifications;
+- all user/admin email-notification combinations;
+- republish success/failure;
+- categories;
+- search/autotags/comments;
+- anonymous/member/admin ACLs;
+- configuration UI/tooltips;
+- Item Info, sitemap, lifecycle events and dashboard summary.
+
+A local `php -l`/runtime pass could not be executed from the current tool container because its GitHub clone attempt had no DNS access. No claim of runtime validation is made by these release notes.
