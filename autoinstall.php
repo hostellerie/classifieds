@@ -128,6 +128,22 @@ function plugin_load_configuration_classifieds($pi_name)
 
 function plugin_postinstall_classifieds($pi_name)
 {
+    global $_CONF;
+
+    // Persistent ad images remain in the site's public image area for 1.4.x.
+    // Create the site-scoped directory explicitly instead of assuming it exists.
+    $imagePath = rtrim($_CONF['path_images'], '/\\') . '/classifieds';
+
+    if (!is_dir($imagePath) && !@mkdir($imagePath, 0755, true)) {
+        COM_errorLog('Classifieds: unable to create image directory ' . $imagePath);
+        return false;
+    }
+
+    if (!is_writable($imagePath)) {
+        COM_errorLog('Classifieds: image directory is not writable: ' . $imagePath);
+        return false;
+    }
+
     // No telemetry or developer notification is sent after installation.
     return true;
 }
