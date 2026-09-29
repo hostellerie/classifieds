@@ -44,7 +44,7 @@
  * @param array $ad array of values describing an Ad
  * @return string HTML string of Ad form
  */
-function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
+function CLASSIFIEDS_getAdForm($ad = array()) {
 
     global $_CONF, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_2, $LANG_CLASSIFIEDS_ADMIN, $_TABLES, $LANG24, $LANG_ADMIN, $_USER;
 
@@ -114,8 +114,9 @@ function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
     $template->set_file(array('ad' => 'ad_form.thtml'));
     $template->set_var('site_url', $_CLASSIFIEDS_CONF['site_url']);
 	$template->set_var('xhtml', XHTML);
+    $token = SEC_createToken();
     $template->set_var('gltoken_name', CSRF_TOKEN);
-    $template->set_var('gltoken', SEC_createToken());
+    $template->set_var('gltoken', $token);
 	
 	if (is_numeric($ad['clid'])) {
         $template->set_var('clid', '<input type="hidden" name="clid" value="' . $ad['clid'] .'" />');
@@ -269,27 +270,24 @@ function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
 	$template->set_var('validate_button', $LANG_CLASSIFIEDS_2['validate_button']);
 	$template->set_var('required_field', $LANG_CLASSIFIEDS_2['required_field']);
 	
-	//Admin options
-	if (SEC_hasRights('classifieds.admin')) {
-        $admin_select = LB . '<select name="op">' . LB;
-        if (!$copy) {
-            $admin_select .= '<option value="save" selected="selected">' . $LANG_CLASSIFIEDS_2['save_button'] . '</option>' . LB;
-            if ($ad['clid'] != '') $admin_select .= '<option value="delete">' . $LANG_CLASSIFIEDS_2['delete_button'] . '</option>'  . LB;
-        }
-        if (($ad['clid'] != '') && !empty($_CLASSIFIEDS_CONF['allow_republish'])) {
-            $admin_select .= CLASSIFIEDS_getBonusAdminButton();
-        }
-        $admin_select .= LB . '</select>' . LB;
-	    $template->set_var('admin_options', $admin_select);
-		$datecreated = COM_getUserDateTimeFormat($ad['created']);
-	    $datemodified = COM_getUserDateTimeFormat($ad['modified']);
-		$template->set_var('created', '<p>' . $LANG_CLASSIFIEDS_ADMIN['created']  . $LANG_CLASSIFIEDS_1['double_point'] . ' ' . $datecreated[0] . '</p>');
-	    $template->set_var('modified', '<p>' . $LANG_CLASSIFIEDS_ADMIN['modified']  . $LANG_CLASSIFIEDS_1['double_point'] . ' ' . $datemodified[0] . '</p>');
-	} else {
-	    $template->set_var('admin_options', '');
+    if (SEC_hasRights('classifieds.admin') && $ad['clid'] !== '') {
+        $dateCreated = COM_getUserDateTimeFormat($ad['created']);
+        $dateModified = COM_getUserDateTimeFormat($ad['modified']);
+        $template->set_var(
+            'created',
+            '<p>' . $LANG_CLASSIFIEDS_ADMIN['created']
+            . $LANG_CLASSIFIEDS_1['double_point'] . ' ' . $dateCreated[0] . '</p>'
+        );
+        $template->set_var(
+            'modified',
+            '<p>' . $LANG_CLASSIFIEDS_ADMIN['modified']
+            . $LANG_CLASSIFIEDS_1['double_point'] . ' ' . $dateModified[0] . '</p>'
+        );
+    } else {
         $template->set_var('created', '');
-	    $template->set_var('modified', '');
-	}
+        $template->set_var('modified', '');
+    }
+
 		
     $retval .= $template->parse('output', 'ad');
 
@@ -569,8 +567,9 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
     $template->set_file(array('cat' => 'cat_form.thtml'));
     $template->set_var('site_admin_url', $_CONF['site_admin_url']);
 	$template->set_var('xhtml', XHTML);
+    $token = SEC_createToken();
     $template->set_var('gltoken_name', CSRF_TOKEN);
-    $template->set_var('gltoken', SEC_createToken());
+    $template->set_var('gltoken', $token);
 	
 	if (is_numeric($catid['cid'])) {
         $template->set_var('cid', '<input type="hidden" name="cid" value="' . $catid['cid'] .'" />');
@@ -633,11 +632,16 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
 	$template->set_var('validate_button', $LANG_CLASSIFIEDS_2['validate_button']);
 	$template->set_var('required_field', $LANG_CLASSIFIEDS_2['required_field']);
 	
-	//Admin options
-	$options = '<select name="op"><option value="save" selected="selected">' . $LANG_CLASSIFIEDS_2['save_button'] . '</option>';
-    if ($catid['cid'] != '') $options .= '<option value="delete">' . $LANG_CLASSIFIEDS_2['delete_button'] . '</option></select>';
-	$template->set_var('admin_options', $options);
-	
+    $deleteAction = '';
+    if ($catid['cid'] !== '') {
+        $deleteAction = '<a href="' . $_CONF['site_admin_url']
+            . '/plugins/classifieds/index.php?mode=cat&amp;op=delete&amp;cid='
+            . (int) $catid['cid']
+            . '&amp;' . CSRF_TOKEN . '=' . $token . '">'
+            . $LANG_CLASSIFIEDS_2['delete_button'] . '</a>';
+    }
+    $template->set_var('delete_action', $deleteAction);
+
     $retval .= $template->parse('output', 'cat');
 
     $retval .= COM_endBlock();
