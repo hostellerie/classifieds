@@ -1528,7 +1528,6 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
     $page = isset($_REQUEST['page']) ? (int) $_REQUEST['page'] : 1;
     $mode = isset($_REQUEST['mode']) ? (string) $_REQUEST['mode'] : '';
     $catid = isset($_REQUEST['catid']) ? (string) $_REQUEST['catid'] : '';
-    $cookieCat = isset($_COOKIE['ads_cat']) ? (string) $_COOKIE['ads_cat'] : '';
     $checked_category = '';
 
     if ($page <= 0) {
@@ -1567,6 +1566,14 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
             $where[] = $permSql;
         }
 
+        $categoryPermSql = trim(COM_getPermSQL('AND', 0, 2, 'c'));
+        if (stripos($categoryPermSql, 'AND ') === 0) {
+            $categoryPermSql = trim(substr($categoryPermSql, 4));
+        }
+        if ($categoryPermSql !== '') {
+            $where[] = $categoryPermSql;
+        }
+
         if ($user > 1) {
             $where[] = 'a.owner_id = ' . $user;
         }
@@ -1574,10 +1581,6 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 
     if ($my == 0 && $profile == 0) {
         $categoryId = 0;
-
-        if (is_numeric($cookieCat) && (int) $cookieCat > 0) {
-            $categoryId = (int) $cookieCat;
-        }
 
         if ($catid !== '' && $catid !== '--' && is_numeric($catid)) {
             $categoryId = (int) $catid;
@@ -1588,14 +1591,22 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
         }
 
         if ($categoryId > 0) {
-            $selectedCategory = DB_query(
-                "SELECT pid FROM {$_TABLES['cl_cat']} "
-                . "WHERE cid = " . $categoryId . " AND catdeleted = 0 LIMIT 1"
+            $categoryResource = CLASSIFIEDS_getContentResource(
+                'category:' . $categoryId,
+                0
             );
-            $selectedCategoryRow = DB_fetchArray($selectedCategory);
 
-            if (is_array($selectedCategoryRow)) {
-                if ((int) $selectedCategoryRow['pid'] === 0) {
+            if (empty($categoryResource)) {
+                $where[] = '1 = 0';
+            } else {
+                $selectedCategory = DB_query(
+                    "SELECT pid FROM {$_TABLES['cl_cat']} "
+                    . "WHERE cid = " . $categoryId . " LIMIT 1"
+                );
+                $selectedCategoryRow = DB_fetchArray($selectedCategory);
+
+                if (is_array($selectedCategoryRow)
+                    && (int) $selectedCategoryRow['pid'] === 0) {
                     $where[] = '(a.catid = ' . $categoryId
                         . ' OR c.pid = ' . $categoryId . ')';
                 } else {
@@ -1693,9 +1704,6 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	    $categories = '';
 		$categories .= '<option value="--">' . $LANG_CLASSIFIEDS_1['choose_category'] . '</option>';
         $categories .= '<option value="0">' . $LANG_CLASSIFIEDS_1['all_categories'] . '</option>';
-        if (is_numeric($cookieCat)) {
-            $checked_category = (int) $cookieCat;
-        }
         if ($catid !== '' && is_numeric($catid)) {
             $checked_category = (int) $catid;
         }
