@@ -269,18 +269,7 @@ function CLASSIFIEDS_saveImage ($ad, $FILES, $clid) {
 
     global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES, $LANG24;
 	
-    $args = &$ad;
-
-    // Handle Magic GPC Garbage:
-    while (list($key, $value) = each($args)) {
-        if (!is_array($value)) {
-            $args[$key] = COM_stripslashes($value);
-        } else {
-            while (list($subkey, $subvalue) = each($value)) {
-                $value[$subkey] = COM_stripslashes($subvalue);
-            }
-        }
-    }
+    $args = is_array($ad) ? $ad : array();
 
 	// Delete any images if needed
 	if (array_key_exists('delete', $args)) {
