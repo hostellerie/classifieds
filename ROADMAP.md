@@ -973,7 +973,7 @@ Functional tests:
 ## Phase 1 — 1.4.0-dev bootstrap
 
 - [x] bump development code version to 1.4.0-dev;
-- [ ] update compatibility declarations only as tests justify them;
+- [x] update compatibility declarations to the 2.1.1–2.2.2 / PHP 5.6–8.1 modernization target (final declaration remains subject to runtime validation);
 - [x] add release/upgrade notes skeleton;
 - [x] add explicit shared-files-safe upgrade structure.
 
@@ -992,12 +992,12 @@ Functional tests:
 
 - [x] replace `each()`;
 - [ ] repair PHP 8 warnings/fatals;
-- [ ] audit request input;
+- [x] audit and normalize request input on state-changing/public routing paths;
 - [ ] audit SQL escaping;
 - [ ] audit output escaping;
-- [ ] audit ACL checks;
-- [ ] audit CSRF tokens;
-- [ ] remove magic-quotes-era transformations.
+- [x] audit ACL checks and centralize ad visibility/edit authorization;
+- [x] audit CSRF tokens for ad/category state-changing actions;
+- [x] remove magic-quotes-era transformations.
 
 ### Phase 3 progress
 
@@ -1021,60 +1021,70 @@ Completed in the current development snapshot:
 
 Still required before Phase 3 can be marked complete:
 
-- complete SQL/output audit of remaining read/render paths;
-- audit `lib-contact.php` and obsolete mail-a-friend code;
-- full ACL review;
-- full PHP 8 warning pass under runtime tests;
-- remove remaining obsolete stripslashes-era presentation handling where safe.
+- finish the residual SQL/output audit of less-used read/helper paths;
+- run the PHP 8 warning/fatal pass in a real Geeklog runtime;
+- validate the complete state-changing workflow under Geeklog 2.1.1 and 2.2.2.
+
+Additional cleanup completed after the initial Phase 3 pass:
+
+- rewrote `CLASSIFIEDS_viewAd()` around explicit ID validation, ACLs and a single visibility policy;
+- extracted `lib-ads.php` for transactional ad persistence and lifecycle events;
+- extracted `lib-images.php` for media persistence;
+- made new image uploads non-destructive: existing images are removed only after replacement uploads succeed;
+- centralized soft/hard deletion and removed orphan-prone controller SQL;
+- removed ambiguous GET/POST `op` selection controls from edit forms;
+- removed the dead direct-copy and preview routes;
+- reduced the supported in-place upgrade chain to the explicit 1.3.2 baseline, removing old public-folder mutation code and `sleep(5)`;
+- removed the forced jQuery dependency.
 
 ## Phase 4 — image pipeline
 
-- [ ] remove TimThumb;
-- [ ] implement local thumbnail handling;
-- [ ] preserve existing images;
+- [x] remove TimThumb;
+- [x] replace the thumbnail proxy with direct local image rendering and responsive CSS sizing;
+- [x] preserve existing image storage and filenames;
 - [ ] test republish image copy;
-- [ ] document persistent image strategy.
+- [x] document the 1.4.x persistent image strategy.
 
 ## Phase 5 — configuration/admin
 
-- [ ] add explicit tab hierarchy;
-- [ ] fix `selection_array` declarations;
-- [ ] add/repair language metadata;
-- [ ] add native configuration tooltips;
-- [ ] implement upgrade repair for existing `conf_values`;
-- [ ] modernize persistent plugin admin navigation;
-- [ ] use `ADMIN_createMenu()` for page actions.
+- [x] add explicit tab hierarchy;
+- [x] fix `selection_array` declarations;
+- [x] add/repair language metadata;
+- [x] add native configuration tooltips;
+- [x] implement upgrade repair for existing `conf_values`;
+- [x] modernize persistent plugin admin navigation;
+- [x] use `ADMIN_createMenu()` for page actions.
 
 ## Phase 6 — frontend
 
-- [ ] remove external social scripts;
-- [ ] modernize ad-list templates;
-- [ ] modernize ad-detail template;
-- [ ] modernize forms;
-- [ ] replace table layout;
-- [ ] responsive/mobile pass;
-- [ ] accessibility pass;
-- [ ] rename/version CSS loading cleanly.
+- [x] remove external social scripts;
+- [x] modernize ad-list templates;
+- [x] modernize ad-detail template;
+- [x] modernize forms;
+- [x] replace presentation table layout;
+- [x] responsive/mobile pass;
+- [x] semantic labels, required fields and accessible form structure pass;
+- [x] rename CSS to stable `classifieds.css` and add cache busting.
 
 ## Phase 7 — Geeklog interoperability
 
-- [ ] Item Info;
-- [ ] ID-to-URL;
-- [ ] lifecycle events;
-- [ ] sitemap;
-- [ ] meta tags;
-- [ ] capabilities;
-- [ ] dashboard summary.
+- [x] Item Info;
+- [x] ID-to-URL;
+- [x] lifecycle events for create/edit/delete/republish;
+- [x] ACL-aware sitemap provider;
+- [x] ad-page description/robots metadata and canonical URL;
+- [x] provider-neutral capabilities declaration;
+- [x] admin-only `dashboard.summary` service.
 
 ## Phase 8 — database/release validation
 
-- [ ] use InnoDB for fresh install;
-- [ ] decide/test existing-table engine migration;
+- [x] use InnoDB for fresh install;
+- [x] implement existing-table engine migration to InnoDB;
 - [ ] document lifecycle columns;
 - [ ] run full upgrade matrix;
 - [ ] run shared-files multisite matrix;
-- [ ] finalize README;
-- [ ] finalize release notes;
+- [x] rewrite README for the 1.4.0 modernization state;
+- [x] maintain 1.4.0-dev release notes (final release wording remains pending runtime validation);
 - [ ] set final version to 1.4.0 only after migration and compatibility tests pass.
 
 ---
