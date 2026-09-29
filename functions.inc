@@ -1153,7 +1153,6 @@ function CLASSIFIEDS_user_menu()
 	$menu->set_var('offer', $LANG_CLASSIFIEDS_1['offer']);
 	$menu->set_var('demand', $LANG_CLASSIFIEDS_1['demand']);
 	$menu->set_var('my_ads', $LANG_CLASSIFIEDS_1['my_ads']);
-	$menu->set_var('pro', $LANG_CLASSIFIEDS_1['pro']);
 	$menu->set_var('help', $LANG_CLASSIFIEDS_1['help']);
 	
 	if (SEC_hasRights('classifieds.admin')) {
@@ -1807,12 +1806,6 @@ function CLASSIFIEDS_viewAd($clid)
     }
 
     $ad->set_var(
-        'save',
-        '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
-        . '/index.php?mode=s&amp;ad=' . $clid . '">'
-        . $LANG_CLASSIFIEDS_1['save_ad'] . '</a></p>'
-    );
-    $ad->set_var(
         'report',
         '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
         . '/index.php?mode=r&amp;ad=' . $clid . '">'
@@ -1880,7 +1873,6 @@ function CLASSIFIEDS_viewAd($clid)
         '<div class="ad-detail">' . PLG_replaceTags(nl2br($A['text'])) . '</div>'
     );
 
-    $ad->set_var('relay', '');
 
     $commentPage = 1;
     $deleteOption = (
