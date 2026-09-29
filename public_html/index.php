@@ -177,19 +177,6 @@ switch ($_REQUEST['mode']) {
                 }
                 break;
 
-            case 'copy':
-                if (!SEC_checkToken()) {
-                    $display .= COM_showMessageText($LANG_CLASSIFIEDS_2['save_fail'], $LANG_CLASSIFIEDS_2['error']);
-                    break;
-                }
-                $copiedId = CLASSIFIEDS_adCopy($_REQUEST, $_FILES);
-                if ($copiedId > 0) {
-                    echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=v&ad=' . $copiedId);
-                    exit;
-                }
-                $display .= CLASSIFIEDS_message($LANG_CLASSIFIEDS_2['save_fail']);
-                break;
-
             case 'repost':
                 if (!SEC_checkToken()) {
                     echo COM_refresh($_CLASSIFIEDS_CONF['site_url']);
