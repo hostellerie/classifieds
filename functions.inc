@@ -915,7 +915,13 @@ function CLASSIFIEDS_renderItemExtensions($id)
         }
     }
 
-    return $html;
+    if ($html === '') {
+        return '';
+    }
+
+    return '<div class="classifieds-item-extensions" data-classifieds-item="'
+        . htmlspecialchars((string) $id, ENT_QUOTES, 'UTF-8')
+        . '">' . $html . '</div>';
 }
 
 /**
@@ -1582,7 +1588,20 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
         }
 
         if ($categoryId > 0) {
-            $where[] = 'a.catid = ' . $categoryId;
+            $selectedCategory = DB_query(
+                "SELECT pid FROM {$_TABLES['cl_cat']} "
+                . "WHERE cid = " . $categoryId . " AND catdeleted = 0 LIMIT 1"
+            );
+            $selectedCategoryRow = DB_fetchArray($selectedCategory);
+
+            if (is_array($selectedCategoryRow)) {
+                if ((int) $selectedCategoryRow['pid'] === 0) {
+                    $where[] = '(a.catid = ' . $categoryId
+                        . ' OR c.pid = ' . $categoryId . ')';
+                } else {
+                    $where[] = 'a.catid = ' . $categoryId;
+                }
+            }
         }
 
         if ($mode === 'o') {
@@ -1682,7 +1701,7 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
         }
 		$categories .= CLASSIFIEDS_adCategoryOptions($checked_category);
         $search_box = '<div id="ad-list-searchbox">
-                        <form action="' . $_CLASSIFIEDS_CONF['site_url'] . '/index.php" id="classifieds_cat" method="post"><strong>' .
+                        <form action="' . $_CLASSIFIEDS_CONF['site_url'] . '/index.php" id="classifieds_cat" method="get"><strong>' .
 						    $type_label .
 						    '</strong>&nbsp;&nbsp; <select name="catid">' . $categories .
 						    '</select>
@@ -2214,6 +2233,11 @@ function CLASSIFIEDS_viewAd($clid)
         '<div class="ad-detail">' . PLG_replaceTags(nl2br($A['text'])) . '</div>'
     );
 
+
+    $ad->set_var(
+        'extensions',
+        CLASSIFIEDS_renderItemExtensions('ad:' . $clid)
+    );
 
     $commentPage = 1;
     $deleteOption = (
