@@ -177,7 +177,10 @@ function CLASSIFIEDS_getAdForm($ad = array()) {
 	    if ($ad['clid'] != '') {
             $icount = DB_count($_TABLES['cl_pic'],'pi_pid', $ad['clid']);
             if ($icount > 0) {
-                $result_pics = DB_query("SELECT * FROM {$_TABLES['cl_pic']} WHERE pi_pid = '". $ad['clid'] ."'");
+                $result_pics = DB_query(
+                "SELECT pi_img_num, pi_filename FROM {$_TABLES['cl_pic']} "
+                . "WHERE pi_pid = '" . (int) $ad['clid'] . "' ORDER BY pi_img_num"
+            );
                 for ($z = 1; $z <= $icount; $z++) {
                     $I = DB_fetchArray($result_pics);
                     $filename = rawurlencode(basename($I['pi_filename']));
@@ -209,10 +212,11 @@ function CLASSIFIEDS_getAdForm($ad = array()) {
 	
 	//your details
 	if (!is_numeric($ad['clid'])) {
-	    $data = DB_query("SELECT *
-            FROM {$_TABLES['cl_users']} 
-			WHERE user_id = {$_USER['uid']}
-		");
+	    $data = DB_query(
+            "SELECT status, tel, postcode, city, siren "
+            . "FROM {$_TABLES['cl_users']} "
+            . "WHERE user_id = " . (int) $_USER['uid'] . " LIMIT 1"
+        );
 		$user_data = DB_fetchArray($data, true);
         if (is_array($user_data)) {
             foreach (array('status', 'tel', 'postcode', 'city', 'siren') as $field) {
@@ -404,11 +408,10 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
     $template->set_var('catorder_label', $LANG_CLASSIFIEDS_ADMIN['catorder']);
 	$template->set_var('catorder', $catid['catorder']);
 	
-	$res = DB_query("SELECT catorder, category, pid 
-	                 FROM {$_TABLES['cl_cat']}
-					 WHERE 1 = 1 
-					 ORDER by catorder
-					 ");
+    $res = DB_query(
+        "SELECT catorder, category, pid FROM {$_TABLES['cl_cat']} "
+        . "ORDER BY catorder ASC, category ASC"
+    );
 	$categories_order = '<blockquote>';
 
 	while ($A = DB_fetchArray($res)) {
