@@ -990,7 +990,7 @@ Functional tests:
 
 ## Phase 3 — PHP/security stabilization
 
-- [ ] replace `each()`;
+- [x] replace `each()`;
 - [ ] repair PHP 8 warnings/fatals;
 - [ ] audit request input;
 - [ ] audit SQL escaping;
@@ -998,6 +998,29 @@ Functional tests:
 - [ ] audit ACL checks;
 - [ ] audit CSRF tokens;
 - [ ] remove magic-quotes-era transformations.
+
+### Phase 3 progress
+
+Completed in the current development snapshot:
+
+- removed PHP 8-incompatible `each()` use from image handling;
+- made request filtering safe when expected scalar keys are absent or submitted as arrays;
+- enabled server-side CSRF validation for ad create/edit/delete/copy/republish writes;
+- added CSRF protection to category administration writes;
+- replaced legacy `addslashes()` persistence with `DB_escapeString()` in ad/category writes;
+- forced numeric IDs, flags and enum-like values to bounded integer values before SQL use;
+- fixed a PHP 8-breaking ad-count/pagination bug that treated an integer row count as an array;
+- initialized request state, pagination variables, counters and common edit-form fields to avoid undefined-key warnings;
+- fixed undefined variables in public contact/advice/profile routes;
+- removed obsolete magic-quotes-era mutation from image handling.
+
+Still required before Phase 3 can be marked complete:
+
+- complete SQL/output audit of remaining read/render paths;
+- audit `lib-contact.php` and obsolete mail-a-friend code;
+- full ACL review;
+- full PHP 8 warning pass under runtime tests;
+- remove remaining obsolete stripslashes-era presentation handling where safe.
 
 ## Phase 4 — image pipeline
 
