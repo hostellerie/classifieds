@@ -169,3 +169,28 @@ white-space: nowrap;
 width:10%;
 text-align:right;
 }
+
+/* Classifieds image rendering without TimThumb */
+.classifieds-thumb {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+}
+
+.classifieds-thumb--small {
+    width: 15px;
+    height: 15px;
+}
+
+.classifieds-main-image {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.classifieds-gallery-thumb {
+    width: 75px;
+    height: 75px;
+    object-fit: cover;
+}
