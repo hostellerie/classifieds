@@ -28,7 +28,6 @@
             {delete}
             {view_all}
             {report}
-            {relay}
         </aside>
     </div>
 </article>
