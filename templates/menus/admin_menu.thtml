@@ -1,4 +1,0 @@
-<div class="user_menu">
- <a href="{site_url}/admin/plugins/classifieds/index.php">{classifieds_list}</a> | 
- <a href="{site_url}/admin/plugins/classifieds/index.php?mode=cat">{categories_list}</a>
-</div>
