@@ -386,16 +386,14 @@ switch ($_REQUEST['mode']) {
                  . $LANG_CLASSIFIEDS_ADMIN['online'] . '</a>. ' . $LANG_CLASSIFIEDS_ADMIN['plugin_conf'] 
                  . ' <a href="#" onclick="classifieds_conf_link.submit()">'. $LANG_CLASSIFIEDS_ADMIN['online']
                  . '</a>. ' . "<form name='classifieds_conf_link' action='{$_CONF['site_admin_url']}/configuration.php' method='POST'><input type='hidden' name='conf_group' value='classifieds'></form>";	
-        if ( !file_exists($_CONF['path_data'] . 'classifieds_data/proversion/proversion.php' ) ) {
-            $display .= $LANG_CLASSIFIEDS_1['limited_edition'];
-        }	 
         $display .= '<div style="clear:both;"></div>';
         
 		//Display group list with classifieds.publish right or warning
 		$ft_id = DB_getItem($_TABLES['features'], 'ft_id', "ft_name = 'classifieds.publish'");
 		$sql = "SELECT * FROM {$_TABLES['access']} as a LEFT JOIN {$_TABLES['groups']} AS g ON a.acc_grp_id = g.grp_id WHERE a.acc_ft_id = $ft_id ";
 		$result = DB_query($sql);
-		$gr_nb = DB_numRows( $result );
+        $i = 0;
+		$gr_nb = DB_numRows($result);
 		if ($gr_nb == 0) {
 		    $display .= '<p>' . $LANG_CLASSIFIEDS_ADMIN['no_group_access'] . '</p><ol>';
 		} else if ($gr_nb ==1) {
