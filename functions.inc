@@ -398,10 +398,15 @@ function plugin_getadminoption_classifieds()
 {
     global $_CONF, $LANG_CLASSIFIEDS_1;
 
-    if (SEC_hasRights('classifieds.admin')) {
-        return array($LANG_CLASSIFIEDS_1['plugin_name'],
-            $_CONF['site_admin_url'] . '/plugins/classifieds/index.php', 0);
+    if (!SEC_hasRights('classifieds.admin')) {
+        return array();
     }
+
+    return array(
+        $LANG_CLASSIFIEDS_1['plugin_name'],
+        $_CONF['site_admin_url'] . '/plugins/classifieds/index.php',
+        ''
+    );
 }
 
 /**
@@ -458,12 +463,6 @@ function plugin_chkVersion_classifieds()
     return $inst_parms['info']['pi_version'];
 }
 
-/**
-* Update the plugin
-*
-* @return   int     Number of message to display or true for success
-*
-*/
 /**
  * Return localized help for native Geeklog configuration options.
  *
