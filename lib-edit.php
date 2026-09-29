@@ -300,17 +300,48 @@ function CLASSIFIEDS_missingFieldCat($field)
     global $LANG_CLASSIFIEDS_ADMIN, $_TABLES;
 
     $fields = array();
+    $cid = isset($field['cid']) ? (int) $field['cid'] : 0;
+    $pid = isset($field['pid']) ? (int) $field['pid'] : 0;
 
     if (empty($field['category'])) {
         $fields[] = $LANG_CLASSIFIEDS_ADMIN['category'];
     }
 
-    $pid = isset($field['pid']) ? (int) $field['pid'] : 0;
-    if ($pid !== 0 && DB_count($_TABLES['cl_cat'], 'cid', $pid) == 0) {
-        $fields[] = $LANG_CLASSIFIEDS_ADMIN['pid'];
+    if ($cid > 0 && $pid === $cid) {
+        $fields[] = $LANG_CLASSIFIEDS_ADMIN['parent_category'];
+        return array_values(array_unique($fields));
     }
 
-    return $fields;
+    if ($pid !== 0) {
+        $parentResult = DB_query(
+            "SELECT pid, catdeleted FROM {$_TABLES['cl_cat']} "
+            . "WHERE cid = " . $pid . " LIMIT 1"
+        );
+        $parent = DB_fetchArray($parentResult);
+
+        if (!is_array($parent)
+            || (int) $parent['pid'] !== 0
+            || !empty($parent['catdeleted'])) {
+            $fields[] = $LANG_CLASSIFIEDS_ADMIN['parent_category'];
+        }
+    }
+
+    if ($cid > 0) {
+        $childCount = DB_count($_TABLES['cl_cat'], 'pid', $cid);
+        $adCount = DB_count($_TABLES['cl'], 'catid', $cid);
+
+        // A parent with children must remain a root category.
+        if ($childCount > 0 && $pid !== 0) {
+            $fields[] = $LANG_CLASSIFIEDS_ADMIN['parent_category'];
+        }
+
+        // A category containing ads must remain a selectable child category.
+        if ($adCount > 0 && $pid === 0) {
+            $fields[] = $LANG_CLASSIFIEDS_ADMIN['parent_category'];
+        }
+    }
+
+    return array_values(array_unique($fields));
 }
 
 /**
