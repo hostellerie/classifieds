@@ -261,8 +261,6 @@ $LANG_confignames['classifieds'] = array(
     'classifieds_edit_header'  => 'Editor header',
     'help_page'  => 'Help page',
     'currency'  => 'Currency',
-    'date_format'  => 'Date format',
-    'time_format'  => 'Time format',
     'maxPerPage'  => 'Max per page',
 	'allow_republish' => 'Allow republishing ad',
 
