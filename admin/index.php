@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Classifieds Plugin 1.3                                                    |
+// | Classifieds Plugin 1.4.0-dev                                                    |
 // +---------------------------------------------------------------------------+
 // | index.php                                                                 |
 // |                                                                           |
@@ -200,7 +200,6 @@ function CLASSIFIEDS_listCategories()
     );
     $retval .= ADMIN_createMenu($menu_arr, '', '');
 
-    reorderCategories();	
 
     $header_arr = array(      // display 'text' and use table field 'field'
         array('text' => $LANG_ADMIN['edit'], 'field' => 'edit', 'sort' => false),
