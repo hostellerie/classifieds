@@ -463,3 +463,8 @@ text-align:right;
         grid-column: 1 / -1;
     }
 }
+
+
+.classifieds-ad__deleted {
+    font-weight: 700;
+}
