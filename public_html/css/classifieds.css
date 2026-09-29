@@ -398,3 +398,10 @@ margin:25px;
 .classifieds-ad__deleted {
     font-weight: 700;
 }
+
+
+/* Generic contextual extension region (FAQ, Hub, future consumers) */
+.classifieds-item-extensions {
+    clear: both;
+    margin: 1.5rem 0;
+}
