@@ -433,35 +433,34 @@ function CLASSIFIEDS_deleteImage ($image)
     // Todo remove image from cache
 }
 
-function CLASSIFIEDS_checkCategory ($cat)
+function CLASSIFIEDS_checkCategory($cat)
 {
     global $_TABLES;
-	
-	// query database for Categories
-    $res = DB_query("SELECT cid 
-	                 FROM {$_TABLES['cl_cat']}
-					 WHERE 1 = 1");
 
-    $categories = DB_fetchArray($res);
+    $cat = (int) $cat;
+    if ($cat <= 0) {
+        return false;
+    }
 
-	if (!in_array($cat, $categories)) {
-	    return false;
-	} else {
-	    return true;
-	}
+    return DB_count($_TABLES['cl_cat'], 'cid', $cat) > 0;
 }
 
-function CLASSIFIEDS_missingFieldCat ($field)
+function CLASSIFIEDS_missingFieldCat($field)
 {
-    global $LANG_CLASSIFIEDS_2, $_TABLES;
-	
-	$fields_array = '';
-	($field['category'] == '') ? $fields_array[] .= $LANG_CLASSIFIEDS_ADMIN['category'] : 0;
-	$pid = DB_count($_TABLES['cl_cat'],'cid',$field['pid']);
-	( ($pid == 0) && ($field['pid'] != '0') ) ? $fields_array[] .= $LANG_CLASSIFIEDS_ADMIN['pid'] : 0;
-    
-	return $fields_array;
+    global $LANG_CLASSIFIEDS_ADMIN, $_TABLES;
 
+    $fields = array();
+
+    if (empty($field['category'])) {
+        $fields[] = $LANG_CLASSIFIEDS_ADMIN['category'];
+    }
+
+    $pid = isset($field['pid']) ? (int) $field['pid'] : 0;
+    if ($pid !== 0 && DB_count($_TABLES['cl_cat'], 'cid', $pid) == 0) {
+        $fields[] = $LANG_CLASSIFIEDS_ADMIN['pid'];
+    }
+
+    return $fields;
 }
 
 /**
