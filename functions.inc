@@ -291,7 +291,7 @@ function plugin_dopluginsearch_classifieds($query, $datestart, $dateend, $topic,
     global $_TABLES, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_1;
 
     // Make sure the query is SQL safe
-    $query = trim(addslashes($query));
+    $query = trim($query);
 	
     //TODO image in search results
     $sql = "SELECT clid AS id, title, text as description, UNIX_TIMESTAMP(created) AS date, owner_id AS uid, hits, ";
@@ -806,15 +806,28 @@ function CLASSIFIEDS_centerblock_lastAds ($limit = 10)
 function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='', $profile=0, $limit= '')
 {
     global $_CONF, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_1, $LANG_CLASSIFIEDS_2, $_TABLES, $_USER;
-	
+
+    $retval = '';
+    $page = isset($_REQUEST['page']) ? (int) $_REQUEST['page'] : 1;
+    $mode = isset($_REQUEST['mode']) ? (string) $_REQUEST['mode'] : '';
+    $catid = isset($_REQUEST['catid']) ? (string) $_REQUEST['catid'] : '';
+    $message = isset($_GET['msg']) ? (string) $_GET['msg'] : '';
+    $cookieType = isset($_COOKIE['ads_type']) ? (string) $_COOKIE['ads_type'] : '';
+    $cookieCat = isset($_COOKIE['ads_cat']) ? (string) $_COOKIE['ads_cat'] : '';
+    $type = '';
+    $checked_category = '';
+
+    if ($page <= 0) {
+        $page = 1;
+    }
+
     //Check if picture folder is writable
     if ( !file_exists($_CLASSIFIEDS_CONF['path_images']) || !is_writable($_CLASSIFIEDS_CONF['path_images']) ) {
         $msg = '<p>' . $LANG_CLASSIFIEDS_1['image_not_writable'] . '</p>';
         return $msg;
     }
 	
-	if ($_REQUEST['page'] == '') $_REQUEST['page'] = 1;
-	
+
     // Get ads from database
     $sql = "SELECT a.*, i.pi_filename, c.category, c.catdeleted
             FROM {$_TABLES['cl']} AS a
@@ -847,10 +860,12 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
     if ( ($my == 0) && ($profile == 0) ) {
 	    // If applicable, limit by category
 	    $category = '';
-        ( isset($_COOKIE['ads_cat']) && is_numeric($_COOKIE['ads_cat']) && ($_COOKIE['ads_cat'] != '--') && ($_COOKIE['ads_cat'] != '0')) ? $category = " AND a.catid = '{$_COOKIE['ads_cat']}'" : 0;
-	    if ( (!empty($_REQUEST['catid'])) &&  ($_REQUEST['catid'] != '--') && ($_REQUEST['catid'] != '0')) {
-	        $category = " AND a.catid = '{$_REQUEST['catid']}'";
-        } else if($_REQUEST['catid'] == '0'){
+        if (is_numeric($cookieCat) && $cookieCat !== '0') {
+            $category = ' AND a.catid = ' . (int) $cookieCat;
+        }
+	    if ($catid !== '' && $catid !== '--' && $catid !== '0' && is_numeric($catid)) {
+	        $category = ' AND a.catid = ' . (int) $catid;
+        } else if ($catid === '0') {
 		    $category = '';
 		}
 	    $sql_index .= $category;
@@ -859,8 +874,11 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	    // TODO remove cookie filter
 		//($_COOKIE['ads_type'] == 'o') ? $type = " AND a.type = '0'" : 0;
 	    //($_COOKIE['ads_type'] == 'd') ? $type = " AND a.type = '1'" : 0;
-        ($_REQUEST['mode'] == 'o') ? $type = " AND a.type = '0'" : 0;
-        ($_REQUEST['mode'] == 'd') ? $type = " AND a.type = '1'" : 0;
+        if ($mode === 'o') {
+            $type = " AND a.type = '0'";
+        } elseif ($mode === 'd') {
+            $type = " AND a.type = '1'";
+        }
 	    $sql_index .= $type;
 	}
 
@@ -869,21 +887,25 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
     // If applicable, handle pagination of query
     if (isset($_CLASSIFIEDS_CONF['maxPerPage']) && $_CLASSIFIEDS_CONF['maxPerPage'] > 0) {
         // Count Ads from database
-        $active_cl = DB_numRows(DB_query("SELECT COUNT(*) FROM {$_TABLES['cl']} WHERE deleted = '0' AND TO_DAYS(NOW()) <= {$_CLASSIFIEDS_CONF['active_days']} + TO_DAYS(created) "));
-		$count = $active_cl[0];
-        // Make sure page count is reasonable, if not, fix it
-        if ($_REQUEST['page'] <= 0) {
-            $_REQUEST['page'] = 1;
-        }
-        if ((($_REQUEST['page']-1) * $_CLASSIFIEDS_CONF['maxPerPage']) > $count) {
-            $_REQUEST['page'] = ceil($count / $_CLASSIFIEDS_CONF['maxPerPage']);
+        $countResult = DB_query(
+            "SELECT COUNT(*) AS total FROM {$_TABLES['cl']} "
+            . "WHERE deleted = '0' "
+            . "AND TO_DAYS(NOW()) <= " . (int) $_CLASSIFIEDS_CONF['active_days'] . " + TO_DAYS(created)"
+        );
+        $countRow = DB_fetchArray($countResult);
+        $count = isset($countRow['total']) ? (int) $countRow['total'] : 0;
+
+        // Make sure page count is reasonable, if not, fix it.
+        if ((($page - 1) * (int) $_CLASSIFIEDS_CONF['maxPerPage']) > $count) {
+            $page = max(1, (int) ceil($count / (int) $_CLASSIFIEDS_CONF['maxPerPage']));
         }
         // Add limit for pagination (if applicable)
         if ( is_numeric($limit) ) {
 		    $sql_index .= ' LIMIT ' . $limit;
 		}
 		else if ($count > $_CLASSIFIEDS_CONF['maxPerPage']) {
-            $sql_index .= ' LIMIT ' . ($_REQUEST['page']-1) * $_CLASSIFIEDS_CONF['maxPerPage'] . ', ' . $_CLASSIFIEDS_CONF['maxPerPage'];
+            $offset = ($page - 1) * (int) $_CLASSIFIEDS_CONF['maxPerPage'];
+            $sql_index .= ' LIMIT ' . $offset . ', ' . (int) $_CLASSIFIEDS_CONF['maxPerPage'];
         }
     }
 
@@ -891,7 +913,7 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
     $ad_res = DB_query($sql_index);
 
 	//if any message
-	if ($profile !=1) $retval .= CLASSIFIEDS_message($_GET['msg']);
+	if ($profile != 1 && $message !== '') $retval .= CLASSIFIEDS_message($message);
 	
     if ( ($user > 1) && ($my == 0) && ($profile == 0) ) {
 		    $retval = COM_startBlock($LANG_CLASSIFIEDS_1['all_ads_from'] . ' <a href="'. $_CLASSIFIEDS_CONF['site_url'] .
@@ -920,17 +942,22 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	if ( ($profile == 0) && ($my != 1) && ($user == 1) ) {
 	    //type label
 		$type_label = $LANG_CLASSIFIEDS_1['offers_demands'];
-		($_COOKIE['ads_type'] == 'o') ? $type_label = $LANG_CLASSIFIEDS_1['offers'] : 0;
-		($_COOKIE['ads_type'] == 'd') ? $type_label = $LANG_CLASSIFIEDS_1['demands']: 0;
-		($_REQUEST['mode'] == 'o') ? $type_label = $LANG_CLASSIFIEDS_1['offers'] : 0;
-		($_REQUEST['mode'] == 'd') ? $type_label = $LANG_CLASSIFIEDS_1['demands'] : 0;
+        if ($cookieType === 'o' || $mode === 'o') {
+            $type_label = $LANG_CLASSIFIEDS_1['offers'];
+        } elseif ($cookieType === 'd' || $mode === 'd') {
+            $type_label = $LANG_CLASSIFIEDS_1['demands'];
+        }
 	
         //category drop down
 	    $categories = '';
 		$categories .= '<option value="--">' . $LANG_CLASSIFIEDS_1['choose_category'] . '</option>';
         $categories .= '<option value="0">' . $LANG_CLASSIFIEDS_1['all_categories'] . '</option>';
-		(isset($_COOKIE['ads_cat']) && is_numeric($_COOKIE['ads_cat'])) ? $checked_category = $_COOKIE['ads_cat']: 0;
-		(isset($_REQUEST['catid'])) ? $checked_category =  $_REQUEST['catid']: 0;
+        if (is_numeric($cookieCat)) {
+            $checked_category = (int) $cookieCat;
+        }
+        if ($catid !== '' && is_numeric($catid)) {
+            $checked_category = (int) $catid;
+        }
 		$categories .= CLASSIFIEDS_adOptionList("{$_TABLES['cl']} AS a,{$_TABLES['cl_cat']} AS c", 'c.cid, c.category, c.pid, a.catid', $checked_category, 'catorder', "(c.cid=a.catid AND a.deleted=0 AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= {$_CLASSIFIEDS_CONF['active_days']}) OR (c.pid=0) GROUP BY c.cid");
         $search_box = '<div id="ad-list-searchbox">
                         <form action="' . $_CLASSIFIEDS_CONF['site_url'] . '/index.php" id="classifieds_cat" method="post"><strong>' .
@@ -1066,7 +1093,7 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
     if ( (isset($_CLASSIFIEDS_CONF['maxPerPage'])) && ($_CLASSIFIEDS_CONF['maxPerPage'] > 0) &&
             ($count > $_CLASSIFIEDS_CONF['maxPerPage']) && $limit == '' ) {
         $ad->set_var('pagination', COM_printPageNavigation($_CLASSIFIEDS_CONF['site_url'] . '/index.php', 
-		$_REQUEST['page'], ceil($count / $_CLASSIFIEDS_CONF['maxPerPage'])));
+		$page, ceil($count / $_CLASSIFIEDS_CONF['maxPerPage'])));
     } else {
         $ad->set_var('pagination', '');
     }
