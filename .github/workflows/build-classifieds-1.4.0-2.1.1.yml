@@ -1,0 +1,90 @@
+name: Build Classifieds 1.4.0 package for Geeklog 2.1.1
+
+on:
+  push:
+    branches:
+      - classifieds_1.4.0
+    paths-ignore:
+      - 'dist/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: classifieds-1.4.0-2.1.1-dist-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-dist:
+    runs-on: ubuntu-latest
+
+    env:
+      ARCHIVE_NAME: classifieds_1.4.0_2.1.1.zip
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build installable plugin archive
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STAGE="${RUNNER_TEMP}/classifieds-package"
+          rm -rf "${STAGE}"
+          mkdir -p "${STAGE}" dist
+
+          # Copy only plugin payload files. Hidden files/directories and dist/
+          # are deliberately excluded from the installable package.
+          rsync -a             --exclude='.*'             --exclude='*/.*'             --exclude='dist/'             ./ "${STAGE}/"
+
+          # Fail loudly if a hidden entry somehow reaches the staging tree.
+          if find "${STAGE}" -mindepth 1 -name '.*' -print -quit | grep -q .; then
+            echo "A hidden file or directory was found in the package staging tree."
+            exit 1
+          fi
+
+          # Basic installable-package sanity checks.
+          for required in autoinstall.php functions.inc plugin.json public_html/index.php; do
+            if [ ! -e "${STAGE}/${required}" ]; then
+              echo "Missing required plugin file: ${required}"
+              exit 1
+            fi
+          done
+
+          rm -f "dist/${ARCHIVE_NAME}"
+          (
+            cd "${STAGE}"
+            zip -q -r "${GITHUB_WORKSPACE}/dist/${ARCHIVE_NAME}" .
+          )
+
+          unzip -t "dist/${ARCHIVE_NAME}"
+
+      - name: Commit generated archive to dist
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -f "dist/${ARCHIVE_NAME}"
+
+          if git diff --cached --quiet; then
+            echo "Archive is unchanged."
+            exit 0
+          fi
+
+          git commit -m "Build ${ARCHIVE_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Upload installable archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: classifieds_1.4.0_2.1.1
+          path: dist/classifieds_1.4.0_2.1.1.zip
+          if-no-files-found: error
+          retention-days: 30
