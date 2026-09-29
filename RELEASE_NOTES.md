@@ -225,3 +225,26 @@ Additional final corrections:
 - legacy CSS conflicting with the responsive list markup was removed.
 
 The source is now intentionally at a **runtime validation gate**. Further changes should be driven by reproducible test failures rather than additional speculative refactoring.
+
+
+## Contextual FAQ and generic item display
+
+Classifieds now implements the current Memorandum content-interoperability model required by FAQ 1.3.0 contextual associations.
+
+Stable Classifieds identities are:
+
+- `root` for the catalogue/home page;
+- `category:<cid>` for category pages;
+- `ad:<clid>` for full ads.
+
+Item Info exposes these resources with `id`, `title`, `url`, `type`, `subtype`, `is-container`, `parent-id` and `parent-subtype` where applicable. Existing positive numeric IDs are still accepted as ad aliases.
+
+Classifieds also calls Geeklog's generic `PLG_itemDisplay($id, 'classifieds')` dispatcher at provider-owned stable locations:
+
+- after the main list on the Classifieds home page;
+- after the list on category pages;
+- after the primary ad content and before comments on full ad pages.
+
+This enables FAQ, Hub and future consumers to contribute contextual server-rendered fragments without Classifieds knowing their tables or APIs.
+
+Category filters now use stable GET URLs and category list visibility is aligned with category ACLs.
