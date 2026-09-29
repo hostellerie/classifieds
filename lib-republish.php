@@ -48,7 +48,7 @@ function CLASSIFIEDS_repost($clid)
         return $result;
     }
 
-    $newClid = CLASSIFIEDS_adCopy($ad, array());
+    $newClid = CLASSIFIEDS_adCopy($ad);
     if ($newClid <= 0) {
         COM_errorLog(
             'Classifieds: republish failed for ad #' . $clid
@@ -86,7 +86,7 @@ function CLASSIFIEDS_repost($clid)
 /**
  * Copy an expired ad and return the new ad id, or 0 on failure.
  */
-function CLASSIFIEDS_adCopy($ad, $FILES)
+function CLASSIFIEDS_adCopy($ad)
 {
     global $_CLASSIFIEDS_CONF, $_TABLES;
 
@@ -148,7 +148,7 @@ function CLASSIFIEDS_adCopy($ad, $FILES)
         return 0;
     }
 
-    if (!CLASSIFIEDS_copyImages($ad, is_array($FILES) ? $FILES : array(), $newClid)) {
+    if (!CLASSIFIEDS_copyImages($ad, $newClid)) {
         DB_query("DELETE FROM {$_TABLES['cl_pic']} WHERE pi_pid = '" . $newClid . "'");
         DB_query("DELETE FROM {$_TABLES['cl']} WHERE clid = " . $newClid);
         COM_errorLog('Classifieds: image copy failed while republishing #' . $sourceClid . '; new copy rolled back.');
@@ -189,7 +189,7 @@ function CLASSIFIEDS_discardRepublishedAd($clid)
     DB_query("DELETE FROM {$_TABLES['cl']} WHERE clid = " . $clid);
 }
 
-function CLASSIFIEDS_copyImages($ad, $FILES, $clid)
+function CLASSIFIEDS_copyImages($ad, $clid)
 {
     global $_CLASSIFIEDS_CONF, $_TABLES;
 
@@ -224,12 +224,6 @@ function CLASSIFIEDS_copyImages($ad, $FILES, $clid)
                 @unlink($_CLASSIFIEDS_CONF['path_images'] . $copied);
             }
             DB_query("DELETE FROM {$_TABLES['cl_pic']} WHERE pi_pid = '" . $clid . "'");
-            return false;
-        }
-    }
-
-    if (!empty($FILES)) {
-        if (!CLASSIFIEDS_saveImage($ad, $FILES, $clid)) {
             return false;
         }
     }
