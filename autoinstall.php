@@ -126,12 +126,15 @@ function plugin_load_configuration_classifieds($pi_name)
     return plugin_initconfig_classifieds();
 }
 
-function plugin_postinstall_classifieds($pi_name)
+/**
+ * Ensure the site-scoped Classifieds image directory exists and is writable.
+ *
+ * @return bool
+ */
+function CLASSIFIEDS_ensureImageDirectory()
 {
     global $_CONF;
 
-    // Persistent ad images remain in the site's public image area for 1.4.x.
-    // Create the site-scoped directory explicitly instead of assuming it exists.
     $imagePath = rtrim($_CONF['path_images'], '/\\') . '/classifieds';
 
     if (!is_dir($imagePath) && !@mkdir($imagePath, 0755, true)) {
@@ -144,7 +147,12 @@ function plugin_postinstall_classifieds($pi_name)
         return false;
     }
 
-    // No telemetry or developer notification is sent after installation.
     return true;
+}
+
+function plugin_postinstall_classifieds($pi_name)
+{
+    // No telemetry or developer notification is sent after installation.
+    return CLASSIFIEDS_ensureImageDirectory();
 }
 ?>
