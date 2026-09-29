@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Classifieds Plugin 1.3.0                                                  |
+// | Classifieds Plugin 1.4.0-dev                                                  |
 // +---------------------------------------------------------------------------+
 // | english.php                                                               |
 // |                                                                           |
@@ -99,8 +99,6 @@ $LANG_CLASSIFIEDS_1 = array(
 	'under_construction'      => 'Under construction',
     'image_not_writable'      => 'The classifieds images folder does not exists or is not writable. You must check this issue before using the classifieds plugin.<br' . XHTML . '><br' . XHTML . '>Please create a classifieds sub folder within the images folder.',
     'install_jquery'          => 'To allow your site users to display the ads images in a lightbox, you need to install the jQuery plugin for Geeklog.',
-    'limited_edition'         => 'Note: You are using the limited edition of classifieds plugin. If you need full features you can upgrade to <a href="http://geeklog.fr/wiki/plugins:classifieds#proversion" target="_blank">Classifieds Pro version</a>.',
-    'upgrade_proversion'      => 'Upgrade to Pro version',
 	'ad-list-active'          => 'Active ad',
 	'ad-list-delete'          => 'Deleted ad',
 	'ad-list-old'             => 'Old ad',
@@ -233,7 +231,7 @@ $LANG_fs['classifieds'] = array(
     'fs_main'            => 'General Settings',
     'fs_images'          => 'Images settings',
 	'fs_display'         => 'Display settings',
-	'fs_email'           => 'Email settings (Pro version)',
+	'fs_email'           => 'Email settings',
     'fs_permissions'     => 'Default Permissions'
  );
  
@@ -267,7 +265,7 @@ $LANG_confignames['classifieds'] = array(
     'date_format'  => 'Date format',
     'time_format'  => 'Time format',
     'maxPerPage'  => 'Max per page',
-	'allow_republish' => 'Allow republishing ad (Pro version)',
+	'allow_republish' => 'Allow republishing ad',
 
     // Email settings
     'create_ad_email_user'  => 'Email user on ad creation',
