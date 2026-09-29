@@ -56,7 +56,8 @@ function CLASSIFIEDS_saveAd($data, $files)
         );
         $existing = DB_fetchArray($query);
 
-        if (!is_array($existing) || SEC_hasAccess2($existing) < 3) {
+        if (!is_array($existing)
+            || (!SEC_hasRights('classifieds.admin') && SEC_hasAccess2($existing) < 3)) {
             return $result;
         }
     }
@@ -353,7 +354,7 @@ function CLASSIFIEDS_deleteAd($clid, $hard = false)
         return true;
     }
 
-    if (SEC_hasAccess2($ad) < 3) {
+    if (!SEC_hasRights('classifieds.admin') && SEC_hasAccess2($ad) < 3) {
         return false;
     }
 
