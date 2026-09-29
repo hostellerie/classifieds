@@ -169,7 +169,8 @@ switch ($_REQUEST['mode']) {
                     "SELECT * FROM {$_TABLES['cl']} WHERE clid = " . $adId . " LIMIT 1"
                 );
                 $A = DB_fetchArray($res);
-                if (!is_array($A) || SEC_hasAccess2($A) < 3) {
+                if (!is_array($A)
+                    || (!SEC_hasRights('classifieds.admin') && SEC_hasAccess2($A) < 3)) {
                     echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
                     exit;
                 }
