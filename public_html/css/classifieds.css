@@ -358,3 +358,108 @@ text-align:right;
         gap: 0;
     }
 }
+
+
+/* Responsive Classifieds lists */
+.classifieds-list__items {
+    display: grid;
+    gap: .75rem;
+}
+
+.classifieds-list__items > article {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    padding: .75rem;
+    border: 1px solid #DDD;
+}
+
+.classifieds-list-item__date {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    white-space: nowrap;
+    font-size: .9em;
+}
+
+.classifieds-list-item__image {
+    min-width: 0;
+}
+
+.classifieds-list-item__main {
+    min-width: 0;
+}
+
+.classifieds-list-item__main .ad-list-title,
+.classifieds-list-item__main .ad-list-price,
+.classifieds-list-item__main .ad-list-location {
+    margin: 0 0 .25rem;
+}
+
+.ad-list-views ul {
+    margin: 0;
+    padding-left: 1.2rem;
+}
+
+.classifieds-list-item--compact {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.ad-list-active,
+.ad-list-old,
+.ad-list-deleted {
+    border-left: 4px solid currentColor;
+}
+
+.ad-list-old {
+    opacity: .72;
+}
+
+.ad-list-deleted {
+    opacity: .6;
+}
+
+.ad-list-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.classifieds-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.classifieds-legend__item > .ad-list-active,
+.classifieds-legend__item > .ad-list-old,
+.classifieds-legend__item > .ad-list-deleted {
+    display: inline-block;
+    width: .8rem;
+    height: .8rem;
+    border: 1px solid currentColor;
+}
+
+.classifieds-pagination {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+@media (max-width: 720px) {
+    .classifieds-list__items > article,
+    .classifieds-list-item--compact {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .classifieds-list-item__date {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        gap: .5rem;
+    }
+
+    .ad-list-views {
+        grid-column: 1 / -1;
+    }
+}
