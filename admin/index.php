@@ -164,7 +164,7 @@ function plugin_getListField_classifieds($fieldname, $fieldvalue, $A, $icon_arr)
             $retval = COM_createLink($A['owner_id'], $uid_url);
             break;
         default:
-            $retval = stripslashes($fieldvalue);
+            $retval = htmlspecialchars((string) $fieldvalue, ENT_QUOTES, $_CONF['default_charset']);
             break;
     }
     return $retval;
@@ -238,7 +238,11 @@ function plugin_getListField_classifieds_categories($fieldname, $fieldvalue, $A,
 		    if ($A['pid'] == '0') {
 			    $retval = $LANG_CLASSIFIEDS_ADMIN['root'];
 			} else {
-			    $retval = stripslashes(DB_getItem($_TABLES['cl_cat'], 'category', "cid = {$A['pid']}"));
+			    $retval = htmlspecialchars(
+                    (string) DB_getItem($_TABLES['cl_cat'], 'category', 'cid = ' . (int) $A['pid']),
+                    ENT_QUOTES,
+                    $_CONF['default_charset']
+                );
 			}
             break;
 		case "catdeleted":
