@@ -1,440 +1,223 @@
 <?php
-
-/* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Geeklog 1.7                                                               |
+// | Classifieds Plugin 1.4.0-dev                                              |
 // +---------------------------------------------------------------------------+
-// | profiles.php                                                              |
-// |                                                                           |
-// | This pages lets GL users communicate with each other without risk of      |
-// | their email address being intercepted by spammers.                        |
-// +---------------------------------------------------------------------------+
-// | Copyright (C) 2000-2010 by the following authors:                         |
-// |                                                                           |
-// | Authors: Tony Bibbs        - tony AT tonybibbs DOT com                    |
-// |          Mark Limburg      - mlimburg AT users DOT sourceforge DOT net    |
-// |          Jason Whittenburg - jwhitten AT securitygeeks DOT com            |
-// |          Dirk Haun         - dirk AT haun-online DOT de                   |
-// +---------------------------------------------------------------------------+
-// |                                                                           |
-// | This program is free software; you can redistribute it and/or             |
-// | modify it under the terms of the GNU General Public License               |
-// | as published by the Free Software Foundation; either version 2            |
-// | of the License, or (at your option) any later version.                    |
-// |                                                                           |
-// | This program is distributed in the hope that it will be useful,           |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of            |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             |
-// | GNU General Public License for more details.                              |
-// |                                                                           |
-// | You should have received a copy of the GNU General Public License         |
-// | along with this program; if not, write to the Free Software Foundation,   |
-// | Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.           |
-// |                                                                           |
+// | Simple ad contact/report workflow.                                        |
 // +---------------------------------------------------------------------------+
 
-/**
-* Mails the contents of the contact form to that user
-*
-* @param    int     $uid            User ID of person to send email to
-* @param    string  $author         The name of the person sending the email
-* @param    string  $authoremail    Email address of person sending the email
-* @param    string  $subject        Subject of email
-* @param    string  $message        Text of message to send
-* @return   string                  Meta redirect or HTML for the contact form
-*/
-function CLASSIFIEDS_contactemail($uid,$author,$authoremail,$subject,$message,$ad)
-{
-    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES, $_USER, $LANG04, $LANG08, $LANG_CLASSIFIEDS_1;
-	
-	$subject = '[' . $_CONF['site_name'] . '] ' . $LANG_CLASSIFIEDS_1['plugin_name'] . ' #' . $ad . ' - ' . $subject;
-
-
-    $retval = '';
-
-    // check for correct $_CONF permission
-    if (COM_isAnonUser() && (($_CONF['loginrequired'] == 1) ||
-                             ($_CONF['emailuserloginrequired'] == 1))
-                         && ($uid != 2)) {
-        return COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php?msg=85');
-    }
-
-    // check for correct 'to' user preferences
-    $result = DB_query ("SELECT emailfromadmin,emailfromuser FROM {$_TABLES['userprefs']} WHERE uid = '$uid'");
-    $P = DB_fetchArray ($result);
-    if (SEC_inGroup ('Root') || SEC_hasRights ('user.mail')) {
-        $isAdmin = true;
-    } else {
-        $isAdmin = false;
-    }
-    if ((($P['emailfromadmin'] != 1) && $isAdmin) ||
-        (($P['emailfromuser'] != 1) && !$isAdmin)) {
-        return COM_refresh ($_CLASSIFIEDS_CONF['site_url'] . '/index.php?msg=85');
-    }
-
-    // check mail speedlimit
-    COM_clearSpeedlimit ($_CONF['speedlimit'], 'mail');
-    if (COM_checkSpeedlimit ('mail') > 0) {
-        return COM_refresh ($_CONF_CLASSIFIEDS['site_url'] . '/index.php?msg=85');
-    }
-
-    if (!empty($author) && !empty($subject) && !empty($message)) {
-        if (COM_isemail($authoremail) && (strpos($author, '@') === false)) {
-            $result = DB_query("SELECT username,fullname,email FROM {$_TABLES['users']} WHERE uid = $uid");
-            $A = DB_fetchArray($result);
-
-            // Append the user's signature to the message
-            $sig = '';
-            if (!COM_isAnonUser()) {
-                $sig = DB_getItem($_TABLES['users'], 'sig',
-                                  "uid={$_USER['uid']}");
-                if (!empty ($sig)) {
-                    $sig = strip_tags (COM_stripslashes ($sig));
-                    $sig = "\n\n-- \n" . $sig;
-                }
-            }
-
-            $subject = COM_stripslashes ($subject);
-            $message = COM_stripslashes ($message);
-
-            // do a spam check with the unfiltered message text and subject
-            $mailtext = $subject . "\n" . $message . $sig;
-            $result = PLG_checkforSpam ($mailtext, $_CONF['spamx']);
-            if ($result > 0) {
-                COM_updateSpeedlimit ('mail');
-                COM_displayMessageAndAbort ($result, 'spamx', 403, 'Forbidden');
-            }
-
-            $msg = PLG_itemPreSave ('contact', $message);
-            if (!empty ($msg)) {
-                $retval .= COM_startBlock ($LANG04[81])
-                        . COM_errorLog ($msg, 2)
-                        . CLASSIFIEDS_contactform ($uid, $subject, $message)
-                        . COM_endBlock ();
-
-                return $retval;
-            }
-
-            $subject = strip_tags ($subject);
-            $subject = substr ($subject, 0, strcspn ($subject, "\r\n"));
-            $message = strip_tags ($message) . $sig;
-            if (!empty ($A['fullname'])) {
-                $to = COM_formatEmailAddress ($A['fullname'], $A['email']);
-            } else {
-                $to = COM_formatEmailAddress ($A['username'], $A['email']);
-            }
-            $from = COM_formatEmailAddress ($author, $authoremail);
-
-            $sent = COM_mail($to, $subject, $message, $from);
-
-            if ($sent && isset($_POST['cc']) && ($_POST['cc'] == 'on')) {
-                $ccmessage = sprintf($LANG08[38], COM_getDisplayName($uid,
-                                            $A['username'], $A['fullname']));
-                $ccmessage .= "\n------------------------------------------------------------\n\n" . $message;
-
-                $sent = COM_mail($from, $subject, $ccmessage, $from);
-            }
-
-            COM_updateSpeedlimit('mail');
-
-            //$retval .= COM_refresh($_CLASSIFIEDS_CONF['site_url']
-            //                       . '/index.php?mode=v&amp;ad=' . $ad
-            //                       . '&amp;msg=' . ($sent ? '27' : '85'));
-        } else {
-            $subject = strip_tags ($subject);
-            $subject = substr ($subject, 0, strcspn ($subject, "\r\n"));
-            $subject = htmlspecialchars (trim ($subject), ENT_QUOTES);
-            $retval .= COM_startBlock ($LANG04[81])
-                    . COM_errorLog ($LANG08[3], 2)
-                    . CLASSIFIEDS_contactform ($uid, $subject, $message)
-                    . COM_endBlock ();
-        }
-    } else {
-        $subject = strip_tags ($subject);
-        $subject = substr ($subject, 0, strcspn ($subject, "\r\n"));
-        $subject = htmlspecialchars (trim ($subject), ENT_QUOTES);
-        $retval .= COM_startBlock ()
-                . CLASSIFIEDS_contactform ($uid, $subject, $message)
-                . COM_endBlock ();
-    }
-
-    return $retval;
+if (!defined('VERSION')) {
+    die('This file can not be used on its own.');
 }
 
 /**
-* Displays the contact form
-*
-* @param    int     $uid        User ID of article author
-* @param    string  $subject    Subject of email
-* @param    string  $message    Text of message to send
-* @return   string              HTML for the contact form
-*
-*/
-function CLASSIFIEDS_contactform ($uid, $subject = '', $message = '')
+ * Check whether the current visitor may contact a Classifieds user.
+ *
+ * @param int $uid
+ * @return bool
+ */
+function CLASSIFIEDS_canContactUser($uid)
 {
-    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES, $_USER, $LANG08;
+    global $_CONF, $_TABLES;
 
-    $retval = '';
-
-    if (COM_isAnonUser() && (($_CONF['loginrequired'] == 1) ||
-                             ($_CONF['emailuserloginrequired'] == 1))) {
-        $retval .= CLASSIFIEDS_loginRequiredForm();
-    } else {
-        $result = DB_query ("SELECT emailfromadmin,emailfromuser FROM {$_TABLES['userprefs']} WHERE uid = '$uid'");
-        $P = DB_fetchArray ($result);
-        if (SEC_inGroup ('Root') || SEC_hasRights ('user.mail')) {
-            $isAdmin = true;
-        } else {
-            $isAdmin = false;
-        }
-
-        $displayname = COM_getDisplayName ($uid);
-        if ((($P['emailfromadmin'] == 1) && $isAdmin) ||
-            (($P['emailfromuser'] == 1) && !$isAdmin)) {
-
-            $retval = COM_startBlock($LANG08[10] . ' ' . $displayname);
-            $mail_template = new Template($_CONF['path'] . 'plugins/classifieds/templates/contact');
-            $mail_template->set_file('form', 'contactuserform.thtml');
-            $mail_template->set_var('xhtml', XHTML);
-            $mail_template->set_var('site_url', $_CONF['site_url']);
-            $mail_template->set_var('site_admin_url', $_CONF['site_admin_url']);
-            $mail_template->set_var('layout_url', $_CONF['layout_url']);
-            $mail_template->set_var('lang_description', $LANG08[26]);
-            $mail_template->set_var('lang_username', $LANG08[11]);
-            if (COM_isAnonUser()) {
-                $sender = '';
-                if (isset ($_POST['author'])) {
-                    $sender = strip_tags ($_POST['author']);
-                    $sender = substr ($sender, 0, strcspn ($sender, "\r\n"));
-                    $sender = htmlspecialchars (trim ($sender), ENT_QUOTES);
-                }
-                $mail_template->set_var ('username', $sender);
-            } else {
-                $mail_template->set_var ('username',
-                        COM_getDisplayName ($_USER['uid'], $_USER['username'],
-                                            $_USER['fullname']));
-            }
-            $mail_template->set_var ('lang_useremail', $LANG08[12]);
-            if (COM_isAnonUser()) {
-                $email = '';
-                if (isset ($_POST['authoremail'])) {
-                    $email = strip_tags ($_POST['authoremail']);
-                    $email = substr ($email, 0, strcspn ($email, "\r\n"));
-                    $email = htmlspecialchars (trim ($email), ENT_QUOTES);
-                }
-                $mail_template->set_var ('useremail', $email);
-            } else {
-                $mail_template->set_var ('useremail', $_USER['email']);
-            }
-            $mail_template->set_var('lang_cc', $LANG08[36]);
-            $mail_template->set_var('lang_cc_description', $LANG08[37]);
-            $mail_template->set_var('lang_subject', $LANG08[13]);
-            $mail_template->set_var('subject', $subject);
-            $mail_template->set_var('lang_message', $LANG08[14]);
-            $mail_template->set_var('message', htmlspecialchars($message));
-            $mail_template->set_var('lang_nohtml', $LANG08[15]);
-            $mail_template->set_var('lang_submit', $LANG08[16]);
-            $mail_template->set_var('uid', $uid);
-            PLG_templateSetVars('contact', $mail_template);
-            $mail_template->parse('output', 'form');
-            $retval .= $mail_template->finish($mail_template->get_var('output'));
-            $retval .= COM_endBlock();
-        } else {
-            $retval = COM_startBlock ($LANG08[10] . ' ' . $displayname, '',
-                              COM_getBlockTemplate ('_msg_block', 'header'));
-            $retval .= $LANG08[35];
-            $retval .= COM_endBlock (COM_getBlockTemplate ('_msg_block',
-                                                           'footer'));
-        }
+    $uid = (int) $uid;
+    if ($uid <= 1) {
+        return false;
     }
 
-    return $retval;
+    if (COM_isAnonUser()
+        && (!empty($_CONF['loginrequired']) || !empty($_CONF['emailuserloginrequired']))) {
+        return false;
+    }
+
+    $result = DB_query(
+        "SELECT emailfromadmin, emailfromuser "
+        . "FROM {$_TABLES['userprefs']} WHERE uid = " . $uid
+    );
+    $prefs = DB_fetchArray($result);
+    if (!is_array($prefs)) {
+        return false;
+    }
+
+    $isAdmin = SEC_inGroup('Root') || SEC_hasRights('user.mail');
+    if ($isAdmin) {
+        return !empty($prefs['emailfromadmin']);
+    }
+
+    return !empty($prefs['emailfromuser']);
 }
 
 /**
-* Email ad to a friend
-*
-* @param    string  $ad        id of ad to email
-* @param    string  $to         name of person / friend to email
-* @param    string  $toemail    friend's email address
-* @param    string  $from       name of person sending the email
-* @param    string  $fromemail  sender's email address
-* @param    string  $shortmsg   short intro text to send with the ad
-* @return   string              Meta refresh
-*
-* Modification History
-*
-* Date        Author        Description
-* ----        ------        -----------
-* 4/17/01    Tony Bibbs    Code now allows anonymous users to send email
-*                and it allows user to input a message as well
-*                Thanks to Yngve Wassvik Bergheim for some of
-*                this code
-*
-*/
-function CLASSIFIEDS_mailAd($ad, $to, $toemail, $from, $fromemail, $shortmsg)
+ * Build the contact/report form.
+ *
+ * @param int    $uid
+ * @param int    $ad
+ * @param string $subject
+ * @param string $mode contact|report
+ * @param string $message
+ * @return string
+ */
+function CLASSIFIEDS_contactForm($uid, $ad, $subject, $mode = 'contact', $message = '')
 {
-    global $_CONF, $_TABLES, $LANG01, $LANG08;
+    global $_CONF, $_CLASSIFIEDS_CONF, $_USER, $LANG08;
 
-    // check for correct $_CONF permission
-    if (COM_isAnonUser() && ($_CONF['loginrequired'] == 1)) {
-        return $retval;
+    $uid = (int) $uid;
+    $ad = (int) $ad;
+    $mode = ($mode === 'report') ? 'report' : 'contact';
+
+    if ($ad <= 0 || !CLASSIFIEDS_checkAdAccess($ad)) {
+        return COM_showMessageText($LANG08[35], $LANG08[10]);
     }
 
-    // check mail speedlimit
+    if ($mode === 'contact' && !CLASSIFIEDS_canContactUser($uid)) {
+        return COM_showMessageText($LANG08[35], $LANG08[10]);
+    }
+
+    if (COM_isAnonUser()
+        && (!empty($_CONF['loginrequired']) || !empty($_CONF['emailuserloginrequired']))) {
+        return CLASSIFIEDS_loginRequiredForm();
+    }
+
+    $author = '';
+    $authoremail = '';
+
+    if (!COM_isAnonUser()) {
+        $author = COM_getDisplayName($_USER['uid'], $_USER['username'], $_USER['fullname']);
+        $authoremail = isset($_USER['email']) ? $_USER['email'] : '';
+    }
+
+    $template = new Template($_CONF['path'] . 'plugins/classifieds/templates/contact');
+    $template->set_file('form', 'contactuserform.thtml');
+
+    $template->set_var('xhtml', XHTML);
+    $template->set_var('action_url', $_CLASSIFIEDS_CONF['site_url'] . '/index.php');
+    $template->set_var('lang_description', $LANG08[26]);
+    $template->set_var('lang_username', $LANG08[11]);
+    $template->set_var('lang_useremail', $LANG08[12]);
+    $template->set_var('lang_subject', $LANG08[13]);
+    $template->set_var('lang_message', $LANG08[14]);
+    $template->set_var('lang_cc', $LANG08[36]);
+    $template->set_var('lang_cc_description', $LANG08[37]);
+    $template->set_var('lang_submit', $LANG08[16]);
+
+    $template->set_var('username', htmlspecialchars($author, ENT_QUOTES, $_CONF['default_charset']));
+    $template->set_var('useremail', htmlspecialchars($authoremail, ENT_QUOTES, $_CONF['default_charset']));
+    $template->set_var('subject', htmlspecialchars($subject, ENT_QUOTES, $_CONF['default_charset']));
+    $template->set_var('message', htmlspecialchars($message, ENT_QUOTES, $_CONF['default_charset']));
+
+    $template->set_var('uid', $uid);
+    $template->set_var('ad', $ad);
+    $template->set_var('contact_mode', $mode);
+    $template->set_var('gltoken_name', CSRF_TOKEN);
+    $template->set_var('gltoken', SEC_createToken());
+
+    PLG_templateSetVars('contact', $template);
+
+    $template->parse('output', 'form');
+
+    return $template->finish($template->get_var('output'));
+}
+
+/**
+ * Send a contact or abuse-report message.
+ *
+ * @param int    $uid
+ * @param int    $ad
+ * @param string $subject
+ * @param string $author
+ * @param string $authoremail
+ * @param string $message
+ * @param string $mode contact|report
+ * @param bool   $copySender
+ * @return bool
+ */
+function CLASSIFIEDS_sendContact(
+    $uid,
+    $ad,
+    $subject,
+    $author,
+    $authoremail,
+    $message,
+    $mode = 'contact',
+    $copySender = false
+) {
+    global $_CONF, $_TABLES;
+
+    $uid = (int) $uid;
+    $ad = (int) $ad;
+    $mode = ($mode === 'report') ? 'report' : 'contact';
+
+    if (!SEC_checkToken() || $ad <= 0 || !CLASSIFIEDS_checkAdAccess($ad)) {
+        return false;
+    }
+
+    if (COM_isAnonUser()
+        && (!empty($_CONF['loginrequired']) || !empty($_CONF['emailuserloginrequired']))) {
+        return false;
+    }
+
+    $author = trim(strip_tags((string) $author));
+    $authoremail = trim((string) $authoremail);
+    $subject = trim(strip_tags((string) $subject));
+    $message = trim(strip_tags((string) $message));
+
+    $author = substr($author, 0, strcspn($author, "\r\n"));
+    $authoremail = substr($authoremail, 0, strcspn($authoremail, "\r\n"));
+    $subject = substr($subject, 0, strcspn($subject, "\r\n"));
+
+    if ($author === '' || $subject === '' || $message === '' || !COM_isemail($authoremail)) {
+        return false;
+    }
+
     COM_clearSpeedlimit($_CONF['speedlimit'], 'mail');
     if (COM_checkSpeedlimit('mail') > 0) {
-        return $retval;
+        return false;
     }
 
-    //Query ad
-
-    $shortmsg = COM_stripslashes ($shortmsg);
-    $mailtext = sprintf ($LANG08[23], $from, $fromemail) . LB;
-    if (strlen ($shortmsg) > 0) {
-        $mailtext .= LB . sprintf ($LANG08[28], $from) . $shortmsg . LB;
+    $spam = PLG_checkforSpam($subject . "\n" . $message, $_CONF['spamx']);
+    if ($spam > 0) {
+        COM_updateSpeedlimit('mail');
+        return false;
     }
 
-    // just to make sure this isn't an attempt at spamming users ...
-    $result = PLG_checkforSpam ($mailtext, $_CONF['spamx']);
-    if ($result > 0) {
-        COM_updateSpeedlimit ('mail');
-        COM_displayMessageAndAbort ($result, 'spamx', 403, 'Forbidden');
+    $presave = PLG_itemPreSave('contact', $message);
+    if (!empty($presave)) {
+        return false;
     }
 
-    $mailtext .= '------------------------------------------------------------'
-              . LB . LB
-              . COM_undoSpecialChars($story->displayElements('title')) . LB
-              . strftime ($_CONF['date'], $story->DisplayElements('unixdate')) . LB;
-
-    if ($_CONF['contributedbyline'] == 1) {
-        $author = COM_getDisplayName($story->displayElements('uid'));
-        $mailtext .= $LANG01[1] . ' ' . $author . LB;
-    }
-
-    $introtext = $story->DisplayElements('introtext');
-    $bodytext  = $story->DisplayElements('bodytext');
-    $introtext = COM_undoSpecialChars(strip_tags($introtext));
-    $bodytext  = COM_undoSpecialChars(strip_tags($bodytext));
-
-    $introtext = str_replace(array("\012\015", "\015"), LB, $introtext);
-    $bodytext  = str_replace(array("\012\015", "\015"), LB, $bodytext);
-
-    $mailtext .= LB . $introtext;
-    if (! empty($bodytext)) {
-        $mailtext .= LB . LB . $bodytext;
-    }
-    $mailtext .= LB . LB 
-        . '------------------------------------------------------------' . LB;
-
-    if ($story->DisplayElements('commentcode') == 0) { // comments allowed
-        $mailtext .= $LANG08[24] . LB
-                  . COM_buildUrl ($_CONF['site_url'] . '/article.php?story='
-                                  . $sid . '#comments');
-    } else { // comments not allowed - just add the story's URL
-        $mailtext .= $LANG08[33] . LB
-                  . COM_buildUrl ($_CONF['site_url'] . '/article.php?story='
-                                  . $sid);
-    }
-
-    $mailto = COM_formatEmailAddress($to, $toemail);
-    $mailfrom = COM_formatEmailAddress($from, $fromemail);
-    $subject = 'Re: ' . COM_undoSpecialChars(strip_tags($story->DisplayElements('title')));
-
-    $sent = COM_mail($mailto, $subject, $mailtext, $mailfrom);
-
-    if ($sent && isset($_POST['cc']) && ($_POST['cc'] == 'on')) {
-        $ccmessage = sprintf($LANG08[38], $to);
-        $ccmessage .= "\n------------------------------------------------------------\n\n" . $mailtext;
-
-        $sent = COM_mail($mailfrom, $subject, $ccmessage, $mailfrom);
-    }
-
-    COM_updateSpeedlimit ('mail');
-
-
-    return $retval;
-}
-
-/**
-* Display form to email a story to someone.
-*
-* @param    string  $sid    ID of article to email
-* @return   string          HTML for email story form
-*
-*/
-function CLASSIFIEDS_mailAdForm ($sid, $to = '', $toemail = '', $from = '',
-                        $fromemail = '', $shortmsg = '', $msg = 0)
-{
-    global $_CONF, $_TABLES, $_USER, $LANG08;
-
-    require_once $_CONF['path_system'] . 'lib-story.php';
-
-    $retval = '';
-
-    if (COM_isAnonUser() && (($_CONF['loginrequired'] == 1) ||
-                             ($_CONF['emailstoryloginrequired'] == 1))) {
-        $retval .= CLASSIFIEDS_loginRequiredForm();
-
-        return $retval;
-    }
-
-    $story = new Story();
-    $result = $story->loadFromDatabase($sid, 'view');
-
-    if ($result != STORY_LOADED_OK) {
-        return COM_refresh($_CONF['site_url'] . '/index.php');
-    }
-
-    if ($msg > 0) {
-        $retval .= COM_showMessage ($msg);
-    }
-
-    if (empty ($from) && empty ($fromemail)) {
-        if (!COM_isAnonUser()) {
-            $from = COM_getDisplayName ($_USER['uid'], $_USER['username'],
-                                        $_USER['fullname']);
-            $fromemail = DB_getItem ($_TABLES['users'], 'email',
-                                     "uid = {$_USER['uid']}");
+    if ($mode === 'report') {
+        $to = $_CONF['site_mail'];
+    } else {
+        if (!CLASSIFIEDS_canContactUser($uid)) {
+            return false;
         }
+
+        $result = DB_query(
+            "SELECT username, fullname, email FROM {$_TABLES['users']} WHERE uid = " . $uid
+        );
+        $recipient = DB_fetchArray($result);
+        if (!is_array($recipient) || empty($recipient['email'])) {
+            return false;
+        }
+
+        $recipientName = !empty($recipient['fullname'])
+            ? $recipient['fullname']
+            : $recipient['username'];
+        $to = COM_formatEmailAddress($recipientName, $recipient['email']);
     }
 
-    $mail_template = new Template($_CONF['path_layout'] . 'profiles');
-    $mail_template->set_file('form', 'contactauthorform.thtml');
-    $mail_template->set_var('xhtml', XHTML);
-    $mail_template->set_var('site_url', $_CONF['site_url']);
-    $mail_template->set_var('site_admin_url', $_CONF['site_admin_url']);
-    $mail_template->set_var('layout_url', $_CONF['layout_url']);
-    $mail_template->set_var('start_block_mailstory2friend',
-                            COM_startBlock($LANG08[17]));
-    $mail_template->set_var('lang_title', $LANG08[31]);
-    $mail_template->set_var('story_title', $story->displayElements('title'));
-    $url = COM_buildUrl($_CONF['site_url'] . '/article.php?story=' . $sid);
-    $mail_template->set_var('story_url', $url);
-    $link = COM_createLink($story->displayElements('title'), $url);
-    $mail_template->set_var('story_link', $link);
-    $mail_template->set_var('lang_fromname', $LANG08[20]);
-    $mail_template->set_var('name', $from);
-    $mail_template->set_var('lang_fromemailaddress', $LANG08[21]);
-    $mail_template->set_var('email', $fromemail);
-    $mail_template->set_var('lang_toname', $LANG08[18]);
-    $mail_template->set_var('toname', $to);
-    $mail_template->set_var('lang_toemailaddress', $LANG08[19]);
-    $mail_template->set_var('toemail', $toemail);
-    $mail_template->set_var('lang_cc', $LANG08[36]);
-    $mail_template->set_var('lang_cc_description', $LANG08[37]);
-    $mail_template->set_var('lang_shortmessage', $LANG08[27]);
-    $mail_template->set_var('shortmsg', htmlspecialchars($shortmsg));
-    $mail_template->set_var('lang_warning', $LANG08[22]);
-    $mail_template->set_var('lang_sendmessage', $LANG08[16]);
-    $mail_template->set_var('story_id',$sid);
-    $mail_template->set_var('end_block', COM_endBlock());
-    PLG_templateSetVars('emailstory', $mail_template);
-    $mail_template->parse('output', 'form');
-    $retval .= $mail_template->finish($mail_template->get_var('output'));
+    $from = COM_formatEmailAddress($author, $authoremail);
+    $mailSubject = '[' . $_CONF['site_name'] . '] Classifieds #' . $ad . ' - ' . $subject;
+    $mailBody = $message . "\n\n"
+        . 'Classified ad: #' . $ad . "\n"
+        . $_CONF['site_url'] . '/classifieds/index.php?mode=v&ad=' . $ad . "\n";
 
-    return $retval;
+    $sent = COM_mail($to, $mailSubject, $mailBody, $from);
+
+    if ($sent && $copySender) {
+        COM_mail($from, $mailSubject, $mailBody, $_CONF['noreply_mail']);
+    }
+
+    COM_updateSpeedlimit('mail');
+
+    return (bool) $sent;
 }
-
-
-?>
