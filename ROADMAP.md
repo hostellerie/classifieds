@@ -1003,6 +1003,11 @@ Functional tests:
 
 Completed in the current development snapshot:
 
+- contact/report flow rewritten from scratch around the ad id; recipient and subject are derived server-side from the database;
+- removed the dead "advise to a friend" route and legacy mail-to-friend code copied from Geeklog profiles;
+- removed the duplicated Classifieds user-profile renderer and use Geeklog core `USER_showProfile()` directly;
+- ad access checks now enforce native Geeklog ACLs instead of checking only the deleted flag;
+- category/ad missing-field validators now use explicit arrays and bounded IDs, avoiding PHP 8 string-to-array errors;
 - removed PHP 8-incompatible `each()` use from image handling;
 - made request filtering safe when expected scalar keys are absent or submitted as arrays;
 - enabled server-side CSRF validation for ad create/edit/delete/copy/republish writes;
