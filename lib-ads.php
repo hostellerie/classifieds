@@ -52,7 +52,8 @@ function CLASSIFIEDS_saveAd($data, $files)
 
     if ($isEdit) {
         $query = DB_query(
-            "SELECT * FROM {$_TABLES['cl']} WHERE clid = " . $clid . " LIMIT 1"
+            "SELECT owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+            . "FROM {$_TABLES['cl']} WHERE clid = " . $clid . " LIMIT 1"
         );
         $existing = DB_fetchArray($query);
 
@@ -297,7 +298,8 @@ function CLASSIFIEDS_deleteAd($clid, $hard = false)
     }
 
     $query = DB_query(
-        "SELECT * FROM {$_TABLES['cl']} WHERE clid = " . $clid . " LIMIT 1"
+        "SELECT title, price, owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+        . "FROM {$_TABLES['cl']} WHERE clid = " . $clid . " LIMIT 1"
     );
     $ad = DB_fetchArray($query);
     if (!is_array($ad)) {
