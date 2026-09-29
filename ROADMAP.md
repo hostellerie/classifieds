@@ -972,21 +972,21 @@ Functional tests:
 
 ## Phase 1 — 1.4.0-dev bootstrap
 
-- [ ] bump development code version to 1.4.0-dev;
+- [x] bump development code version to 1.4.0-dev;
 - [ ] update compatibility declarations only as tests justify them;
-- [ ] add release/upgrade notes skeleton;
-- [ ] add explicit shared-files-safe upgrade structure.
+- [x] add release/upgrade notes skeleton;
+- [x] add explicit shared-files-safe upgrade structure.
 
 ## Phase 2 — privacy and Pro merge
 
-- [ ] remove installation telemetry;
-- [ ] import Pro notification functions;
-- [ ] import scheduled expiration task;
-- [ ] import republish/copy logic;
-- [ ] import image-copy logic;
-- [ ] review category seed file;
-- [ ] remove Pro loader and edition gating;
-- [ ] preserve historical Pro configuration.
+- [x] remove installation and upgrade telemetry;
+- [x] import Pro notification functions;
+- [x] import scheduled expiration task;
+- [x] import republish/copy logic;
+- [x] import image-copy logic;
+- [x] review category seed file (not auto-imported: historical file is an opinionated mostly-French taxonomy);
+- [x] remove Pro loader and edition gating;
+- [x] preserve historical Pro configuration (existing settings reused; legacy Pro file ignored but not deleted).
 
 ## Phase 3 — PHP/security stabilization
 
