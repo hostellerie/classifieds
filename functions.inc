@@ -541,6 +541,26 @@ function CLASSIFIEDS_upgradeConfiguration()
     return true;
 }
 
+/**
+ * Modernize existing Classifieds tables without changing their logical schema.
+ *
+ * @return bool
+ */
+function CLASSIFIEDS_upgradeDatabase()
+{
+    global $_TABLES;
+
+    foreach (array('cl', 'cl_cat', 'cl_pic', 'cl_users') as $tableKey) {
+        DB_query("ALTER TABLE {$_TABLES[$tableKey]} ENGINE=InnoDB");
+        if (DB_error()) {
+            COM_errorLog('Classifieds: failed to convert table ' . $_TABLES[$tableKey] . ' to InnoDB.');
+            return false;
+        }
+    }
+
+    return true;
+}
+
 function plugin_upgrade_classifieds()
 {
     global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES, $_DB_table_prefix;
