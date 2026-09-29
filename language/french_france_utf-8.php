@@ -153,6 +153,8 @@ $LANG_CLASSIFIEDS_2 = array(
 );
 
 $LANG_CLASSIFIEDS_ADMIN = array(
+    'administration'          => 'Administration des petites annonces',
+    'configuration'           => 'Configuration',
     'clid'                    => 'Ad ID',
 	'title'                   => 'Ad title',
 	'owner_id'                => 'Owner ID',
