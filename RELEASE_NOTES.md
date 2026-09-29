@@ -201,3 +201,8 @@ A further source-level cleanup removed remaining legacy behavior before the runt
 - category option rendering now uses purpose-built, escaped helpers rather than dynamic generic SQL builders;
 - opening the category administration list no longer mutates category ordering;
 - comment callbacks now use the real Classifieds ACL contract.
+
+
+## Native date/time formatting
+
+Date/time rendering now follows Geeklog user preferences through `COM_getUserDateTimeFormat()` using Core `dateonly` and `timeonly` modes. The plugin-specific `date_format` and `time_format` settings and all direct `strftime()` calls were removed. Existing upgrade rows for those two obsolete settings are deleted during the 1.4.0 migration.
