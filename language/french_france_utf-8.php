@@ -220,7 +220,11 @@ $LANG_configsections['classifieds'] = array(
 *   @global array $LANG_configsubgroups['classifieds']
 */
 $LANG_configsubgroups['classifieds'] = array(
-    'sg_main' => 'Main Settings'
+    'sg_main' => 'Paramètres principaux'
+);
+
+$LANG_tab['classifieds'] = array(
+    'tab_main' => 'Petites annonces'
 );
 
 /**
@@ -228,11 +232,11 @@ $LANG_configsubgroups['classifieds'] = array(
 *   @global array $LANG_fs['classifieds']
 */
 $LANG_fs['classifieds'] = array(
-    'fs_main'            => 'General Settings',
-    'fs_images'          => 'Images settings',
-	'fs_display'         => 'Display settings',
+    'fs_main'            => 'Paramètres généraux',
+    'fs_images'          => 'Images',
+	'fs_display'         => 'Affichage',
 	'fs_email'           => 'Paramètres des emails',
-    'fs_permissions'     => 'Default Permissions'
+    'fs_permissions'     => 'Permissions par défaut'
  );
  
 /**
@@ -241,27 +245,26 @@ $LANG_fs['classifieds'] = array(
 */
 $LANG_confignames['classifieds'] = array(
     //Main settings
-	'classifieds_folder'  => 'Classifieds folder',
-	'active_days'  => 'Active days',
-    'site_name'  => 'Site name for images folder',
+	'classifieds_folder'  => 'Dossier public des annonces',
+	'active_days'  => 'Durée de validité des annonces',
     
 	//Images settings
-    'max_image_width'  => 'Max image width',
-	'max_image_height'  => 'Max image height',
-    'max_image_size'  => 'Max image size',
-    'max_images_per_ad'  => 'Max images per ad',
+    'max_image_width'  => 'Largeur maximale des images',
+	'max_image_height'  => 'Hauteur maximale des images',
+    'max_image_size'  => 'Taille maximale d’une image',
+    'max_images_per_ad'  => 'Nombre maximal d’images par annonce',
 
      //Display settings
-    'menulabel'  => 'Menulabel',
-    'hide_classifieds_menu'  => 'Hide classifieds menu',
-    'classifieds_main_header'  => 'Main header',
-    'classifieds_main_footer'  => 'Main footer',
-    'classifieds_edit_header'  => 'Editor header',
-    'help_page'  => 'Help page',
-    'currency'  => 'Currency',
-    'date_format'  => 'Date format',
-    'time_format'  => 'Time format',
-    'maxPerPage'  => 'Max per page',
+    'menulabel'  => 'Libellé du menu',
+    'hide_classifieds_menu'  => 'Masquer le menu des annonces',
+    'classifieds_main_header'  => 'En-tête principal',
+    'classifieds_main_footer'  => 'Pied de page principal',
+    'classifieds_edit_header'  => 'En-tête du formulaire',
+    'help_page'  => 'Page d’aide',
+    'currency'  => 'Devise',
+    'date_format'  => 'Format de date',
+    'time_format'  => 'Format de l’heure',
+    'maxPerPage'  => 'Annonces par page',
 	'allow_republish' => 'Permettre la republication des annonces',
 
     // Email settings
@@ -275,8 +278,8 @@ $LANG_confignames['classifieds'] = array(
     'expire_ad_email_admin'  => 'Email admin on ad expire',
 	
     //Permissions settings
-    'classifieds_login_required'  => 'Login required to access classifieds',
-    'default_permissions'  => 'Default permissions'
+    'classifieds_login_required'  => 'Connexion requise pour accéder aux annonces',
+    'default_permissions'  => 'Permissions par défaut'
 );
 
 /**
@@ -287,12 +290,18 @@ $LANG_confignames['classifieds'] = array(
 *   @global array $LANG_configselects['classifieds']
 */
 $LANG_configselects['classifieds'] = array(
-    0 => array('True' => 1, 'False' => 0),
-    1 => array('True' => TRUE, 'False' => FALSE),
-    3 => array('Yes' => 1, 'No' => 0),
-    4 => array('On' => 1, 'Off' => 0),
-    10 => array('5' => 5, '10' => 10, '25' => 25, '50' => 50),
-    12 => array('No access' => 0, 'Read-Only' => 2, 'Read-Write' => 3)
+    3 => array('Oui' => 1, 'Non' => 0),
+    12 => array('Aucun accès' => 0, 'Lecture seule' => 2, 'Lecture-écriture' => 3)
+);
+
+$LANG_configtooltips['classifieds'] = array(
+    'classifieds_folder' => 'Dossier public utilisé par les pages des petites annonces. Sur un site existant, sa modification nécessite de conserver la cohérence des fichiers publics et des liens.',
+    'active_days' => 'Nombre de jours pendant lesquels une annonce reste active avant de pouvoir être notifiée comme expirée et republiée.',
+    'max_image_size' => 'Taille maximale, en octets, pour une image envoyée avec une annonce.',
+    'max_images_per_ad' => 'Nombre maximal d’images pouvant être associées à une annonce.',
+    'allow_republish' => 'Permet de copier une annonce expirée vers une nouvelle annonce active tout en conservant l’ancienne dans l’historique.',
+    'classifieds_login_required' => 'Lorsque cette option est activée, les visiteurs doivent se connecter pour accéder aux petites annonces.',
+    'default_permissions' => 'Permissions ACL Geeklog appliquées aux nouveaux contenus Classifieds.'
 );
 
 ?>
