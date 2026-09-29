@@ -152,6 +152,8 @@ $LANG_CLASSIFIEDS_2 = array(
 );
 
 $LANG_CLASSIFIEDS_ADMIN = array(
+    'administration'          => 'Classifieds administration',
+    'configuration'           => 'Configuration',
     'clid'                    => 'Ad ID',
 	'title'                   => 'Ad title',
 	'owner_id'                => 'Owner ID',
