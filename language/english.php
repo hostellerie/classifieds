@@ -97,7 +97,6 @@ $LANG_CLASSIFIEDS_1 = array(
 	'view_all_ads'            => 'View all ads',
 	'under_construction'      => 'Under construction',
     'image_not_writable'      => 'The classifieds images folder does not exists or is not writable. You must check this issue before using the classifieds plugin.<br' . XHTML . '><br' . XHTML . '>Please create a classifieds sub folder within the images folder.',
-    'install_jquery'          => 'To allow your site users to display the ads images in a lightbox, you need to install the jQuery plugin for Geeklog.',
 	'ad-list-active'          => 'Active ad',
 	'ad-list-delete'          => 'Deleted ad',
 	'ad-list-old'             => 'Old ad',
