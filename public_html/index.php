@@ -47,7 +47,7 @@ if (!in_array('classifieds', $_PLUGINS)) {
 $vars = array(
     'mode'        => 'alpha',
     'page'        => 'number',
-    'catid'       => 'alpha',
+    'catid'       => 'number',
     'ad'          => 'number',
     'op'          => 'alpha',
     'clid'        => 'number',
@@ -56,7 +56,7 @@ $vars = array(
     'title'       => 'text',
     'text'        => 'text',
     'price'       => 'text',
-    'tel'         => 'alpha',
+    'tel'         => 'text',
     'hide_tel'    => 'number',
     'status'      => 'number',
     'siren'       => 'text',
@@ -64,7 +64,7 @@ $vars = array(
     'authoremail' => 'text',
     'message'     => 'text',
     'cc'          => 'number',
-    'postcode'    => 'alpha',
+    'postcode'    => 'text',
     'city'        => 'text',
     'u'           => 'number'
 );
