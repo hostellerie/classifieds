@@ -435,31 +435,5 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
     return $retval;
 }
 
-/**
-* Re-orders all categories in increments of 10
-*
-*/
-function reorderCategories()
-{
-    global $_TABLES;
 
-    $sql = "SELECT * FROM {$_TABLES['cl_cat']} ORDER BY catorder ASC;";
-    $result = DB_query($sql);
-    $nrows = DB_numRows($result);
-
-
-    $catOrd = 10;
-    $stepNumber = 10;
-
-    for ($i = 0; $i < $nrows; $i++) {
-        $A = DB_fetchArray($result);
-
-        if ($A['catorder'] != $catOrd) {  // only update incorrect ones
-            $q = "UPDATE " . $_TABLES['cl_cat'] . " SET catorder = '" .
-                  $catOrd . "' WHERE cid = '" . $A['cid'] ."'";
-            DB_query($q);
-        }
-        $catOrd += $stepNumber;
-    }
-}
 ?>
