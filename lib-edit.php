@@ -297,118 +297,195 @@ function CLASSIFIEDS_getAdForm($ad = array(), $copy=false) {
     return $retval;
 }
 
-function CLASSIFIEDS_saveImage ($ad, $FILES, $clid) {
+function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
+{
+    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES;
 
-    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES, $LANG24;
-	
+    $clid = (int) $clid;
+    if ($clid <= 0) {
+        return false;
+    }
+
     $args = is_array($ad) ? $ad : array();
+    $FILES = is_array($FILES) ? $FILES : array();
 
-	// Delete any images if needed
-	if (array_key_exists('delete', $args)) {
-		$delete = count($args['delete']);
-		for ($i = 1; $i <= $delete; $i++) {
-			$pi_filename = DB_getItem ($_TABLES['cl_pic'],'pi_filename', 'pi_pid = ' . $clid . ' AND pi_img_num = ' . key($args['delete']));
-			CLASSIFIEDS_deleteImage ($pi_filename);
-			DB_query ("DELETE FROM {$_TABLES['cl_pic']} WHERE pi_pid = ". $clid . " AND pi_img_num = " . key($args['delete']));
-			next($args['delete']);
-		}
-	}
+    $deleteNumbers = array();
+    if (isset($args['delete']) && is_array($args['delete'])) {
+        foreach (array_keys($args['delete']) as $imageNumber) {
+            $imageNumber = (int) $imageNumber;
+            if ($imageNumber > 0) {
+                $deleteNumbers[$imageNumber] = $imageNumber;
+            }
+        }
+    }
 
-	// OK, let's upload any pictures with the ad
-	if (DB_count($_TABLES['cl_pic'], 'pi_pid', $clid) > 0) {
-		$index_start = DB_getItem($_TABLES['cl_pic'],'max(pi_img_num)',"pi_pid = '". $clid. "'") + 1;
-	} else {
-		$index_start = 1;
-	}
+    $existingCount = (int) DB_count($_TABLES['cl_pic'], 'pi_pid', $clid);
+    $remainingCount = max(0, $existingCount - count($deleteNumbers));
+    $maxImages = max(0, (int) $_CLASSIFIEDS_CONF['max_images_per_ad']);
+    $availableSlots = max(0, $maxImages - $remainingCount);
 
-	if (count($FILES) > 0 AND $_CLASSIFIEDS_CONF['max_images_per_ad'] > 0) {
-		require_once($_CONF['path_system'] . 'classes/upload.class.php');
-		$upload = new upload();
+    $uploadFiles = array();
+    foreach ($FILES as $key => $file) {
+        if (!is_array($file) || empty($file['name'])) {
+            continue;
+        }
+        $uploadFiles[$key] = $file;
+        if (count($uploadFiles) >= $availableSlots) {
+            break;
+        }
+    }
 
-		//Debug with story debug function
-		if (isset ($_CONF['debug_image_upload']) && $_CONF['debug_image_upload']) {
-			$upload->setLogFile ($_CONF['path'] . 'logs/error.log');
-			$upload->setDebug (true);
-		}
-		$upload->setMaxFileUploads ($_CLASSIFIEDS_CONF['max_images_per_ad']);
-		if (!empty($_CONF['image_lib'])) {
-			if ($_CONF['image_lib'] == 'imagemagick') {
-				// Using imagemagick
-				$upload->setMogrifyPath ($_CONF['path_to_mogrify']);
-			} elseif ($_CONF['image_lib'] == 'netpbm') {
-				// using netPBM
-				$upload->setNetPBM ($_CONF['path_to_netpbm']);
-			} elseif ($_CONF['image_lib'] == 'gdlib') {
-				// using the GD library
-				$upload->setGDLib ();
-			}
-			$upload->setAutomaticResize(true);
-			$upload->keepOriginalImage (false);
+    $uploadedNames = array();
+    $insertedNumbers = array();
 
-			if (isset($_CONF['jpeg_quality'])) {
-				$upload->setJpegQuality($_CONF['jpeg_quality']);
-			}
-		}
-		$upload->setAllowedMimeTypes (array (
-				'image/gif'   => '.gif',
-				'image/jpeg'  => '.jpg,.jpeg',
-				'image/pjpeg' => '.jpg,.jpeg',
-				'image/x-png' => '.png',
-				'image/png'   => '.png'
-				));
-		
-		if (!$upload->setPath($_CLASSIFIEDS_CONF['path_images'])) {
-			$output = COM_siteHeader ('menu', $LANG24[30]);
-			$output .= COM_startBlock ($LANG24[30], '', COM_getBlockTemplate ('_msg_block', 'header'));
-			$output .= $upload->printErrors (false);
-			$output .= COM_endBlock (COM_getBlockTemplate ('_msg_block', 'footer'));
-			$output .= COM_siteFooter ();
-			echo $output;
-			exit;
-		}
+    if (!empty($uploadFiles) && $availableSlots > 0) {
+        require_once $_CONF['path_system'] . 'classes/upload.class.php';
 
-		// NOTE: if $_CONF['path_to_mogrify'] is set, the call below will
-		// force any images bigger than the passed dimensions to be resized.
-		// If mogrify is not set, any images larger than these dimensions
-		// will get validation errors
-		$upload->setMaxDimensions($_CLASSIFIEDS_CONF['max_image_width'], $_CLASSIFIEDS_CONF['max_image_height']);
-		$upload->setMaxFileSize($_CLASSIFIEDS_CONF['max_image_size']); // size in bytes, 1048576 = 1MB
+        $upload = new upload();
 
-		// Set file permissions on file after it gets uploaded (number is in octal)
-		$upload->setPerms('0644');
-		$filenames = array();
-		$end_index = $index_start + $upload->numFiles() - 1;
-		for ($z = $index_start; $z <= $end_index; $z++) {
-			$curfile = current($FILES);
-			if (!empty($curfile['name'])) {
-				$pos = strrpos($curfile['name'],'.') + 1;
-				$fextension = substr($curfile['name'], $pos);
-				$filenames[] = $clid . '_' . $z . '.' . $fextension;
-			}
-			next($FILES);
-		}
-		$upload->setFileNames($filenames);
-		reset($FILES);
-		$upload->uploadFiles();
+        if (!empty($_CONF['debug_image_upload'])) {
+            $upload->setLogFile($_CONF['path'] . 'logs/error.log');
+            $upload->setDebug(true);
+        }
 
-		if ($upload->areErrors()) {
-			$retval = COM_siteHeader('menu', $LANG24[30]);
-			$retval .= COM_startBlock ($LANG24[30], '',
-						COM_getBlockTemplate ('_msg_block', 'header'));
-			$retval .= $upload->printErrors(false);
-			$retval .= COM_endBlock(COM_getBlockTemplate ('_msg_block', 'footer'));
-			$retval .= COM_siteFooter();
-			echo $retval;
-			exit;
-		}
+        $upload->setMaxFileUploads($availableSlots);
 
-		reset($filenames);
-		for ($z = $index_start; $z <= $end_index; $z++) {
-			DB_query("INSERT INTO {$_TABLES['cl_pic']} (pi_pid, pi_img_num, pi_filename) VALUES ('" . $clid . "', $z, '" . current($filenames) . "')");
-			next($filenames);
-		}
-	}
-	return true;
+        if (!empty($_CONF['image_lib'])) {
+            if ($_CONF['image_lib'] === 'imagemagick') {
+                $upload->setMogrifyPath($_CONF['path_to_mogrify']);
+            } elseif ($_CONF['image_lib'] === 'netpbm') {
+                $upload->setNetPBM($_CONF['path_to_netpbm']);
+            } elseif ($_CONF['image_lib'] === 'gdlib') {
+                $upload->setGDLib();
+            }
+
+            $upload->setAutomaticResize(true);
+            $upload->keepOriginalImage(false);
+
+            if (isset($_CONF['jpeg_quality'])) {
+                $upload->setJpegQuality($_CONF['jpeg_quality']);
+            }
+        }
+
+        $upload->setAllowedMimeTypes(array(
+            'image/gif'   => '.gif',
+            'image/jpeg'  => '.jpg,.jpeg',
+            'image/pjpeg' => '.jpg,.jpeg',
+            'image/x-png' => '.png',
+            'image/png'   => '.png'
+        ));
+
+        if (!$upload->setPath($_CLASSIFIEDS_CONF['path_images'])) {
+            COM_errorLog('Classifieds: image upload path is unavailable.');
+            return false;
+        }
+
+        $upload->setMaxDimensions(
+            (int) $_CLASSIFIEDS_CONF['max_image_width'],
+            (int) $_CLASSIFIEDS_CONF['max_image_height']
+        );
+        $upload->setMaxFileSize((int) $_CLASSIFIEDS_CONF['max_image_size']);
+        $upload->setPerms('0644');
+
+        $nextNumber = (int) DB_getItem(
+            $_TABLES['cl_pic'],
+            'MAX(pi_img_num)',
+            "pi_pid = '" . $clid . "'"
+        ) + 1;
+
+        $filenames = array();
+        $imageNumbers = array();
+
+        foreach ($uploadFiles as $file) {
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $extension = preg_replace('/[^a-z0-9]/', '', $extension);
+            if ($extension === '') {
+                $extension = 'jpg';
+            }
+
+            $filename = $clid . '_' . $nextNumber . '.' . $extension;
+            $filenames[] = $filename;
+            $imageNumbers[] = $nextNumber;
+            $nextNumber++;
+        }
+
+        $upload->setFileNames($filenames);
+        $upload->uploadFiles();
+
+        if ($upload->areErrors()) {
+            foreach ($filenames as $filename) {
+                $path = $_CLASSIFIEDS_CONF['path_images'] . basename($filename);
+                if (is_file($path)) {
+                    @unlink($path);
+                }
+            }
+            COM_errorLog('Classifieds: one or more ad images could not be uploaded.');
+            return false;
+        }
+
+        foreach ($filenames as $index => $filename) {
+            $imageNumber = (int) $imageNumbers[$index];
+            DB_query(
+                "INSERT INTO {$_TABLES['cl_pic']} "
+                . "(pi_pid, pi_img_num, pi_filename) VALUES ('"
+                . $clid . "', " . $imageNumber . ", '"
+                . DB_escapeString($filename) . "')"
+            );
+
+            if (DB_error()) {
+                foreach ($uploadedNames as $uploaded) {
+                    $path = $_CLASSIFIEDS_CONF['path_images'] . basename($uploaded);
+                    if (is_file($path)) {
+                        @unlink($path);
+                    }
+                }
+                $path = $_CLASSIFIEDS_CONF['path_images'] . basename($filename);
+                if (is_file($path)) {
+                    @unlink($path);
+                }
+                foreach ($insertedNumbers as $insertedNumber) {
+                    DB_query(
+                        "DELETE FROM {$_TABLES['cl_pic']} WHERE pi_pid = '"
+                        . $clid . "' AND pi_img_num = " . (int) $insertedNumber
+                    );
+                }
+                COM_errorLog('Classifieds: unable to persist uploaded image metadata.');
+                return false;
+            }
+
+            $uploadedNames[] = $filename;
+            $insertedNumbers[] = $imageNumber;
+        }
+    }
+
+    // Delete old images only after all new uploads have succeeded.
+    foreach ($deleteNumbers as $imageNumber) {
+        $filename = DB_getItem(
+            $_TABLES['cl_pic'],
+            'pi_filename',
+            "pi_pid = '" . $clid . "' AND pi_img_num = " . (int) $imageNumber
+        );
+
+        if ($filename !== '') {
+            if (!CLASSIFIEDS_deleteImage($filename)) {
+                COM_errorLog(
+                    'Classifieds: unable to delete image ' . basename($filename)
+                );
+                return false;
+            }
+        }
+
+        DB_query(
+            "DELETE FROM {$_TABLES['cl_pic']} WHERE pi_pid = '"
+            . $clid . "' AND pi_img_num = " . (int) $imageNumber
+        );
+
+        if (DB_error()) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**
@@ -417,19 +494,20 @@ function CLASSIFIEDS_saveImage ($ad, $FILES, $clid) {
 * @param    string  $image  file name of the image (without the path)
 *
 */
-function CLASSIFIEDS_deleteImage ($image)
+function CLASSIFIEDS_deleteImage($image)
 {
     global $_CLASSIFIEDS_CONF;
 
-    if (empty ($image)) {
-        return;
+    if (empty($image)) {
+        return true;
     }
-	
-	$pi = $_CLASSIFIEDS_CONF['path_images'] . $image;
-			if (!@unlink ($pi)) {
-                // log the problem but don't abort the script
-                COM_errorLog('Classifieds: unable to remove image ' . basename($image));
-            }
+
+    $path = $_CLASSIFIEDS_CONF['path_images'] . basename($image);
+    if (!is_file($path)) {
+        return true;
+    }
+
+    return @unlink($path);
 }
 
 function CLASSIFIEDS_checkCategory($cat)
