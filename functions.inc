@@ -1587,10 +1587,8 @@ function CLASSIFIEDS_viewAd($clid)
             'delete',
             '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
             . '/index.php?mode=e&amp;op=del&amp;ad=' . $clid
-            . '&amp;' . CSRF_TOKEN . '=' . SEC_createToken()
-            . '" onclick="return confirm(\''
-            . addslashes($LANG_CLASSIFIEDS_1['delete_confirm'])
-            . '\');">' . $LANG_CLASSIFIEDS_1['delete_ad'] . '</a></p>'
+            . '&amp;' . CSRF_TOKEN . '=' . SEC_createToken() . '">'
+            . $LANG_CLASSIFIEDS_1['delete_ad'] . '</a></p>'
         );
     } else {
         $ad->set_var('modify', '');
