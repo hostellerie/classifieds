@@ -13,9 +13,15 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
 {
     global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES;
 
+    $result = array(
+        'ok' => false,
+        'uploaded_files' => array(),
+        'delete_files' => array()
+    );
+
     $clid = (int) $clid;
     if ($clid <= 0) {
-        return false;
+        return $result;
     }
 
     $args = is_array($ad) ? $ad : array();
@@ -37,18 +43,16 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
     $availableSlots = max(0, $maxImages - $remainingCount);
 
     $uploadFiles = array();
-    foreach ($FILES as $key => $file) {
+    foreach ($FILES as $file) {
         if (!is_array($file) || empty($file['name'])) {
             continue;
         }
-        $uploadFiles[$key] = $file;
+
+        $uploadFiles[] = $file;
         if (count($uploadFiles) >= $availableSlots) {
             break;
         }
     }
-
-    $uploadedNames = array();
-    $insertedNumbers = array();
 
     if (!empty($uploadFiles) && $availableSlots > 0) {
         require_once $_CONF['path_system'] . 'classes/upload.class.php';
@@ -89,7 +93,7 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
 
         if (!$upload->setPath($_CLASSIFIEDS_CONF['path_images'])) {
             COM_errorLog('Classifieds: image upload path is unavailable.');
-            return false;
+            return $result;
         }
 
         $upload->setMaxDimensions(
@@ -125,52 +129,31 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
         $upload->uploadFiles();
 
         if ($upload->areErrors()) {
-            foreach ($filenames as $filename) {
-                $path = $_CLASSIFIEDS_CONF['path_images'] . basename($filename);
-                if (is_file($path)) {
-                    @unlink($path);
-                }
-            }
+            CLASSIFIEDS_cleanupImageFiles($filenames);
             COM_errorLog('Classifieds: one or more ad images could not be uploaded.');
-            return false;
+            return $result;
         }
 
         foreach ($filenames as $index => $filename) {
-            $imageNumber = (int) $imageNumbers[$index];
             DB_query(
                 "INSERT INTO {$_TABLES['cl_pic']} "
                 . "(pi_pid, pi_img_num, pi_filename) VALUES ('"
-                . $clid . "', " . $imageNumber . ", '"
+                . $clid . "', " . (int) $imageNumbers[$index] . ", '"
                 . DB_escapeString($filename) . "')"
             );
 
             if (DB_error()) {
-                foreach ($uploadedNames as $uploaded) {
-                    $path = $_CLASSIFIEDS_CONF['path_images'] . basename($uploaded);
-                    if (is_file($path)) {
-                        @unlink($path);
-                    }
-                }
-                $path = $_CLASSIFIEDS_CONF['path_images'] . basename($filename);
-                if (is_file($path)) {
-                    @unlink($path);
-                }
-                foreach ($insertedNumbers as $insertedNumber) {
-                    DB_query(
-                        "DELETE FROM {$_TABLES['cl_pic']} WHERE pi_pid = '"
-                        . $clid . "' AND pi_img_num = " . (int) $insertedNumber
-                    );
-                }
+                CLASSIFIEDS_cleanupImageFiles($filenames);
                 COM_errorLog('Classifieds: unable to persist uploaded image metadata.');
-                return false;
+                return $result;
             }
 
-            $uploadedNames[] = $filename;
-            $insertedNumbers[] = $imageNumber;
+            $result['uploaded_files'][] = $filename;
         }
     }
 
-    // Delete old images only after all new uploads have succeeded.
+    // Stage old image deletions in SQL only. Physical files are removed after
+    // the outer ad transaction commits successfully.
     foreach ($deleteNumbers as $imageNumber) {
         $filename = DB_getItem(
             $_TABLES['cl_pic'],
@@ -179,12 +162,7 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
         );
 
         if ($filename !== '') {
-            if (!CLASSIFIEDS_deleteImage($filename)) {
-                COM_errorLog(
-                    'Classifieds: unable to delete image ' . basename($filename)
-                );
-                return false;
-            }
+            $result['delete_files'][] = basename($filename);
         }
 
         DB_query(
@@ -193,11 +171,31 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
         );
 
         if (DB_error()) {
-            return false;
+            CLASSIFIEDS_cleanupImageFiles($result['uploaded_files']);
+            return $result;
         }
     }
 
-    return true;
+    $result['ok'] = true;
+
+    return $result;
+}
+
+/**
+ * Remove local image files by filename.
+ *
+ * @param array $files
+ * @return void
+ */
+function CLASSIFIEDS_cleanupImageFiles($files)
+{
+    if (!is_array($files)) {
+        return;
+    }
+
+    foreach ($files as $file) {
+        CLASSIFIEDS_deleteImage($file);
+    }
 }
 
 /**
