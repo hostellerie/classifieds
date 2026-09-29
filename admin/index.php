@@ -273,7 +273,7 @@ function plugin_getListField_classifieds_categories($fieldname, $fieldvalue, $A,
 			}
             break;
         default:
-            $retval = stripslashes($fieldvalue);
+            $retval = htmlspecialchars((string) $fieldvalue, ENT_QUOTES, $_CONF['default_charset']);
             break;
     }
     return $retval;
