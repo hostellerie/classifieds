@@ -1,86 +1,22 @@
-/* CSS for classified plugin */
-/*ad form */
-.ad_form {
-background:#CCC;
-padding:10px;
-color:#333;
-}
-.ad_form  fieldset{
-border:1px solid #999;
-padding:10px;
-}
-.ad_form  legend{
-background:#FFF;
-color:#666;
-padding:3px 5px;
-border:1px solid #BBB;
-font-size:11px;
-display:block;
-}
-/*ad list*/
-.ad_list table {
-width:100%;
-border:none;
-}
-.ad_list td {
-border-bottom: 1px dotted #DDD;
-padding-right:5px;
-}
-.ad-list-date, .ad-list-time
-{
-margin-bottom:5px;
-}
+/* Classifieds plugin */
+
+/* Public list controls */
 #ad-list-searchbox {
-padding:5px;
-background:#DDD;
-border:1px solide #CCC;
-text-align:right;
-border-radius:3px;
--moz-border-radius:3px;
--webkit-border-radius:3px;
+    padding: .5rem;
+    border: 1px solid #CCC;
+    text-align: right;
+    border-radius: .35rem;
 }
-.ad-list-date {
-	width:5%;
-}
-.ad-list-image {
-	width:5%;
-	text-align:center;
-}
-.ad-list-category {
-	width:200px;
-}
-.ad-list-image img {
-	float: left;
-	margin: 5px 10px 5px 0px;
-	border: 1px solid #DDD;
-	padding: 2px;
-}
+
 .ad-list-title {
-font-weight: bold!important;
-font-size: 1.1em!important;
-color: #999!important;
+    font-weight: 700;
+    font-size: 1.1em;
 }
+
 .ad-list-price {
-font-size: 1.0em!important;
+    font-size: 1em;
 }
-.ad-list-cat, .ad-list-postcode, .ad-list-city {
-font-size:0.95em!important;
-margin-bottom:5px;
-}
-.ad-list-old {
-background: #BBB;
-width:15px;
-border:1px solid #333;
-}
-.ad-list-active {
-width:15px;
-border:1px solid #333;
-}
-.ad-list-deleted{
-background: #FFCC66;
-width:15px;
-border:1px solid #333;
-}
+
 /*ad detail*/
 #ad {
 	margin-bottom:60px;
@@ -140,12 +76,6 @@ border: 0px !important;
 .classifieds-contact {
 margin:25px;
 }
-.classifieds-alignright {
-white-space: nowrap;
-width:10%;
-text-align:right;
-}
-
 /* Classifieds image rendering without TimThumb */
 .classifieds-thumb {
     width: 80px;
