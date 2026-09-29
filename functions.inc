@@ -1044,7 +1044,10 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 		    $admin_ad = '<td class="ad-list-views">
 			 <ul><li>' . $A['hits'] . ' ' . $LANG_CLASSIFIEDS_1['hits'] . '</li>';
 			 //repost
-			if ( (function_exists('CLASSIFIEDS_adCopy') && $active==false && $A['deleted'] == 0 &&  $_CLASSIFIEDS_CONF['allow_republish'] == 1 && SEC_hasRights('classifieds.publish')) || SEC_hasRights('classifieds.admin') && $active==false) {
+			if (($active == false && $A['deleted'] == 0
+                && !empty($_CLASSIFIEDS_CONF['allow_republish'])
+                && SEC_hasRights('classifieds.publish'))
+                || (SEC_hasRights('classifieds.admin') && $active == false)) {
 			    $admin_ad .= '<li><a href="' . $_CLASSIFIEDS_CONF['site_url']
                     . '/index.php?op=repost&amp;mode=e&amp;ad=' . (int) $A['clid']
                     . '&amp;' . CSRF_TOKEN . '=' . SEC_createToken() . '">'
