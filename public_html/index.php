@@ -139,148 +139,36 @@ switch ($_REQUEST['mode']) {
                 break;
         
             case 'save':
-                if (!SEC_checkToken()) {
-                    $display .= COM_showMessageText($LANG_CLASSIFIEDS_2['save_fail'], $LANG_CLASSIFIEDS_2['error']);
-                    break;
-                }
-			    $missingfields = CLASSIFIEDS_missingField($_REQUEST);
-                if ($missingfields != '') {
-                    $display .= COM_startBlock($LANG_CLASSIFIEDS_2['error']);
-                    $display .= $LANG_CLASSIFIEDS_2['missing_field'];
-					$display .= '<ul>';
-					foreach ($missingfields as $i => $value) {
-                        $display .= '<li>' . ($missingfields[$i]);
+                $saveResult = CLASSIFIEDS_saveAd($_REQUEST, $_FILES);
+
+                if (!$saveResult['ok']) {
+                    if (!empty($saveResult['errors'])) {
+                        $display .= COM_startBlock($LANG_CLASSIFIEDS_2['error']);
+                        $display .= $LANG_CLASSIFIEDS_2['missing_field'];
+                        $display .= '<ul>';
+                        foreach ($saveResult['errors'] as $error) {
+                            $display .= '<li>' . $error . '</li>';
+                        }
+                        $display .= '</ul>';
+                        $display .= $LANG_CLASSIFIEDS_2['check_it'];
+                        $display .= COM_endBlock();
+                    } else {
+                        $display .= COM_showMessageText(
+                            $LANG_CLASSIFIEDS_2['save_fail'],
+                            $LANG_CLASSIFIEDS_2['error']
+                        );
                     }
-					$display .= '</ul>';
-					$display .= $LANG_CLASSIFIEDS_2['check_it'];
-                    $display .= COM_endBlock();
+
                     $display .= CLASSIFIEDS_getAdForm($_REQUEST);
                     break;
                 }
-                // Prepare validated values for persistence.
-                $title = DB_escapeString(COM_getTextContent($_REQUEST['title']));
-                $text = DB_escapeString(CLASSIFIEDS_getTextContent($_REQUEST['text']));
-                $city = DB_escapeString(COM_getTextContent($_REQUEST['city']));
-                $postcode = DB_escapeString($_REQUEST['postcode']);
-                $siren = DB_escapeString(COM_getTextContent($_REQUEST['siren']));
-                $catid = (int) $_REQUEST['catid'];
-                $type = ((int) $_REQUEST['type'] === 1) ? 1 : 0;
-                $deleted = !empty($_REQUEST['deleted']) ? 1 : 0;
-                $remove_from_tel = array(' ', '.', '|', ',', '/', ':', '-', '_');
-                $clean_tel = DB_escapeString(str_replace($remove_from_tel, '', $_REQUEST['tel']));
-                $hide_tel = !empty($_REQUEST['hide_tel']) ? 1 : 0;
-                $status = !empty($_REQUEST['status']) ? 1 : 0;
-                $created = date("YmdHis");
-                $modified = date("YmdHis");
 
-                // price can only contain numbers and a decimal
-                $price = str_replace(",","",$_REQUEST['price']);
-                $price = preg_replace('/[^\d.]/', '', $price);
-
-                if (!empty($_REQUEST['clid'])) {
-				    //Edit mode 
-					if (is_numeric($_REQUEST['clid'])) {
-                        $sql = "SELECT * FROM {$_TABLES['cl']} WHERE clid = {$_REQUEST['clid']}";
-                        $res = DB_query($sql);
-                        $A = DB_fetchArray($res);
-					    if (SEC_hasAccess2($A) < 3) {
-	                        echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . "/index.php");
-		                    exit();
-							break;
-						}
-					} else {
-					    echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . "/index.php");
-						exit();
-						break;
-	                }
-					
-				    $sql = "catid = '{$catid}', "
-                     . "status = '{$status}', "
-                     . "type = '{$type}', "
-                     . "tel = '{$clean_tel}', "
-                     . "hide_tel = '{$hide_tel}', "
-			         . "title = '{$title}', "
-			         . "text = '{$text}', "
-			         . "price = '{$price}', "
-					 . "postcode = '{$postcode}', "
-					 . "city = '{$city}', "
-                     . "siren = '{$siren}', "
-			         . "modified = '{$modified}', "
-			         . "deleted = '{$deleted}'
-			         ";
-                    $sql = "UPDATE {$_TABLES['cl']} SET $sql "
-                         . "WHERE clid = {$_REQUEST['clid']}";
-
-                    DB_query($sql);
-                    $last_pid = $_REQUEST['clid'];
-                    if (DB_error()) { 
-                        $msg = $LANG_CLASSIFIEDS_2['save_fail'];
-                    } else {
-                        $msg = $LANG_CLASSIFIEDS_2['save_success'];
-						CLASSIFIEDS_emailEditAd($_REQUEST['title'], $_REQUEST['text'],
-                            (int) $_REQUEST['clid'], $_USER['uid'], $price);
-						modifAd($_REQUEST['clid']);
-                    }
-                } else {
-				    //Create mode
-					if ($_USER['uid'] < 2) {
-	                    $display .= CLASSIFIEDS_loginRequiredForm();
-						break;
-	                }
-					
-				    $sql = "catid = '{$catid}', "
-                     . "status = '{$status}', "
-                     . "type = '{$type}', "
-                     . "tel = '{$clean_tel}', "
-                     . "hide_tel = '{$hide_tel}', "
-			         . "title = '{$title}', "
-			         . "text = '{$text}', "
-			         . "price = '{$price}', "
-					 . "postcode = '{$postcode}', "
-					 . "city = '{$city}', "
-                     . "siren = '{$siren}', "
-			         . "created = '{$created}', "
-			         . "modified = '{$modified}', "
-					 . "owner_id = '" . (int) $_USER['uid'] . "'
-			         ";
-                    $sql = "INSERT INTO {$_TABLES['cl']} SET $sql ";
-					
-					DB_query($sql);
-                    $last_pid = DB_insertId();
-					if ($last_pid == 0) $last_pid = 1;
-                    if (DB_error()) {
-                        $msg = $LANG_CLASSIFIEDS_2['save_fail'];
-                    } else {
-                        $msg = $LANG_CLASSIFIEDS_2['save_success'];
-						$adnumber = DB_insertId();
-						CLASSIFIEDS_emailNewAd($title, $text, $adnumber, $_USER['uid'], $price);
-						//add user to classifieds users group
-						require_once $_CONF['path_system'] . 'lib-user.php';
-						$ad_users = DB_getItem($_TABLES['groups'], 'grp_id',
-                             "grp_name='Classifieds Users'");
-                        USER_addGroup ($ad_users, $_USER['uid']);						
-						
-						// Populate user data
-						if (DB_count($_TABLES['cl_users'],'user_id',$_USER['uid']) > 0) {
-						    DB_query("UPDATE {$_TABLES['cl_users']} SET tel = '{$clean_tel}', postcode = '{$postcode}',
-                            city = '{$city}', status = '{$status}', siren = '{$siren}' WHERE user_id = " . (int) $_USER['uid']);
-						} else {
-						    DB_query("INSERT INTO {$_TABLES['cl_users']} SET user_id = " . (int) $_USER['uid'] . ",
-                            tel = '{$clean_tel}', postcode = '{$postcode}',
-                            city = '{$city}', status = '{$status}',
-                            siren = '{$siren}'");
-						}
-                    }
-                }
-		        
-		        //Process images
-
-		        CLASSIFIEDS_saveImage ($_REQUEST, $_FILES, $last_pid);
-		        
-                // save complete, return to Ad display
-                echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php?msg=' . urlencode($msg) . '&amp;mode=v&amp;ad=' . $last_pid);
-                exit();
-                break;
+                echo COM_refresh(
+                    $_CLASSIFIEDS_CONF['site_url']
+                    . '/index.php?msg=' . urlencode($saveResult['message'])
+                    . '&amp;mode=v&amp;ad=' . (int) $saveResult['id']
+                );
+                exit;
 
             /* this case is currently not used... future expansion? */
             case 'preview':
