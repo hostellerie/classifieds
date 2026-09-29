@@ -139,7 +139,7 @@ function CLASSIFIEDS_listAds()
         'table'          => 'cl',
         'sql'            => $sql,
         'query_fields'   => array('clid', 'created', 'title', 'owner_id'),
-        'default_filter' => COM_getPermSQL ('AND', 0, 3)
+        'default_filter' => ''
     );
 
     $retval .= ADMIN_list('classifieds', 'plugin_getListField_classifieds',
