@@ -310,6 +310,14 @@ function plugin_displaycomment_classifieds($id, $cid, $title, $order, $format, $
         );
     }
 
+    $commentCode = plugin_commentenabled_classifieds($clid);
+    if ($commentCode == COMMENT_CODE_DISABLED) {
+        return COM_showMessageText(
+            $LANG_CLASSIFIEDS_1['ads_not_available'],
+            $LANG_ACCESS['accessdenied']
+        );
+    }
+
     $sql = "SELECT owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
         . "FROM {$_TABLES['cl']} "
         . "WHERE clid = " . $clid
@@ -347,7 +355,7 @@ function plugin_displaycomment_classifieds($id, $cid, $title, $order, $format, $
         $page,
         $view,
         $deleteOption,
-        0
+        $commentCode
     );
 }
 
