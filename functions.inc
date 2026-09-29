@@ -1313,7 +1313,11 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
             ENT_QUOTES,
             $_CONF['default_charset']
         );
-        $adUrl = plugin_idToURL_classifieds('classifieds', $A['clid']);
+        $adUrl = htmlspecialchars(
+            plugin_idToURL_classifieds('classifieds', $A['clid']),
+            ENT_QUOTES,
+            $_CONF['default_charset']
+        );
 
         if (is_numeric($limit)) {
             $shortTitle = (strlen($title) > 40)
