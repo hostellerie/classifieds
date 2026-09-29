@@ -165,10 +165,24 @@ function plugin_runScheduledTask_classifieds()
             continue;
         }
 
-        if (CLASSIFIEDS_emailAdExpire($A['title'], $A['text'], $clid, $A['owner_id'], $A['price'])) {
-            DB_query("UPDATE {$_TABLES['cl']} SET notification = 2 WHERE clid = " . $clid);
-        } else {
-            COM_errorLog('Classifieds: expiration notification failed for ad #' . $clid . '. It will be retried.');
+        $sent = CLASSIFIEDS_emailAdExpire(
+            $A['title'],
+            $A['text'],
+            $clid,
+            $A['owner_id'],
+            $A['price']
+        );
+
+        if (!$sent) {
+            COM_errorLog(
+                'Classifieds: one or more expiration notification recipients '
+                . 'could not be reached for ad #' . $clid
+                . '. The expiration event is marked handled to avoid duplicate mail.'
+            );
         }
+
+        DB_query(
+            "UPDATE {$_TABLES['cl']} SET notification = 2 WHERE clid = " . $clid
+        );
     }
 }
