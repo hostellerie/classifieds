@@ -200,10 +200,7 @@ $LANG_CLASSIFIEDS_EMAIL = array(
 	'price'                   => 'Price:',
 );
 
-$LANG_CLASSIFIEDS_LOGIN = array(
-    1                         => 'Login required',
-    2                         => 'Sorry, to access this area you need to be logged in as a user.'
-);
+
 // Messages for the plugin upgrade
 $PLG_classifieds_MESSAGE3002 = $LANG32[9]; // "requires a newer version of Geeklog"
 $PLG_classifieds_MESSAGE1    = 'Hello world :)';
