@@ -2028,8 +2028,15 @@ function CLASSIFIEDS_missingField($field)
     if ($catid <= 0) {
         $fields[] = $LANG_CLASSIFIEDS_2['category'];
     } else {
-        $pid = (int) DB_getItem($_TABLES['cl_cat'], 'pid', 'cid = ' . $catid);
-        if ($pid === 0) {
+        $categoryResult = DB_query(
+            "SELECT pid, catdeleted FROM {$_TABLES['cl_cat']} "
+            . "WHERE cid = " . $catid . " LIMIT 1"
+        );
+        $category = DB_fetchArray($categoryResult);
+
+        if (!is_array($category)
+            || (int) $category['pid'] === 0
+            || !empty($category['catdeleted'])) {
             $fields[] = $LANG_CLASSIFIEDS_2['category'];
         }
     }
