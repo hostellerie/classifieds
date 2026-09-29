@@ -1299,7 +1299,6 @@ function CLASSIFIEDS_viewAd ($clid)
 	    $ad->set_var('view_all', '<p><a href="'. $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=va&amp;u=' .
 	    $A['owner_id'] . '">' . $LANG_CLASSIFIEDS_1['view_all'] . '</a></p>');
 	}
-	$ad->set_var('advisor', '');
 	
 	//Price
 	    if ($A['price'] != 0) {
