@@ -12,8 +12,8 @@
     </p>
 
     <p>
-        <label for="classifieds-contact-subject"><strong>{lang_subject}</strong></label><br{xhtml}>
-        <input id="classifieds-contact-subject" type="text" name="subject" size="80" maxlength="96" value="{subject}" readonly="readonly"{xhtml}>
+        <strong>{lang_subject}</strong><br{xhtml}>
+        {subject}
     </p>
 
     <p>
