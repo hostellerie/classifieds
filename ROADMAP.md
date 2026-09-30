@@ -970,9 +970,9 @@ Functional tests:
 
 # Suggested implementation order
 
-## Phase 1 — 1.4.0-dev bootstrap
+## Phase 1 — 1.4.0 bootstrap
 
-- [x] bump development code version to 1.4.0-dev;
+- [x] bump development code version to 1.4.0;
 - [x] update compatibility declarations to the 2.1.1–2.2.2 / PHP 5.6–8.1 modernization target (final declaration remains subject to runtime validation);
 - [x] add release/upgrade notes skeleton;
 - [x] add explicit shared-files-safe upgrade structure.
@@ -1084,7 +1084,7 @@ Additional cleanup completed after the initial Phase 3 pass:
 - [ ] run full upgrade matrix;
 - [ ] run shared-files multisite matrix;
 - [x] rewrite README for the 1.4.0 modernization state;
-- [x] maintain 1.4.0-dev release notes (final release wording remains pending runtime validation);
+- [x] maintain 1.4.0 release notes (final release wording remains pending runtime validation);
 - [ ] set final version to 1.4.0 only after migration and compatibility tests pass.
 
 ---
@@ -1202,7 +1202,7 @@ Additional cleanup completed before runtime testing:
 
 ## Source consolidation complete — runtime validation next
 
-The 1.4.0-dev source consolidation pass is now complete.
+The 1.4.0 source consolidation pass is now complete.
 
 Final source-level corrections before runtime validation include:
 
