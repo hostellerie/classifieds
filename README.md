@@ -39,6 +39,8 @@ The 1.4.0 branch:
 
 Legacy `classifieds_data/proversion/proversion.php` files are ignored by 1.4.0 code and are not deleted automatically.
 
+The public plugin route is now canonicalized to `/classifieds` and is no longer an editable Geeklog Configuration setting. During an upgrade, a historical custom public folder is retained only as hidden compatibility when that directory actually exists on disk.
+
 ## Images
 
 Uploaded ad images remain in the site-scoped Geeklog public image directory:
