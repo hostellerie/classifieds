@@ -1,4 +1,4 @@
-# Classifieds 1.4.0-dev release notes
+# Classifieds 1.4.0 release notes
 
 Development branch: `classifieds_1.4.0`
 
@@ -147,7 +147,7 @@ This remains a **development snapshot**, not a final release.
 
 ## Validation still required
 
-Before changing the version from `1.4.0-dev` to `1.4.0`, run the complete runtime matrix, including:
+Before changing the version from `1.4.0` to `1.4.0`, run the complete runtime matrix, including:
 
 - fresh install;
 - upgrade from 1.3.2;
