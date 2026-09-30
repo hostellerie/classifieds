@@ -41,21 +41,39 @@ if (strpos(strtolower($_SERVER['PHP_SELF']), 'functions.inc') !== false) {
 }
 
 /**
+ * Globals used during normal bootstrap and during Geeklog's autoinstall path.
+ *
+ * Geeklog 2.1.1 loads functions.inc from inside plugin_do_autoinstall(). Files
+ * included from a function inherit that function scope, so plugin globals must
+ * be declared explicitly here instead of relying on top-level include scope.
+ */
+global $_CONF, $_CLASSIFIEDS_DEFAULT, $_CLASSIFIEDS_CONF;
+global $LANG_CLASSIFIEDS_1, $LANG_CLASSIFIEDS_2;
+global $LANG_CLASSIFIEDS_ADMIN, $LANG_CLASSIFIEDS_EMAIL;
+
+/**
  * Language file include
  */
 $plugin_path = $_CONF['path'] . 'plugins/classifieds/';
 $langfile = $plugin_path . 'language/' . $_CONF['language'] . '.php';
 
-if (file_exists($langfile)) {
-    require_once $langfile;
-} else {
-    require_once $plugin_path . 'language/english.php';
+if (!isset($LANG_CLASSIFIEDS_1) || !is_array($LANG_CLASSIFIEDS_1)) {
+    if (file_exists($langfile)) {
+        require $langfile;
+    } else {
+        require $plugin_path . 'language/english.php';
+    }
 }
+
 /**
  * Load our config
  */
 require_once $_CONF['path_system'] . 'classes/config.class.php';
 require_once $plugin_path . 'install_defaults.php';
+
+if (!isset($_CLASSIFIEDS_DEFAULT) || !is_array($_CLASSIFIEDS_DEFAULT)) {
+    $_CLASSIFIEDS_DEFAULT = array();
+}
 
 $c = config::get_instance();
 $storedClassifiedsConfig = $c->get_config('classifieds');
