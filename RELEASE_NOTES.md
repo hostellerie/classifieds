@@ -95,6 +95,7 @@ Ad saves now follow:
 - Changed currency to a normal text setting instead of a nonexistent select-list ID.
 - Added English/French tab metadata and configuration tooltips.
 - Added upgrade repair for persisted `conf_values` metadata.
+- Removed the misleading editable `classifieds_folder` setting from Geeklog Configuration. Fresh installs use the canonical public `/classifieds` directory; upgrades keep an existing custom value hidden only when needed for legacy compatibility, and runtime honors it only when that public directory actually exists.
 - Replaced the old admin-menu template with the shared `plugin-admin-nav*` contract.
 - Uses `ADMIN_createMenu()` for page-level administration actions.
 - Configuration opens Geeklog's native Configuration UI.
