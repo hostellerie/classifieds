@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Classifieds Plugin 1.4.0-dev                                                  |
+// | Classifieds Plugin 1.4.0                                                  |
 // +---------------------------------------------------------------------------+
 // | autoinstall.php                                                           |
 // |                                                                           |
@@ -52,7 +52,7 @@ function plugin_autoinstall_classifieds($pi_name)
     $info = array(
         'pi_name'         => $pi_name,
         'pi_display_name' => $pi_display_name,
-        'pi_version'      => '1.4.0-dev',
+        'pi_version'      => '1.4.0',
         'pi_gl_version'   => '2.1.1',
         'pi_homepage'     => 'https://github.com/Geeklog-Plugins/classifieds'
     );
