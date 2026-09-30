@@ -41,6 +41,19 @@ Legacy `classifieds_data/proversion/proversion.php` files are ignored by 1.4.0 c
 
 The public plugin route is now canonicalized to `/classifieds` and is no longer an editable Geeklog Configuration setting. During an upgrade, a historical custom public folder is retained only as hidden compatibility when that directory actually exists on disk.
 
+## Category CSV import
+
+Category administration can import a UTF-8 CSV file with the columns:
+
+```csv
+key,category,parent_key,order
+vehicles,Vehicles,,10
+cars,Cars,vehicles,10
+motorcycles,Motorcycles,vehicles,20
+```
+
+`key` and `parent_key` are import-only identifiers used to resolve the hierarchy; the database keeps its native `cid` / `pid` structure. Root categories use an empty `parent_key`. Rows may appear in any order. The importer validates the complete file before writing, detects missing parents and cycles, previews create/skip actions, skips categories already present under the same parent, and revalidates on confirmation.
+
 ## Images
 
 Uploaded ad images remain in the site-scoped Geeklog public image directory:
