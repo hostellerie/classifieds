@@ -3,7 +3,7 @@
 Classifieds provides small classified ads integrated with Geeklog permissions, users, search, comments, autotags and administration.
 
 Development branch: `classifieds_1.4.0`  
-Current development version: `1.4.0-dev`
+Current development version: `1.4.0`
 
 ## Compatibility target
 
