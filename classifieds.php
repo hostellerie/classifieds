@@ -38,19 +38,35 @@ $_TABLES['cl_users'] = $_DB_table_prefix . 'cl_users';
 /**
 * Classifieds Configuration.
  */
-$classifiedsFolder = isset($_CLASSIFIEDS_CONF['classifieds_folder'])
-    ? trim((string) $_CLASSIFIEDS_CONF['classifieds_folder'], '/\\')
-    : 'classifieds';
-$classifiedsFolder = preg_replace('/[^A-Za-z0-9_-]/', '', $classifiedsFolder);
-if ($classifiedsFolder === '') {
-    $classifiedsFolder = 'classifieds';
+/*
+ * Public plugin location.
+ *
+ * New installations always use /classifieds. Older installations may still
+ * carry the historical classifieds_folder setting. It is no longer exposed in
+ * Geeklog Configuration, but a genuinely existing custom public directory is
+ * honored so an in-place upgrade cannot break an installation that physically
+ * moved the public files.
+ */
+$classifiedsFolder = 'classifieds';
+if (isset($_CLASSIFIEDS_CONF['classifieds_folder'])) {
+    $legacyFolder = trim((string) $_CLASSIFIEDS_CONF['classifieds_folder'], '/\\');
+    $legacyFolder = preg_replace('/[^A-Za-z0-9_-]/', '', $legacyFolder);
+
+    if ($legacyFolder !== ''
+        && $legacyFolder !== 'classifieds'
+        && is_dir(rtrim($_CONF['path_html'], '/\\') . '/' . $legacyFolder)) {
+        $classifiedsFolder = $legacyFolder;
+    }
 }
 
-$_CLASSIFIEDS_CONF['classifieds_folder'] = $classifiedsFolder;
+if (!defined('CLASSIFIEDS_PUBLIC_FOLDER')) {
+    define('CLASSIFIEDS_PUBLIC_FOLDER', $classifiedsFolder);
+}
+
 $_CLASSIFIEDS_CONF['path_html'] = rtrim($_CONF['path_html'], '/\\')
-    . '/' . $classifiedsFolder . '/';
+    . '/' . CLASSIFIEDS_PUBLIC_FOLDER . '/';
 $_CLASSIFIEDS_CONF['site_url'] = rtrim($_CONF['site_url'], '/')
-    . '/' . $classifiedsFolder;
+    . '/' . CLASSIFIEDS_PUBLIC_FOLDER;
 $_CLASSIFIEDS_CONF['debug'] = false;
 $_CLASSIFIEDS_CONF['path_images'] = rtrim($_CONF['path_images'], '/\\')
     . '/classifieds/';
