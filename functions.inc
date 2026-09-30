@@ -451,7 +451,7 @@ function plugin_dopluginsearch_classifieds(
 
     $sql = "SELECT a.clid AS id, a.title, a.text AS description, "
         . "UNIX_TIMESTAMP(a.created) AS date, a.owner_id AS uid, a.hits, "
-        . "CONCAT('/" . DB_escapeString($_CLASSIFIEDS_CONF['classifieds_folder'])
+        . "CONCAT('/" . DB_escapeString(CLASSIFIEDS_PUBLIC_FOLDER)
         . "/index.php?mode=v&ad=', a.clid) AS url "
         . "FROM {$_TABLES['cl']} AS a "
         . "INNER JOIN {$_TABLES['cl_cat']} AS c ON c.cid = a.catid "
@@ -1202,7 +1202,6 @@ function CLASSIFIEDS_upgradeConfiguration()
         'tab_main' => array(NULL, 'tab', 0, 0, NULL, 0, true),
 
         'fs_main' => array(NULL, 'fieldset', 0, 0, NULL, 0, true),
-        'classifieds_folder' => array($_CLASSIFIEDS_DEFAULT['classifieds_folder'], 'text', 0, 0, NULL, 10, true),
         'active_days' => array($_CLASSIFIEDS_DEFAULT['active_days'], 'text', 0, 0, NULL, 20, true),
 
         'fs_images' => array(NULL, 'fieldset', 0, 1, NULL, 0, true),
@@ -1280,6 +1279,29 @@ function CLASSIFIEDS_upgradeConfiguration()
             COM_errorLog(
                 'Classifieds: unable to repair configuration metadata for ' . $name
             );
+            return false;
+        }
+    }
+
+    /*
+     * classifieds_folder used to be editable even though changing it never
+     * moved the public files. Keep an existing row only as hidden upgrade
+     * compatibility for sites that really moved their public directory.
+     * Fresh installs no longer create this setting.
+     */
+    if ((int) DB_getItem(
+        $_TABLES['conf_values'],
+        'COUNT(*)',
+        "group_name = 'classifieds' AND name = 'classifieds_folder'"
+    ) > 0) {
+        DB_query(
+            "UPDATE {$_TABLES['conf_values']} SET "
+            . "type = 'hidden', selectionArray = -1, sort_order = 0 "
+            . "WHERE group_name = 'classifieds' AND name = 'classifieds_folder'"
+        );
+
+        if (DB_error()) {
+            COM_errorLog('Classifieds: unable to hide legacy classifieds_folder configuration.');
             return false;
         }
     }
