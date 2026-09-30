@@ -49,18 +49,25 @@ if (strpos(strtolower($_SERVER['PHP_SELF']), 'install_defaults.php') !== false) 
 *   Default values to be used during plugin installation/upgrade
 *   @global array $_CLASSIFIEDS_DEFAULT
 */
-global $_DB_table_prefix, $_CLASSIFIEDS_DEFAULT;
+global $_CONF, $_DB_table_prefix, $_CLASSIFIEDS_DEFAULT;
+global $LANG_CLASSIFIEDS_1, $LANG_CLASSIFIEDS_2;
+global $LANG_CLASSIFIEDS_ADMIN, $LANG_CLASSIFIEDS_EMAIL;
 
 /**
  * Language file include
+ *
+ * This file can be included from Geeklog's plugin autoinstall functions.
+ * Declare language arrays global so their values survive that function scope.
  */
 $plugin_path = $_CONF['path'] . 'plugins/classifieds/';
 $langfile = $plugin_path . 'language/' . $_CONF['language'] . '.php';
 
-if (file_exists($langfile)) {
-    require_once $langfile;
-} else {
-    require_once $plugin_path . 'language/english.php';
+if (!isset($LANG_CLASSIFIEDS_1) || !is_array($LANG_CLASSIFIEDS_1)) {
+    if (file_exists($langfile)) {
+        require $langfile;
+    } else {
+        require $plugin_path . 'language/english.php';
+    }
 }
 
 $_CLASSIFIEDS_DEFAULT = array();
