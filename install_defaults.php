@@ -75,7 +75,6 @@ $_CLASSIFIEDS_DEFAULT = array();
 /**
 *   Main settings
 */
-$_CLASSIFIEDS_DEFAULT['classifieds_folder']    = 'classifieds'; //Allow to move the directory where the users's classifieds program is store
 $_CLASSIFIEDS_DEFAULT['active_days'] = 60;
 
  /**
@@ -138,8 +137,6 @@ function plugin_initconfig_classifieds()
 
 		//Main settings   
 		$c->add('fs_main', NULL, 'fieldset', 0, 0, NULL, 0, true, 'classifieds', 0);
-        $c->add('classifieds_folder', $_CLASSIFIEDS_DEFAULT['classifieds_folder'],
-                'text', 0, 0, NULL, 10, true, 'classifieds', 0);
 		$c->add('active_days', $_CLASSIFIEDS_DEFAULT['active_days'],
                 'text', 0, 0, NULL, 20, true, 'classifieds', 0);
 
