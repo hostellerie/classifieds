@@ -88,6 +88,14 @@ Ad saves now follow:
 - Frontend display uses the local image files directly with responsive CSS and lazy loading.
 - No remote image proxy is used.
 
+## Category administration
+
+- Added a UTF-8 CSV importer for categories and subcategories using `key,category,parent_key,order`.
+- Added downloadable CSV template and validation preview before import.
+- Parent relationships are resolved by stable import keys rather than database IDs, so files are portable across sites.
+- Import validation rejects malformed rows, duplicate keys, missing parents, self-parenting and hierarchy cycles before database writes.
+- Existing categories under the same parent are skipped; confirmation revalidates the payload and imports transactionally.
+
 ## Configuration and administration
 
 - Added explicit native configuration tab hierarchy.
