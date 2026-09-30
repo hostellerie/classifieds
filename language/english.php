@@ -244,9 +244,7 @@ $LANG_fs['classifieds'] = array(
 *   @global array $LANG_confignames['classifieds']
 */
 $LANG_confignames['classifieds'] = array(
-    //Main settings
-	'classifieds_folder'  => 'Classifieds folder',
-	'active_days'  => 'Active days',
+    //Main settings	'active_days'  => 'Active days',
     
 	//Images settings
     'max_image_width'  => 'Max image width',
@@ -292,9 +290,7 @@ $LANG_configselects['classifieds'] = array(
     12 => array('No access' => 0, 'Read-Only' => 2, 'Read-Write' => 3)
 );
 
-$LANG_configtooltips['classifieds'] = array(
-    'classifieds_folder' => 'Public folder used by the Classifieds pages. Changing it on an existing site requires the public files and links to remain consistent.',
-    'active_days' => 'Number of days an ad remains active before it becomes eligible for expiration notification and republishing.',
+$LANG_configtooltips['classifieds'] = array(    'active_days' => 'Number of days an ad remains active before it becomes eligible for expiration notification and republishing.',
     'max_image_size' => 'Maximum upload size in bytes for one ad image.',
     'max_images_per_ad' => 'Maximum number of images that can be attached to one ad.',
     'allow_republish' => 'Allows eligible expired ads to be copied into a new active ad while preserving the historical original.',
