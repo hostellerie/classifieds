@@ -34,22 +34,31 @@ jobs:
           set -euo pipefail
 
           STAGE="${RUNNER_TEMP}/classifieds-package"
+          PLUGIN_STAGE="${STAGE}/classifieds"
           rm -rf "${STAGE}"
-          mkdir -p "${STAGE}" dist
+          mkdir -p "${PLUGIN_STAGE}" dist
 
+          # Geeklog 2.1.1 determines the plugin name from the archive's first
+          # top-level directory. Therefore every shipped file must live under
+          # classifieds/ inside the ZIP, never directly at the archive root.
+          #
           # Copy only plugin payload files. Hidden files/directories and dist/
           # are deliberately excluded from the installable package.
-          rsync -a             --exclude='.*'             --exclude='*/.*'             --exclude='dist/'             ./ "${STAGE}/"
+          rsync -a \
+            --exclude='.*' \
+            --exclude='*/.*' \
+            --exclude='dist/' \
+            ./ "${PLUGIN_STAGE}/"
 
           # Fail loudly if a hidden entry somehow reaches the staging tree.
-          if find "${STAGE}" -mindepth 1 -name '.*' -print -quit | grep -q .; then
+          if find "${PLUGIN_STAGE}" -mindepth 1 -name '.*' -print -quit | grep -q .; then
             echo "A hidden file or directory was found in the package staging tree."
             exit 1
           fi
 
-          # Basic installable-package sanity checks.
+          # Basic installable-package sanity checks before ZIP creation.
           for required in autoinstall.php functions.inc plugin.json public_html/index.php; do
-            if [ ! -e "${STAGE}/${required}" ]; then
+            if [ ! -e "${PLUGIN_STAGE}/${required}" ]; then
               echo "Missing required plugin file: ${required}"
               exit 1
             fi
@@ -58,10 +67,37 @@ jobs:
           rm -f "dist/${ARCHIVE_NAME}"
           (
             cd "${STAGE}"
-            zip -q -r "${GITHUB_WORKSPACE}/dist/${ARCHIVE_NAME}" .
+            zip -q -r "${GITHUB_WORKSPACE}/dist/${ARCHIVE_NAME}" classifieds
           )
 
+          # Validate both ZIP integrity and the actual Geeklog package layout.
           unzip -t "dist/${ARCHIVE_NAME}"
+
+          mapfile -t top_level_entries < <(
+            unzip -Z1 "dist/${ARCHIVE_NAME}" |
+              sed 's#^\./##' |
+              cut -d/ -f1 |
+              sed '/^$/d' |
+              sort -u
+          )
+
+          if [ "${#top_level_entries[@]}" -ne 1 ] || [ "${top_level_entries[0]}" != "classifieds" ]; then
+            echo "Invalid Geeklog package layout: archive must contain exactly one top-level directory named classifieds/."
+            printf 'Found top-level entries: %s\n' "${top_level_entries[*]:-<none>}"
+            exit 1
+          fi
+
+          for required in \
+            classifieds/autoinstall.php \
+            classifieds/functions.inc \
+            classifieds/plugin.json \
+            classifieds/public_html/index.php
+          do
+            if ! unzip -Z1 "dist/${ARCHIVE_NAME}" | grep -Fxq "${required}"; then
+              echo "Missing required file in generated archive: ${required}"
+              exit 1
+            fi
+          done
 
       - name: Commit generated archive to dist
         shell: bash
