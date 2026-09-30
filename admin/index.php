@@ -61,6 +61,7 @@ $vars = array('mode'       => 'alpha',
 			  'category'   => 'text',
 			  'catorder'   => 'number',
               'catdeleted' => 'number',
+              'csv_action'  => 'alpha',
 );
 
 CLASSIFIEDS_filterVars($vars, $_REQUEST);
@@ -195,6 +196,14 @@ function CLASSIFIEDS_listCategories()
         array(
             'url' => $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=new',
             'text' => $LANG_CLASSIFIEDS_ADMIN['create_new_cat']
+        ),
+        array(
+            'url' => $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=csvimport',
+            'text' => $LANG_CLASSIFIEDS_ADMIN['csv_import']
+        ),
+        array(
+            'url' => $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=csvtemplate',
+            'text' => $LANG_CLASSIFIEDS_ADMIN['csv_template']
         )
     );
     $retval .= ADMIN_createMenu($menu_arr, '', '');
@@ -276,7 +285,120 @@ function plugin_getListField_classifieds_categories($fieldname, $fieldvalue, $A,
     return $retval;
 }
 
+/**
+ * Render the category CSV import form.
+ *
+ * @return string
+ */
+function CLASSIFIEDS_categoryCsvForm()
+{
+    global $_CONF, $LANG_CLASSIFIEDS_ADMIN;
+
+    $action = $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=csvimport';
+    $token = SEC_createToken();
+
+    $html = '<div class="classifieds-csv-import">'
+        . '<p>' . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_help'], ENT_QUOTES, $_CONF['default_charset']) . '</p>'
+        . '<p><code>key,category,parent_key,order</code></p>'
+        . '<form method="post" enctype="multipart/form-data" action="' . $action . '">'
+        . '<input type="hidden" name="mode" value="cat">'
+        . '<input type="hidden" name="op" value="csvimport">'
+        . '<input type="hidden" name="csv_action" value="preview">'
+        . '<input type="hidden" name="' . CSRF_TOKEN . '" value="' . htmlspecialchars($token, ENT_QUOTES, $_CONF['default_charset']) . '">'
+        . '<label for="classifieds-category-csv"><strong>'
+        . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_file'], ENT_QUOTES, $_CONF['default_charset'])
+        . '</strong></label><br>'
+        . '<input id="classifieds-category-csv" name="category_csv" type="file" accept=".csv,text/csv,text/plain" required>'
+        . '<p><button type="submit">'
+        . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_preview'], ENT_QUOTES, $_CONF['default_charset'])
+        . '</button></p></form></div>';
+
+    return $html;
+}
+
+/**
+ * Render a validated CSV preview and confirmation form.
+ *
+ * @param string $csv
+ * @param array $rows
+ * @return string
+ */
+function CLASSIFIEDS_categoryCsvPreview($csv, $rows)
+{
+    global $_CONF, $LANG_CLASSIFIEDS_ADMIN;
+
+    $preview = CLASSIFIEDS_previewCategoryImport($rows);
+    $createCount = 0;
+    $skipCount = 0;
+    $html = '<div class="classifieds-csv-preview"><p><strong>'
+        . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_preview_title'], ENT_QUOTES, $_CONF['default_charset'])
+        . '</strong></p><table class="admin-list-table"><thead><tr>'
+        . '<th>' . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_key'], ENT_QUOTES, $_CONF['default_charset']) . '</th>'
+        . '<th>' . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['category'], ENT_QUOTES, $_CONF['default_charset']) . '</th>'
+        . '<th>' . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_parent_key'], ENT_QUOTES, $_CONF['default_charset']) . '</th>'
+        . '<th>' . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['catorder'], ENT_QUOTES, $_CONF['default_charset']) . '</th>'
+        . '<th>' . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_status'], ENT_QUOTES, $_CONF['default_charset']) . '</th>'
+        . '</tr></thead><tbody>';
+
+    foreach ($preview as $row) {
+        $isCreate = ($row['status'] === 'create');
+        if ($isCreate) {
+            $createCount++;
+        } else {
+            $skipCount++;
+        }
+
+        $html .= '<tr><td><code>' . htmlspecialchars($row['key'], ENT_QUOTES, $_CONF['default_charset']) . '</code></td>'
+            . '<td>' . htmlspecialchars($row['category'], ENT_QUOTES, $_CONF['default_charset']) . '</td>'
+            . '<td>' . htmlspecialchars($row['parent_key'], ENT_QUOTES, $_CONF['default_charset']) . '</td>'
+            . '<td>' . (int) $row['order'] . '</td>'
+            . '<td>' . htmlspecialchars(
+                $isCreate ? $LANG_CLASSIFIEDS_ADMIN['csv_status_create'] : $LANG_CLASSIFIEDS_ADMIN['csv_status_skip'],
+                ENT_QUOTES,
+                $_CONF['default_charset']
+            ) . '</td></tr>';
+    }
+    $html .= '</tbody></table>';
+
+    $html .= '<p>' . sprintf(
+        htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_preview_summary'], ENT_QUOTES, $_CONF['default_charset']),
+        $createCount,
+        $skipCount
+    ) . '</p>';
+
+    $token = SEC_createToken();
+    $html .= '<form method="post" action="'
+        . $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=csvimport">'
+        . '<input type="hidden" name="mode" value="cat">'
+        . '<input type="hidden" name="op" value="csvimport">'
+        . '<input type="hidden" name="csv_action" value="confirm">'
+        . '<input type="hidden" name="' . CSRF_TOKEN . '" value="' . htmlspecialchars($token, ENT_QUOTES, $_CONF['default_charset']) . '">'
+        . '<input type="hidden" name="csv_payload" value="'
+        . htmlspecialchars(base64_encode($csv), ENT_QUOTES, $_CONF['default_charset']) . '">'
+        . '<button type="submit">'
+        . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_confirm'], ENT_QUOTES, $_CONF['default_charset'])
+        . '</button></form></div>';
+
+    return $html;
+}
+
 // MAIN
+
+if ($_REQUEST['mode'] === 'cat' && $_REQUEST['op'] === 'csvtemplate') {
+    $filename = 'classifieds-categories-template.csv';
+    $csv = "key,category,parent_key,order\n"
+        . "vehicles,Vehicles,,10\n"
+        . "cars,Cars,vehicles,10\n"
+        . "motorcycles,Motorcycles,vehicles,20\n"
+        . "real-estate,Real estate,,20\n"
+        . "real-estate-sale,Sale,real-estate,10\n"
+        . "real-estate-rental,Rental,real-estate,20\n";
+
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    echo "\xEF\xBB\xBF" . $csv;
+    exit;
+}
 
 $display .= COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name']);
 
@@ -392,6 +514,102 @@ switch ($_REQUEST['mode']) {
                     . '&amp;mode=cat'
                 );
                 exit;
+
+            case 'csvimport':
+                require_once $_CONF['path'] . 'plugins/classifieds/lib-categories.php';
+
+                $csvAction = isset($_REQUEST['csv_action'])
+                    ? preg_replace('/[^a-z]/', '', strtolower((string) $_REQUEST['csv_action']))
+                    : '';
+
+                if ($csvAction === '') {
+                    $display .= COM_startBlock($LANG_CLASSIFIEDS_ADMIN['csv_import']);
+                    $display .= CLASSIFIEDS_categoryCsvForm();
+                    $display .= COM_endBlock();
+                    break;
+                }
+
+                if (!SEC_checkToken()) {
+                    $display .= COM_showMessageText(
+                        $LANG_CLASSIFIEDS_ADMIN['csv_error_token'],
+                        $LANG_CLASSIFIEDS_2['error']
+                    );
+                    break;
+                }
+
+                if ($csvAction === 'preview') {
+                    $csv = '';
+                    if (!isset($_FILES['category_csv'])
+                        || !is_array($_FILES['category_csv'])
+                        || !isset($_FILES['category_csv']['error'])
+                        || (int) $_FILES['category_csv']['error'] !== UPLOAD_ERR_OK
+                        || empty($_FILES['category_csv']['tmp_name'])
+                        || !is_uploaded_file($_FILES['category_csv']['tmp_name'])) {
+                        $display .= CLASSIFIEDS_categoryImportErrorsHtml(array('upload'));
+                        $display .= CLASSIFIEDS_categoryCsvForm();
+                        break;
+                    }
+
+                    if ((int) $_FILES['category_csv']['size'] > 262144) {
+                        $display .= CLASSIFIEDS_categoryImportErrorsHtml(array('too_large'));
+                        $display .= CLASSIFIEDS_categoryCsvForm();
+                        break;
+                    }
+
+                    $csv = file_get_contents($_FILES['category_csv']['tmp_name']);
+                    if ($csv === false) {
+                        $display .= CLASSIFIEDS_categoryImportErrorsHtml(array('read_failed'));
+                        $display .= CLASSIFIEDS_categoryCsvForm();
+                        break;
+                    }
+
+                    $parsed = CLASSIFIEDS_parseCategoryCsv($csv);
+                    $display .= COM_startBlock($LANG_CLASSIFIEDS_ADMIN['csv_import']);
+                    if (!empty($parsed['errors'])) {
+                        $display .= CLASSIFIEDS_categoryImportErrorsHtml($parsed['errors']);
+                        $display .= CLASSIFIEDS_categoryCsvForm();
+                    } else {
+                        $display .= CLASSIFIEDS_categoryCsvPreview($csv, $parsed['rows']);
+                    }
+                    $display .= COM_endBlock();
+                    break;
+                }
+
+                if ($csvAction === 'confirm') {
+                    $payload = isset($_POST['csv_payload']) ? (string) $_POST['csv_payload'] : '';
+                    $csv = base64_decode($payload, true);
+                    if ($csv === false || strlen($csv) > 262144) {
+                        $display .= CLASSIFIEDS_categoryImportErrorsHtml(array('payload'));
+                        break;
+                    }
+
+                    // Re-parse and re-validate on confirmation; never trust the preview request.
+                    $parsed = CLASSIFIEDS_parseCategoryCsv($csv);
+                    if (!empty($parsed['errors'])) {
+                        $display .= CLASSIFIEDS_categoryImportErrorsHtml($parsed['errors']);
+                        break;
+                    }
+
+                    $import = CLASSIFIEDS_importCategories($parsed['rows']);
+                    if ($import['error'] !== '') {
+                        $display .= CLASSIFIEDS_categoryImportErrorsHtml(array($import['error']));
+                        break;
+                    }
+
+                    $msg = sprintf(
+                        $LANG_CLASSIFIEDS_ADMIN['csv_import_success'],
+                        (int) $import['created'],
+                        (int) $import['skipped']
+                    );
+                    echo COM_refresh(
+                        $_CONF['site_admin_url']
+                        . '/plugins/classifieds/index.php?mode=cat&amp;msg=' . urlencode($msg)
+                    );
+                    exit;
+                }
+
+                $display .= CLASSIFIEDS_categoryImportErrorsHtml(array('invalid'));
+                break;
 
 			case 'new':
 			    $display .= COM_startBlock($LANG_CLASSIFIEDS_1['plugin_name']);
