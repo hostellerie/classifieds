@@ -245,9 +245,7 @@ $LANG_fs['classifieds'] = array(
 *   @global array $LANG_confignames['classifieds']
 */
 $LANG_confignames['classifieds'] = array(
-    //Main settings
-	'classifieds_folder'  => 'Dossier public des annonces',
-	'active_days'  => 'Durée de validité des annonces',
+    //Main settings	'active_days'  => 'Durée de validité des annonces',
     
 	//Images settings
     'max_image_width'  => 'Largeur maximale des images',
@@ -293,9 +291,7 @@ $LANG_configselects['classifieds'] = array(
     12 => array('Aucun accès' => 0, 'Lecture seule' => 2, 'Lecture-écriture' => 3)
 );
 
-$LANG_configtooltips['classifieds'] = array(
-    'classifieds_folder' => 'Dossier public utilisé par les pages des petites annonces. Sur un site existant, sa modification nécessite de conserver la cohérence des fichiers publics et des liens.',
-    'active_days' => 'Nombre de jours pendant lesquels une annonce reste active avant de pouvoir être notifiée comme expirée et republiée.',
+$LANG_configtooltips['classifieds'] = array(    'active_days' => 'Nombre de jours pendant lesquels une annonce reste active avant de pouvoir être notifiée comme expirée et republiée.',
     'max_image_size' => 'Taille maximale, en octets, pour une image envoyée avec une annonce.',
     'max_images_per_ad' => 'Nombre maximal d’images pouvant être associées à une annonce.',
     'allow_republish' => 'Permet de copier une annonce expirée vers une nouvelle annonce active tout en conservant l’ancienne dans l’historique.',
