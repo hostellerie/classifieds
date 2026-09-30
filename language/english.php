@@ -277,7 +277,8 @@ $LANG_fs['classifieds'] = array(
 *   @global array $LANG_confignames['classifieds']
 */
 $LANG_confignames['classifieds'] = array(
-    //Main settings	'active_days'  => 'Active days',
+    // Main settings
+    'active_days' => 'Active days',
     
 	//Images settings
     'max_image_width'  => 'Max image width',
