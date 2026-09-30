@@ -278,7 +278,8 @@ $LANG_fs['classifieds'] = array(
 *   @global array $LANG_confignames['classifieds']
 */
 $LANG_confignames['classifieds'] = array(
-    //Main settings	'active_days'  => 'Durée de validité des annonces',
+    // Paramètres généraux
+    'active_days' => 'Durée de validité des annonces',
     
 	//Images settings
     'max_image_width'  => 'Largeur maximale des images',
