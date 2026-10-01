@@ -1484,15 +1484,11 @@ function CLASSIFIEDS_upgradeDatabase()
         }
     }
 
-    $indexExists = (int) DB_getItem(
-        'information_schema.statistics',
-        'COUNT(*)',
-        "table_schema = DATABASE() "
-        . "AND table_name = '" . DB_escapeString($_TABLES['cl']) . "' "
-        . "AND index_name = 'cl_catid'"
+    $indexResult = DB_query(
+        "SHOW INDEX FROM {$_TABLES['cl']} WHERE Key_name = 'cl_catid'"
     );
 
-    if ($indexExists === 0) {
+    if (DB_numRows($indexResult) === 0) {
         DB_query(
             "ALTER TABLE {$_TABLES['cl']} ADD INDEX cl_catid (catid)"
         );
