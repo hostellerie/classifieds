@@ -212,8 +212,8 @@ switch ($_REQUEST['mode']) {
 		break;
 	//My ads
 	case 'my':
-	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['my_ads'] . ' - '. $LANG_CLASSIFIEDS_1['plugin_name']);
-		$display .= CLASSIFIEDS_user_menu();
+        $pageTitle = $LANG_CLASSIFIEDS_1['my_ads'] . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
+        $display = CLASSIFIEDS_user_menu();
 		if (COM_isAnonUser()) {
             $uid = 1;
         } else {
@@ -225,20 +225,20 @@ switch ($_REQUEST['mode']) {
 		break;
 	//Help
 	case 'h':
-	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name']);
-		$display .= CLASSIFIEDS_user_menu();
-		$display .= PLG_replaceTags($_CLASSIFIEDS_CONF['help_page']);
+        $pageTitle = $LANG_CLASSIFIEDS_1['help'] . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
+        $display = CLASSIFIEDS_user_menu();
+        $display .= PLG_replaceTags($_CLASSIFIEDS_CONF['help_page']);
 		break;
 	//View ad
 	case 'v':
-	    $display .= CLASSIFIEDS_viewAd($_REQUEST['ad']);
+        $display = CLASSIFIEDS_viewAd($_REQUEST['ad']);
 		break;
 	//see all
 	case 'va':
         $profileUid = (int) $_REQUEST['u'];
 	    $user = DB_getItem($_TABLES['users'], 'username', 'uid=' . $profileUid);
-	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['all_ads_from'] . ' ' . $user);
-		$display .= CLASSIFIEDS_user_menu();
+        $pageTitle = $LANG_CLASSIFIEDS_1['all_ads_from'] . ' ' . $user;
+        $display = CLASSIFIEDS_user_menu();
 	    $display .= CLASSIFIEDS_displayAds($profileUid, 0, $user);
 	    break;
     // Contact advertiser
@@ -326,8 +326,8 @@ switch ($_REQUEST['mode']) {
 	//profile
 	case 'p' :
 	    require_once ($_CONF['path_system']  . 'lib-user.php');
-	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['profile']);
-		$display .= CLASSIFIEDS_user_menu();
+        $pageTitle = $LANG_CLASSIFIEDS_1['profile'];
+        $display = CLASSIFIEDS_user_menu();
 		$profileUid = (int) $_REQUEST['u'];
         $display .= USER_showProfile($profileUid, true);
 		break;
@@ -337,8 +337,8 @@ switch ($_REQUEST['mode']) {
 	case 'd':	
 	//Ads list
 	default :
-	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name']);
-		$display .= CLASSIFIEDS_user_menu();
+        $pageTitle = $LANG_CLASSIFIEDS_1['plugin_name'];
+        $display = CLASSIFIEDS_user_menu();
         if (!empty($_CLASSIFIEDS_CONF['classifieds_main_header'])) {
             $display .= '<div>'
                 . PLG_replaceTags($_CLASSIFIEDS_CONF['classifieds_main_header'])
