@@ -1460,27 +1460,11 @@ function CLASSIFIEDS_upgradeConfiguration()
     }
 
     /*
-     * classifieds_folder used to be editable even though changing it never
-     * moved the public files. Keep an existing row only as hidden upgrade
-     * compatibility for sites that really moved their public directory.
-     * Fresh installs no longer create this setting.
+     * Keep the historical public-folder value only as hidden compatibility.
+     * The same normalization also runs during normal bootstrap so existing
+     * 1.4.0 installations receive the metadata repair without a version bump.
      */
-    if ((int) DB_getItem(
-        $_TABLES['conf_values'],
-        'COUNT(*)',
-        "group_name = 'classifieds' AND name = 'classifieds_folder'"
-    ) > 0) {
-        DB_query(
-            "UPDATE {$_TABLES['conf_values']} SET "
-            . "type = 'hidden', selectionArray = -1, sort_order = 0 "
-            . "WHERE group_name = 'classifieds' AND name = 'classifieds_folder'"
-        );
-
-        if (DB_error()) {
-            COM_errorLog('Classifieds: unable to hide legacy classifieds_folder configuration.');
-            return false;
-        }
-    }
+    CLASSIFIEDS_normalizeLegacyConfiguration();
 
     // Remove settings that existed only for the deleted TimThumb component.
     foreach (array(
