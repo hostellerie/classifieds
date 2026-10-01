@@ -90,6 +90,8 @@ Ad saves now follow:
 
 ## Category administration
 
+- Replaced raw numeric `catorder` editing for subcategories with semantic positioning: First, After a sibling, or Last. Classifieds now recalculates and normalizes sibling order automatically; numeric ordering remains available for root categories.
+
 - Added a UTF-8 CSV importer for categories and subcategories using `key,category,parent_key,order`.
 - Added downloadable CSV template and validation preview before import.
 - Parent relationships are resolved by stable import keys rather than database IDs, so files are portable across sites.
