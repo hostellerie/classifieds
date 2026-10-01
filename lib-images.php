@@ -173,7 +173,20 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
         }
 
         $upload->setFileNames($filenames);
+
+        // Geeklog's Upload class reads the global $_FILES array directly and
+        // expects one scalar file structure per entry. The modern images[]
+        // control arrives as nested arrays, so expose the already validated,
+        // flattened files only for the duration of the core upload call.
+        $originalFiles = $_FILES;
+        $_FILES = array();
+        foreach ($uploadFiles as $index => $file) {
+            $_FILES['classifieds_image_' . ($index + 1)] = $file;
+        }
+
         $upload->uploadFiles();
+
+        $_FILES = $originalFiles;
 
         if ($upload->areErrors()) {
             CLASSIFIEDS_cleanupImageFiles($filenames);
