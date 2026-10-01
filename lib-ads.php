@@ -173,6 +173,9 @@ function CLASSIFIEDS_saveAd($data, $files)
         if (!empty($imageResult['uploaded_files'])) {
             CLASSIFIEDS_cleanupImageFiles($imageResult['uploaded_files']);
         }
+        if (!empty($imageResult['errors'])) {
+            $result['errors'] = $imageResult['errors'];
+        }
         return $result;
     }
 
