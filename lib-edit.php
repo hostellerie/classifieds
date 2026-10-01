@@ -405,11 +405,8 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
     $template->set_var('category_label', $LANG_CLASSIFIEDS_ADMIN['category']);
 	$template->set_var('category', $catid['category']);
 
-    // Root categories keep a numeric order. Child categories use a semantic
-    // first / after / last position so administrators never manipulate raw
-    // catorder values for siblings.
-    $template->set_var('catorder_label', $LANG_CLASSIFIEDS_ADMIN['catorder']);
-    $template->set_var('catorder', (int) $catid['catorder']);
+    // All categories use semantic first / after / last positioning.
+    // catorder remains an internal storage detail.
     $template->set_var('child_position_label', $LANG_CLASSIFIEDS_ADMIN['child_position']);
 
     $currentPid = (int) $catid['pid'];
@@ -417,7 +414,7 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
     $selectedPosition = (isset($catid['position'])
         && preg_match('/^(?:first|last|after:[0-9]+)$/', (string) $catid['position']))
         ? (string) $catid['position']
-        : (($currentPid > 0 && $currentCid > 0)
+        : (($currentCid > 0)
             ? CLASSIFIEDS_childCategoryPosition($currentPid, $currentCid)
             : 'last');
 
@@ -429,8 +426,6 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
             $selectedPosition
         )
     );
-    $template->set_var('root_order_hidden', $currentPid > 0 ? ' hidden="hidden"' : '');
-    $template->set_var('child_position_hidden', $currentPid > 0 ? '' : ' hidden="hidden"');
 
 	//active
 	$template->set_var('catdeleted_label', $LANG_CLASSIFIEDS_ADMIN['catdeleted']);
