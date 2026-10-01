@@ -403,3 +403,15 @@ margin:25px;
     clear: both;
     margin: 1.5rem 0;
 }
+
+
+/* Link-like POST action used by first-use admin guidance. */
+.plugin-admin-help__action {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
