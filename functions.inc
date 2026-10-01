@@ -1984,15 +1984,17 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 		} else {
 		    $ad->set_var('class', ' class="ad-list-active"');
 		}
-        // Date
+        // Date: follow Geeklog's configured short-date format.
         $ad->set_var(
             'date',
-            isset($created[0])
-                ? htmlspecialchars($created[0], ENT_QUOTES, $_CONF['default_charset'])
-                : ''
+            htmlspecialchars(
+                CLASSIFIEDS_formatShortDate($A['created']),
+                ENT_QUOTES,
+                $_CONF['default_charset']
+            )
         );
 
-	    $title = ucfirst(mb_strtolower($A['title'], $_CONF['default_charset']));
+        $title = CLASSIFIEDS_normalizePublicText($A['title'], true);
 		
 		//First Ad image	
 	    if ($A['pi_filename'] == '') {
@@ -2056,28 +2058,32 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	    }else {
         $ad->set_var('edit', '');
         }
-	
-	    //Price
-	    if ($A['price'] != 0) {
-		    $ad->set_var('price', number_format($A['price'], $_CONF['decimal_count'], $_CONF['decimal_separator'], $_CONF['thousand_separator']));
-            $ad->set_var(
-                'currency',
-                htmlspecialchars(
-                    $_CLASSIFIEDS_CONF['currency'],
-                    ENT_QUOTES,
-                    $_CONF['default_charset']
-                )
-            );
-		} else {
-		    $ad->set_var('price', '');
-			$ad->set_var('currency', '');
-		}
-	
-	    //Category
+        // Price: zero is a valid advertised value.
+        $ad->set_var(
+            'price',
+            number_format(
+                (float) $A['price'],
+                $_CONF['decimal_count'],
+                $_CONF['decimal_separator'],
+                $_CONF['thousand_separator']
+            )
+        );
+        $ad->set_var(
+            'currency',
+            htmlspecialchars(
+                $_CLASSIFIEDS_CONF['currency'],
+                ENT_QUOTES,
+                $_CONF['default_charset']
+            )
+        );
+
+        //Category
         $ad->set_var(
             'cat',
             htmlspecialchars(
-                isset($A['category']) ? $A['category'] : '',
+                isset($A['category'])
+                    ? CLASSIFIEDS_normalizePublicText($A['category'], true)
+                    : '',
                 ENT_QUOTES,
                 $_CONF['default_charset']
             )
@@ -2086,11 +2092,15 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	    //Postal
         $ad->set_var(
             'postcode',
-            htmlspecialchars($A['postcode'], ENT_QUOTES, $_CONF['default_charset'])
+            htmlspecialchars(
+                CLASSIFIEDS_normalizePostcode($A['postcode']),
+                ENT_QUOTES,
+                $_CONF['default_charset']
+            )
         );
 	
 	    //City
-        $city = ucwords(mb_strtolower($A['city'], $_CONF['default_charset']));
+        $city = CLASSIFIEDS_normalizeCity($A['city']);
         $ad->set_var(
             'city',
             htmlspecialchars($city, ENT_QUOTES, $_CONF['default_charset'])
@@ -2297,13 +2307,15 @@ function CLASSIFIEDS_viewAd($clid)
         );
     }
 
-    $title = (string) $A['title'];
-    $category = isset($A['category']) ? (string) $A['category'] : '';
+    $title = CLASSIFIEDS_normalizePublicText($A['title'], true);
+    $category = isset($A['category'])
+        ? CLASSIFIEDS_normalizePublicText($A['category'], true)
+        : '';
     $pageTitle = $title
         . ($category !== '' ? ' - ' . $category : '')
         . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
 
-    $description = trim(strip_tags((string) $A['text']));
+    $description = CLASSIFIEDS_normalizePublicText($A['text'], false);
     $headerCode = CLASSIFIEDS_resourceHeaderCode(
         'ad:' . $clid,
         $description,
@@ -2341,7 +2353,7 @@ function CLASSIFIEDS_viewAd($clid)
         $ad->set_var('edit', '');
     }
 
-    $createdLabel = isset($created[0]) ? (string) $created[0] : '';
+    $createdLabel = CLASSIFIEDS_formatShortDate($A['created']);
 
     $username = isset($A['username']) ? (string) $A['username'] : '';
     $postBy = '<span class="classifieds-ad__author">'
@@ -2409,7 +2421,11 @@ function CLASSIFIEDS_viewAd($clid)
             'tel',
             '<p>' . htmlspecialchars($username, ENT_QUOTES, $_CONF['default_charset'])
             . $LANG_CLASSIFIEDS_1['double_point'] . ' '
-            . htmlspecialchars($A['tel'], ENT_QUOTES, $_CONF['default_charset'])
+            . htmlspecialchars(
+                CLASSIFIEDS_normalizeTelephone($A['tel']),
+                ENT_QUOTES,
+                $_CONF['default_charset']
+            )
             . '</p>'
         );
     } else {
@@ -2484,41 +2500,36 @@ function CLASSIFIEDS_viewAd($clid)
         );
     }
 
-    if ((float) $A['price'] != 0.0) {
-        $ad->set_var(
-            'price',
-            number_format(
-                $A['price'],
-                $_CONF['decimal_count'],
-                $_CONF['decimal_separator'],
-                $_CONF['thousand_separator']
-            )
-        );
-        $ad->set_var(
-            'currency',
-            htmlspecialchars(
-                $_CLASSIFIEDS_CONF['currency'],
-                ENT_QUOTES,
-                $_CONF['default_charset']
-            )
-        );
-    } else {
-        $ad->set_var('price', '--');
-        $ad->set_var('currency', '');
-    }
+    $ad->set_var(
+        'price',
+        number_format(
+            (float) $A['price'],
+            $_CONF['decimal_count'],
+            $_CONF['decimal_separator'],
+            $_CONF['thousand_separator']
+        )
+    );
+    $ad->set_var(
+        'currency',
+        htmlspecialchars(
+            $_CLASSIFIEDS_CONF['currency'],
+            ENT_QUOTES,
+            $_CONF['default_charset']
+        )
+    );
     $ad->set_var('price_label', $LANG_CLASSIFIEDS_1['price']);
 
     $locationParts = array();
     if (!empty($A['postcode'])) {
         $locationParts[] = htmlspecialchars(
-            $A['postcode'],
+            CLASSIFIEDS_normalizePostcode($A['postcode']),
             ENT_QUOTES,
             $_CONF['default_charset']
         );
     }
     if (!empty($A['city'])) {
         $locationParts[] = htmlspecialchars(
-            $A['city'],
+            CLASSIFIEDS_normalizeCity($A['city']),
             ENT_QUOTES,
             $_CONF['default_charset']
         );
@@ -2550,7 +2561,13 @@ function CLASSIFIEDS_viewAd($clid)
 
     $ad->set_var(
         'detail',
-        '<div class="ad-detail">' . PLG_replaceTags(nl2br($A['text'])) . '</div>'
+        '<div class="ad-detail">'
+        . nl2br(htmlspecialchars(
+            CLASSIFIEDS_normalizePublicText($A['text'], false),
+            ENT_QUOTES,
+            $_CONF['default_charset']
+        ))
+        . '</div>'
     );
 
 
@@ -2981,6 +2998,105 @@ function CLASSIFIEDS_adCategoryOptions($selected = 0)
     }
 
     return $retval;
+}
+
+/**
+ * Normalize public Classifieds text consistently.
+ */
+function CLASSIFIEDS_normalizePublicText($value, $singleLine = false)
+{
+    global $_CONF;
+
+    $value = html_entity_decode((string) $value, ENT_QUOTES, $_CONF['default_charset']);
+    $value = strip_tags($value);
+    $value = str_replace(array("\r\n", "\r"), "\n", $value);
+    $value = preg_replace('#(?:https?://|www\.)[^\s<>"\']+#iu', '', $value);
+
+    if ($singleLine) {
+        $value = preg_replace('/\s+/u', ' ', $value);
+    } else {
+        $lines = explode("\n", $value);
+        foreach ($lines as &$line) {
+            $line = preg_replace('/[ \t]+/u', ' ', trim($line));
+        }
+        unset($line);
+        $value = preg_replace('/\n{3,}/', "\n\n", implode("\n", $lines));
+    }
+
+    $value = trim($value);
+    if ($value !== '' && function_exists('COM_checkWords')) {
+        $value = COM_checkWords($value);
+    }
+
+    return trim($value);
+}
+
+function CLASSIFIEDS_normalizeCity($city)
+{
+    global $_CONF;
+
+    $city = CLASSIFIEDS_normalizePublicText($city, true);
+    if ($city === '') {
+        return '';
+    }
+
+    if (function_exists('mb_convert_case')) {
+        return mb_convert_case(
+            mb_strtolower($city, $_CONF['default_charset']),
+            MB_CASE_TITLE,
+            $_CONF['default_charset']
+        );
+    }
+
+    return ucwords(strtolower($city));
+}
+
+function CLASSIFIEDS_normalizePostcode($postcode)
+{
+    global $_CONF;
+
+    $postcode = CLASSIFIEDS_normalizePublicText($postcode, true);
+    $postcode = preg_replace('/[^\p{L}\p{N} -]+/u', '', $postcode);
+    $postcode = preg_replace('/\s+/u', ' ', trim($postcode));
+
+    return function_exists('mb_strtoupper')
+        ? mb_strtoupper($postcode, $_CONF['default_charset'])
+        : strtoupper($postcode);
+}
+
+function CLASSIFIEDS_normalizeTelephone($telephone)
+{
+    $telephone = CLASSIFIEDS_normalizePublicText($telephone, true);
+    $hasPlus = (substr($telephone, 0, 1) === '+');
+    $digits = preg_replace('/\D+/', '', $telephone);
+
+    if ($digits === '') {
+        return '';
+    }
+
+    return ($hasPlus ? '+' : '') . $digits;
+}
+
+/**
+ * Use Geeklog's configured short-date format on every supported core.
+ */
+function CLASSIFIEDS_formatShortDate($date)
+{
+    global $_CONF;
+
+    list(, $timestamp) = COM_getUserDateTimeFormat($date);
+    $timestamp = (int) $timestamp;
+    if ($timestamp <= 0) {
+        return '';
+    }
+
+    if (defined('VERSION') && version_compare(VERSION, '2.1.2', '>=')) {
+        $formatted = COM_getUserDateTimeFormat($timestamp, 'shortdate');
+        return isset($formatted[0]) ? (string) $formatted[0] : '';
+    }
+
+    $format = !empty($_CONF['shortdate']) ? $_CONF['shortdate'] : '%x';
+    return COM_strftime($format, $timestamp);
 }
 
 function CLASSIFIEDS_getTextContent($text)

@@ -65,15 +65,29 @@ function CLASSIFIEDS_saveAd($data, $files)
         }
     }
 
-    $rawTitle = COM_getTextContent(isset($data['title']) ? $data['title'] : '');
-    $rawText = CLASSIFIEDS_getTextContent(isset($data['text']) ? $data['text'] : '');
-    $rawCity = COM_getTextContent(isset($data['city']) ? $data['city'] : '');
-    $rawSiren = COM_getTextContent(isset($data['siren']) ? $data['siren'] : '');
+    $rawTitle = CLASSIFIEDS_normalizePublicText(
+        isset($data['title']) ? $data['title'] : '',
+        true
+    );
+    $rawText = CLASSIFIEDS_normalizePublicText(
+        isset($data['text']) ? $data['text'] : '',
+        false
+    );
+    $rawCity = CLASSIFIEDS_normalizeCity(
+        isset($data['city']) ? $data['city'] : ''
+    );
+    $rawPostcode = CLASSIFIEDS_normalizePostcode(
+        isset($data['postcode']) ? $data['postcode'] : ''
+    );
+    $rawSiren = CLASSIFIEDS_normalizePublicText(
+        isset($data['siren']) ? $data['siren'] : '',
+        true
+    );
 
     $title = DB_escapeString($rawTitle);
     $text = DB_escapeString($rawText);
     $city = DB_escapeString($rawCity);
-    $postcode = DB_escapeString(isset($data['postcode']) ? $data['postcode'] : '');
+    $postcode = DB_escapeString($rawPostcode);
     $siren = DB_escapeString($rawSiren);
 
     $catid = isset($data['catid']) ? (int) $data['catid'] : 0;
@@ -81,12 +95,11 @@ function CLASSIFIEDS_saveAd($data, $files)
     $status = !empty($data['status']) ? 1 : 0;
     $hideTel = !empty($data['hide_tel']) ? 1 : 0;
 
-    $removeFromTel = array(' ', '.', '|', ',', '/', ':', '-', '_');
-    $cleanTel = DB_escapeString(str_replace(
-        $removeFromTel,
-        '',
-        isset($data['tel']) ? $data['tel'] : ''
-    ));
+    $cleanTel = DB_escapeString(
+        CLASSIFIEDS_normalizeTelephone(
+            isset($data['tel']) ? $data['tel'] : ''
+        )
+    );
 
     $priceInput = isset($data['price']) ? str_replace(',', '', $data['price']) : '';
     $priceInput = preg_replace('/[^\d.]/', '', $priceInput);
