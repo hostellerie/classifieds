@@ -282,6 +282,7 @@ function CLASSIFIEDS_importCategories($rows)
     );
 
     $resolved = array();
+    $createdIds = array();
     $pending = array_values($rows);
     $guard = count($pending) + 1;
 
@@ -329,6 +330,7 @@ function CLASSIFIEDS_importCategories($rows)
             }
 
             $resolved[$row['key']] = $cid;
+            $createdIds[] = $cid;
             $result['created']++;
             $progress = true;
         }
@@ -349,6 +351,13 @@ function CLASSIFIEDS_importCategories($rows)
     }
 
     DB_query('COMMIT');
+
+    if (!DB_error()) {
+        foreach ($createdIds as $createdCid) {
+            PLG_itemSaved('category:' . (int) $createdCid, 'classifieds');
+        }
+    }
+
     return $result;
 }
 
