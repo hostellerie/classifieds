@@ -399,6 +399,7 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
 	//parent category
 	$categories = '';
     $template->set_var('parent_category_label', $LANG_CLASSIFIEDS_ADMIN['parent_category']);
+    $template->set_var('root_category_help', $LANG_CLASSIFIEDS_ADMIN['root_category_help']);
     $categories .= '<option value="0">' . $LANG_CLASSIFIEDS_ADMIN['root'] . '</option>';
 
     if ($catid['cid']) {
