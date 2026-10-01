@@ -388,6 +388,7 @@ switch ($_REQUEST['mode']) {
         }
 
         $isFilterVariant = ($_REQUEST['mode'] === 'o' || $_REQUEST['mode'] === 'd');
+        $isPaginationVariant = isset($_REQUEST['page']) && (int) $_REQUEST['page'] > 1;
         $rootDescription = ($contextId === 'root')
             ? (string) $_CLASSIFIEDS_CONF['classifieds_main_header']
             : '';
@@ -395,7 +396,7 @@ switch ($_REQUEST['mode']) {
         $headerCode = CLASSIFIEDS_resourceHeaderCode(
             $contextId,
             $rootDescription,
-            $isFilterVariant
+            $isFilterVariant || $isPaginationVariant
         );
 
         $display .= '<h1 class="classifieds-page-title">'
