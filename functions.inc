@@ -402,6 +402,86 @@ function plugin_displaycomment_classifieds($id, $cid, $title, $order, $format, $
 * @return   mixed   menu entry, or boolean false if disabled / hidden
 *
 */
+/**
+ * Return whether the current user may publish Classifieds content.
+ *
+ * Historical contract:
+ * - anonymous users never publish;
+ * - explicit classifieds.publish grants access;
+ * - when no group owns classifieds.publish, every logged-in user may publish;
+ * - once at least one group owns the feature, users without that feature are
+ *   restricted.
+ *
+ * @return bool
+ */
+function CLASSIFIEDS_canPublish()
+{
+    global $_TABLES;
+
+    if (COM_isAnonUser()) {
+        return false;
+    }
+
+    if (SEC_hasRights('classifieds.publish')) {
+        return true;
+    }
+
+    $featureId = (int) DB_getItem(
+        $_TABLES['features'],
+        'ft_id',
+        "ft_name = 'classifieds.publish'"
+    );
+
+    if ($featureId <= 0) {
+        return false;
+    }
+
+    $groupCount = (int) DB_getItem(
+        $_TABLES['access'],
+        'COUNT(*)',
+        'acc_ft_id = ' . $featureId
+    );
+
+    return $groupCount === 0;
+}
+
+/**
+ * Return group names that explicitly own classifieds.publish.
+ *
+ * @return array
+ */
+function CLASSIFIEDS_publishGroups()
+{
+    global $_TABLES;
+
+    $featureId = (int) DB_getItem(
+        $_TABLES['features'],
+        'ft_id',
+        "ft_name = 'classifieds.publish'"
+    );
+
+    if ($featureId <= 0) {
+        return array();
+    }
+
+    $result = DB_query(
+        "SELECT g.grp_name "
+        . "FROM {$_TABLES['access']} a "
+        . "INNER JOIN {$_TABLES['groups']} g ON g.grp_id = a.acc_grp_id "
+        . "WHERE a.acc_ft_id = " . $featureId
+        . " ORDER BY g.grp_name ASC"
+    );
+
+    $groups = array();
+    while ($row = DB_fetchArray($result)) {
+        if (!empty($row['grp_name'])) {
+            $groups[] = (string) $row['grp_name'];
+        }
+    }
+
+    return $groups;
+}
+
 function plugin_getmenuitems_classifieds()
 {
     global $_CLASSIFIEDS_CONF;
