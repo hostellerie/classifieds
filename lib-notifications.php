@@ -66,6 +66,7 @@ function CLASSIFIEDS_sendLifecycleEmail($event, $title, $ad, $adnumber, $uid, $p
     $manageUrl = $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=e&op=edit&ad=' . $adnumber;
     $placeUrl = $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=e';
     $myAdsUrl = $_CLASSIFIEDS_CONF['site_url'] . '/index.php?mode=my';
+    $adminUrl = $_CONF['site_admin_url'] . '/plugins/classifieds/index.php';
 
     $imageUrl = '';
     $imageFilename = DB_getItem(
@@ -78,7 +79,11 @@ function CLASSIFIEDS_sendLifecycleEmail($event, $title, $ad, $adnumber, $uid, $p
             . rawurlencode(basename($imageFilename));
     }
 
-    $subject = '[' . $_CONF['site_name'] . '] ' . $LANG_CLASSIFIEDS_1['plugin_name']
+    $subjectKey = 'subject_' . $event;
+    $subjectPrefix = isset($LANG_CLASSIFIEDS_EMAIL[$subjectKey])
+        ? $LANG_CLASSIFIEDS_EMAIL[$subjectKey]
+        : $LANG_CLASSIFIEDS_1['plugin_name'];
+    $subject = '[' . $_CONF['site_name'] . '] ' . $subjectPrefix
         . ' #' . $adnumber . ' - ' . $title;
 
     $eventLabel = $LANG_CLASSIFIEDS_EMAIL[$map[$event][2]];
@@ -116,12 +121,19 @@ function CLASSIFIEDS_sendLifecycleEmail($event, $title, $ad, $adnumber, $uid, $p
 
     $imageHtml = '';
     if ($imageUrl !== '') {
-        $imageHtml = '<a href="' . htmlspecialchars($adUrl, ENT_QUOTES, $_CONF['default_charset'])
-            . '" style="display:block;text-decoration:none;">'
-            . '<img src="' . htmlspecialchars($imageUrl, ENT_QUOTES, $_CONF['default_charset'])
+        $imageTag = '<img src="'
+            . htmlspecialchars($imageUrl, ENT_QUOTES, $_CONF['default_charset'])
             . '" alt="' . $safeTitle . '" '
-            . 'style="display:block;width:100%;max-height:420px;object-fit:cover;border:0;border-radius:12px 12px 0 0;">'
-            . '</a>';
+            . 'style="display:block;width:100%;max-height:420px;object-fit:cover;border:0;border-radius:12px 12px 0 0;">';
+
+        if ($event === 'create' || $event === 'edit') {
+            $imageHtml = '<a href="'
+                . htmlspecialchars($adUrl, ENT_QUOTES, $_CONF['default_charset'])
+                . '" style="display:block;text-decoration:none;">'
+                . $imageTag . '</a>';
+        } else {
+            $imageHtml = $imageTag;
+        }
     }
 
     $descriptionHtml = '';
@@ -243,14 +255,15 @@ function CLASSIFIEDS_sendLifecycleEmail($event, $title, $ad, $adnumber, $uid, $p
         if ($event === 'create' || $event === 'edit') {
             $adminActions = $publicActionHtml;
             $plainAdmin .= "\n" . $LANG_CLASSIFIEDS_EMAIL['view_ad'] . ': ' . $adUrl . "\n";
-        } elseif ($event === 'expire') {
-            $adminActions = '<a href="' . htmlspecialchars($myAdsUrl, ENT_QUOTES, $_CONF['default_charset'])
-                . '" style="display:inline-block;margin:0 8px 8px 0;padding:11px 18px;'
-                . 'border-radius:7px;background:#222;color:#fff;text-decoration:none;font-weight:600;">'
-                . htmlspecialchars($LANG_CLASSIFIEDS_EMAIL['my_ads'], ENT_QUOTES, $_CONF['default_charset'])
-                . '</a>';
-            $plainAdmin .= "\n" . $LANG_CLASSIFIEDS_EMAIL['my_ads'] . ': ' . $myAdsUrl . "\n";
         }
+
+        $adminActions .= '<a href="'
+            . htmlspecialchars($adminUrl, ENT_QUOTES, $_CONF['default_charset'])
+            . '" style="display:inline-block;margin:0 8px 8px 0;padding:10px 17px;'
+            . 'border:1px solid #bbb;border-radius:7px;color:#222;text-decoration:none;font-weight:600;">'
+            . htmlspecialchars($LANG_CLASSIFIEDS_EMAIL['admin_manage'], ENT_QUOTES, $_CONF['default_charset'])
+            . '</a>';
+        $plainAdmin .= "\n" . $LANG_CLASSIFIEDS_EMAIL['admin_manage'] . ': ' . $adminUrl . "\n";
 
         $adminHtml = $htmlStart
             . '<div style="padding:4px 24px 24px;">' . $adminActions . '</div>'
