@@ -2494,13 +2494,33 @@ function CLASSIFIEDS_viewAd($clid)
         $ad->set_var('currency', '');
     }
 
-    $ad->set_var(
-        'postal',
-        '<span class="ad-col2">' . $LANG_CLASSIFIEDS_1['postcode']
-        . $LANG_CLASSIFIEDS_1['double_point'] . ' <strong>'
-        . htmlspecialchars($A['postcode'], ENT_QUOTES, $_CONF['default_charset'])
-        . '</strong></span>'
-    );
+    $locationParts = array();
+    if (!empty($A['postcode'])) {
+        $locationParts[] = htmlspecialchars(
+            $A['postcode'],
+            ENT_QUOTES,
+            $_CONF['default_charset']
+        );
+    }
+    if (!empty($A['city'])) {
+        $locationParts[] = htmlspecialchars(
+            $A['city'],
+            ENT_QUOTES,
+            $_CONF['default_charset']
+        );
+    }
+
+    if (!empty($locationParts)) {
+        $ad->set_var(
+            'postal',
+            '<span class="ad-col2">' . $LANG_CLASSIFIEDS_1['postcode']
+            . $LANG_CLASSIFIEDS_1['double_point'] . ' <strong>'
+            . implode(' ', $locationParts)
+            . '</strong></span>'
+        );
+    } else {
+        $ad->set_var('postal', '');
+    }
 
     $ad->set_var(
         'category',
