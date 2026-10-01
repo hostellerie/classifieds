@@ -1779,19 +1779,6 @@ function CLASSIFIEDS_user_menu()
     $menu->set_var('my_ads', $LANG_CLASSIFIEDS_1['my_ads']);
     $menu->set_var('help', $LANG_CLASSIFIEDS_1['help']);
 
-    if (COM_isAnonUser()) {
-        $menu->set_var('my_ads_menu', '');
-    } else {
-        $menu->set_var(
-            'my_ads_menu',
-            '<li><a class="classifieds-nav__link{my_class}"{my_current} href="'
-            . $_CLASSIFIEDS_CONF['site_url']
-            . '/index.php?mode=my">'
-            . $LANG_CLASSIFIEDS_1['my_ads']
-            . '</a></li>'
-        );
-    }
-
     $mode = isset($_REQUEST['mode']) ? (string) $_REQUEST['mode'] : '';
     $current = array(
         'all' => ($mode === '' || $mode === 'v' || $mode === 'va' || $mode === 'p'),
@@ -1807,6 +1794,22 @@ function CLASSIFIEDS_user_menu()
         $menu->set_var(
             $key . '_current',
             $active ? ' aria-current="page"' : ''
+        );
+    }
+
+    if (COM_isAnonUser()) {
+        $menu->set_var('my_ads_menu', '');
+    } else {
+        $menu->set_var(
+            'my_ads_menu',
+            '<li><a class="classifieds-nav__link'
+            . ($current['my'] ? ' is-active' : '')
+            . '"'
+            . ($current['my'] ? ' aria-current="page"' : '')
+            . ' href="' . $_CLASSIFIEDS_CONF['site_url']
+            . '/index.php?mode=my">'
+            . $LANG_CLASSIFIEDS_1['my_ads']
+            . '</a></li>'
         );
     }
 
