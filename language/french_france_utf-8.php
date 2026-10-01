@@ -269,19 +269,20 @@ $LANG_CLASSIFIEDS_ADMIN = array(
 
 $LANG_CLASSIFIEDS_EMAIL = array(
     'hello'                   => 'Bonjour',
-    'new_ad'                  => 'Votre nouvelle annonce a été publiée sur le site',
-	'edit_ad'                 => 'Votre annonce a été modifiée sur le site',
-	'delete_ad'               => 'Votre annonce a été retirée du site',
-	'expire_ad'               => 'Votre annonce est arrivée a expiration sur le site',
-	'online_for'              => 'et sera en ligne pendant',
-	'days'                    => 'jours.',
-	'post_new'                => 'Vous pouvez en publier une nouvelle sur la page',
-	'you_can_see'             => 'Vous pouvez la voir sur la page',
-	'thanks'                  => 'Merci,',
-	'sign'                    => 'L\'administrateur du site.',
-	'no_reply'                => 'PS: Ceci est un email automatique, merci de ne pas y répondre.',
-	'your_ad'                 => 'Votre annonce :',
-	'price'                   => 'Prix :',
+    'new_ad'                  => 'Votre nouvelle annonce a été publiée.',
+    'edit_ad'                 => 'Votre annonce a été mise à jour.',
+    'delete_ad'               => 'Votre annonce a été retirée.',
+    'expire_ad'               => 'Votre annonce est arrivée à expiration.',
+    'online_for'              => 'Elle restera en ligne pendant',
+    'days'                    => 'jours.',
+    'price'                   => 'Prix :',
+    'view_ad'                 => 'Voir l’annonce',
+    'manage_ad'               => 'Gérer mon annonce',
+    'my_ads'                  => 'Mes annonces',
+    'post_new_button'         => 'Publier une nouvelle annonce',
+    'publisher'               => 'Annonceur',
+    'automatic_notice'        => 'Ceci est un message automatique. Merci de ne pas répondre à cet email.',
+
 );
 
 
