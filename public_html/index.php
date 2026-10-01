@@ -372,8 +372,10 @@ switch ($_REQUEST['mode']) {
 
         if (!empty($categoryResource)) {
             $listHeading = $categoryResource['title'];
-            $pageTitle = $categoryResource['title']
-                . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
+            $pageTitle = !empty($categoryResource['meta-title'])
+                ? $categoryResource['meta-title']
+                : $categoryResource['title']
+                    . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
         } elseif ($_REQUEST['mode'] === 'o') {
             $listHeading = $LANG_CLASSIFIEDS_1['offers'];
             $pageTitle = $LANG_CLASSIFIEDS_1['offers']
@@ -389,14 +391,20 @@ switch ($_REQUEST['mode']) {
 
         $isFilterVariant = ($_REQUEST['mode'] === 'o' || $_REQUEST['mode'] === 'd');
         $isPaginationVariant = isset($_REQUEST['page']) && (int) $_REQUEST['page'] > 1;
-        $rootDescription = ($contextId === 'root')
+        $resourceDescription = ($contextId === 'root')
             ? (string) $_CLASSIFIEDS_CONF['classifieds_main_header']
+            : (!empty($categoryResource['description'])
+                ? (string) $categoryResource['description']
+                : '');
+        $resourceKeywords = !empty($categoryResource['meta-keywords'])
+            ? (string) $categoryResource['meta-keywords']
             : '';
 
         $headerCode = CLASSIFIEDS_resourceHeaderCode(
             $contextId,
-            $rootDescription,
-            $isFilterVariant || $isPaginationVariant
+            $resourceDescription,
+            $isFilterVariant || $isPaginationVariant,
+            $resourceKeywords
         );
 
         $display .= '<h1 class="classifieds-page-title">'
