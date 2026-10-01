@@ -21,7 +21,7 @@ function CLASSIFIEDS_repost($clid)
 
     $clid = (int) $clid;
     $isAdmin = SEC_hasRights('classifieds.admin');
-    $canPublish = SEC_hasRights('classifieds.publish');
+    $canPublish = CLASSIFIEDS_canPublish();
 
     if ($clid <= 0
         || empty($_CLASSIFIEDS_CONF['allow_republish'])
