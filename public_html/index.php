@@ -413,6 +413,10 @@ switch ($_REQUEST['mode']) {
         }
 }
 
+if ($_REQUEST['mode'] !== 'v') {
+    $display = CLASSIFIEDS_renderPage($display, $pageTitle, $headerCode);
+}
+
 COM_output($display);
 
 ?>
