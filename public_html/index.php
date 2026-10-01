@@ -72,6 +72,8 @@ $vars = array(
 CLASSIFIEDS_filterVars($vars, $_REQUEST);
 
 $display = '';
+$pageTitle = $LANG_CLASSIFIEDS_1['plugin_name'];
+$headerCode = '';
 
 // MAIN
 
@@ -86,8 +88,8 @@ switch ($_REQUEST['mode']) {
 		*/
 		require_once ($_CONF['path'] . 'plugins/classifieds/lib-edit.php');
 		
-		$display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name']);
-		$display .= CLASSIFIEDS_user_menu();
+		$pageTitle = $LANG_CLASSIFIEDS_1['plugin_name'];
+		$display = CLASSIFIEDS_user_menu();
 
         switch ($_REQUEST['op']) {
             case 'del':
@@ -207,7 +209,6 @@ switch ($_REQUEST['mode']) {
                 break;
 
         }
-		$display .= COM_siteFooter(1);
 		break;
 	//My ads
 	case 'my':
@@ -221,14 +222,12 @@ switch ($_REQUEST['mode']) {
 		// If any message
         $display .= CLASSIFIEDS_message($_REQUEST['msg']);
 		$display .= CLASSIFIEDS_displayAds($uid,1);
-	    $display .= COM_siteFooter(1);
 		break;
 	//Help
 	case 'h':
 	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name']);
 		$display .= CLASSIFIEDS_user_menu();
 		$display .= PLG_replaceTags($_CLASSIFIEDS_CONF['help_page']);
-	    $display .= COM_siteFooter(1);
 		break;
 	//View ad
 	case 'v':
@@ -241,12 +240,12 @@ switch ($_REQUEST['mode']) {
 	    $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['all_ads_from'] . ' ' . $user);
 		$display .= CLASSIFIEDS_user_menu();
 	    $display .= CLASSIFIEDS_displayAds($profileUid, 0, $user);
-		$display .= COM_siteFooter(1);
 	    break;
     // Contact advertiser
     case 'c':
         $ad = (int) $_REQUEST['ad'];
-        $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['contact_advertiser']);
+        $pageTitle = $LANG_CLASSIFIEDS_1['contact_advertiser'];
+        $display = '';
 
         if (!CLASSIFIEDS_checkAdAccess($ad)) {
             echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
@@ -281,13 +280,13 @@ switch ($_REQUEST['mode']) {
             'contact',
             $_REQUEST['message']
         );
-        $display .= COM_siteFooter(1);
         break;
 
     // Report ad / abuse
     case 'r':
         $ad = (int) $_REQUEST['ad'];
-        $display = COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['report']);
+        $pageTitle = $LANG_CLASSIFIEDS_1['report'];
+        $display = '';
 
         if (!CLASSIFIEDS_checkAdAccess($ad)) {
             echo COM_refresh($_CLASSIFIEDS_CONF['site_url'] . '/index.php');
@@ -322,7 +321,6 @@ switch ($_REQUEST['mode']) {
             'report',
             $_REQUEST['message']
         );
-        $display .= COM_siteFooter(1);
         break;
 
 	//profile
@@ -332,7 +330,6 @@ switch ($_REQUEST['mode']) {
 		$display .= CLASSIFIEDS_user_menu();
 		$profileUid = (int) $_REQUEST['u'];
         $display .= USER_showProfile($profileUid, true);
-		$display .= COM_siteFooter(1);
 		break;
 	//Offert
 	case 'o':
@@ -369,7 +366,6 @@ switch ($_REQUEST['mode']) {
                 . PLG_replaceTags($_CLASSIFIEDS_CONF['classifieds_main_footer'])
                 . '</div>';
         }
-        $display .= COM_siteFooter(1);
 }
 
 COM_output($display);
