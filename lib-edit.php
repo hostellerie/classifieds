@@ -36,6 +36,10 @@
 * @package Classifieds
 */
 
+if (!defined('VERSION')) {
+    die('This file can not be used on its own.');
+}
+
 /**
  * This function creates an Ad Form
  *
