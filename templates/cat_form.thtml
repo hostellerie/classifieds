@@ -9,6 +9,7 @@
             <select id="classifieds-parent-category" name="pid">
                 {categories}
             </select>
+            <p class="classifieds-form__help">{root_category_help}</p>
         </div>
 
         <div class="classifieds-form__field">
