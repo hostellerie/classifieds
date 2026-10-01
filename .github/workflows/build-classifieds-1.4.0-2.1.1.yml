@@ -28,6 +28,88 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup PHP 5.6
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '5.6'
+          coverage: none
+          tools: none
+
+      - name: Validate Memorandum source contract
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Linting shipped PHP and INC files with PHP 5.6..."
+          while IFS= read -r -d '' file; do
+            php -l "$file"
+          done < <(
+            find . -type f \( -name '*.php' -o -name '*.inc' \) \
+              -not -path './dist/*' -print0
+          )
+
+          echo "Checking for legacy full-page rendering..."
+          if grep -R -nE 'COM_site(Header|Footer)[[:space:]]*\(' \
+              --include='*.php' --include='*.inc' --exclude-dir=dist .; then
+            echo "Legacy COM_siteHeader()/COM_siteFooter() rendering is forbidden by the Memorandum."
+            exit 1
+          fi
+
+          echo "Validating plugin.json..."
+          php -r '
+            $m = json_decode(file_get_contents("plugin.json"), true);
+            if (!is_array($m)
+                || !isset($m["schema"]) || (int) $m["schema"] !== 1
+                || !isset($m["id"]) || $m["id"] !== "classifieds"
+                || !isset($m["name"]) || $m["name"] !== "Classifieds"
+                || !isset($m["requires"]["geeklog"]) || $m["requires"]["geeklog"] !== "2.1.1"
+                || !isset($m["requires"]["php"]) || $m["requires"]["php"] !== "5.6.0") {
+                fwrite(STDERR, "Invalid or inconsistent plugin.json\n");
+                exit(1);
+            }
+          '
+
+          echo "Checking language-key parity and duplicate Plugin API callbacks..."
+          python3 - <<'PY'
+          from __future__ import print_function
+          from collections import Counter
+          from pathlib import Path
+          import re
+          import sys
+
+          def language_keys(path):
+              text = Path(path).read_text(encoding="utf-8")
+              return Counter(re.findall(r"""['"]([^'"]+)['"]\s*=>""", text))
+
+          english = language_keys("language/english.php")
+          french = language_keys("language/french_france_utf-8.php")
+          if english != french:
+              print("Language key parity failure.")
+              print("Only/different in English:", english - french)
+              print("Only/different in French:", french - english)
+              sys.exit(1)
+
+          callbacks = Counter()
+          locations = {}
+          pattern = re.compile(r"function\s+(plugin_[A-Za-z0-9_]+_classifieds)\s*\(")
+          for path in Path(".").rglob("*"):
+              if not path.is_file() or path.suffix not in (".php", ".inc"):
+                  continue
+              if "dist" in path.parts:
+                  continue
+              text = path.read_text(encoding="utf-8", errors="replace")
+              for name in pattern.findall(text):
+                  callbacks[name] += 1
+                  locations.setdefault(name, []).append(str(path))
+
+          duplicates = {name: locations[name] for name, count in callbacks.items() if count > 1}
+          if duplicates:
+              print("Duplicate Classifieds Plugin API callbacks detected:")
+              for name, paths in sorted(duplicates.items()):
+                  print("  {}: {}".format(name, ", ".join(paths)))
+              sys.exit(1)
+          PY
+
       - name: Build installable plugin archive
         shell: bash
         run: |
