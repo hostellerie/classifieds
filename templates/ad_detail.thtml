@@ -17,10 +17,7 @@
         </section>
 
         <aside class="classifieds-ad__summary">
-            <div class="classifieds-ad__price-block">
-                <span class="classifieds-ad__summary-label">{price_label}</span>
-                <div class="classifieds-ad__price">{price} {currency}</div>
-            </div>
+            {price_block}
 
             <div class="classifieds-ad__facts">
                 <div class="classifieds-ad__location">{postal}</div>
