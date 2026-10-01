@@ -12,7 +12,9 @@
  * relationships. Classifieds continues to persist its native cid/pid model.
  */
 
-if (strpos(strtolower($_SERVER['PHP_SELF']), 'lib-categories.php') !== false) {
+$phpSelf = isset($_SERVER['PHP_SELF']) ? (string) $_SERVER['PHP_SELF'] : '';
+
+if (strpos(strtolower($phpSelf), 'lib-categories.php') !== false) {
     die('This file can not be used on its own.');
 }
 
