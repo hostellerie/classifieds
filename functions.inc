@@ -75,7 +75,52 @@ if (!isset($_CLASSIFIEDS_DEFAULT) || !is_array($_CLASSIFIEDS_DEFAULT)) {
     $_CLASSIFIEDS_DEFAULT = array();
 }
 
+/**
+ * Keep obsolete configuration metadata out of Geeklog Configuration even when
+ * the installed plugin version already matches the running code version.
+ *
+ * The historical classifieds_folder value remains stored and readable for
+ * installations that physically moved the public directory, but Geeklog must
+ * treat it as a hidden compatibility value rather than an administrator-facing
+ * setting.
+ *
+ * @return void
+ */
+function CLASSIFIEDS_normalizeLegacyConfiguration()
+{
+    global $_TABLES;
+
+    $type = DB_getItem(
+        $_TABLES['conf_values'],
+        'type',
+        "group_name = 'classifieds' AND name = 'classifieds_folder'"
+    );
+
+    if ($type === '' || $type === 'hidden') {
+        return;
+    }
+
+    DB_query(
+        "UPDATE {$_TABLES['conf_values']} SET "
+        . "type = 'hidden', selectionArray = -1, sort_order = 0 "
+        . "WHERE group_name = 'classifieds' "
+        . "AND name = 'classifieds_folder'"
+    );
+
+    if (DB_error()) {
+        COM_errorLog(
+            'Classifieds: unable to hide legacy classifieds_folder configuration.'
+        );
+        return;
+    }
+
+    if (class_exists('Cache')) {
+        Cache::delete('configuration.autocomplete_data');
+    }
+}
+
 $c = config::get_instance();
+CLASSIFIEDS_normalizeLegacyConfiguration();
 $storedClassifiedsConfig = $c->get_config('classifieds');
 if (!is_array($storedClassifiedsConfig)) {
     $storedClassifiedsConfig = array();
