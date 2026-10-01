@@ -41,6 +41,16 @@ Legacy `classifieds_data/proversion/proversion.php` files are ignored by 1.4.0 c
 
 The public plugin route is now canonicalized to `/classifieds` and is no longer an editable Geeklog Configuration setting. During an upgrade, a historical custom public folder is retained only as hidden compatibility when that directory actually exists on disk.
 
+## Publication access policy
+
+Classifieds preserves its historical publication-access behavior:
+
+- if no group is assigned the `classifieds.publish` feature, every registered (logged-in) user may publish ads;
+- as soon as one or more groups are assigned `classifieds.publish`, publication is restricted to users who have that feature through those groups;
+- anonymous users cannot publish.
+
+This makes `classifieds.publish` an optional restriction mechanism rather than a mandatory setup step. Existing sites that already reserve publication to one or more dedicated groups keep that behavior unchanged.
+
 ## Category CSV import
 
 Category administration can import a UTF-8 CSV file with the columns:
