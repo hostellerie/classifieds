@@ -1720,10 +1720,28 @@ function CLASSIFIEDS_user_menu()
     $menu->set_var('my_ads', $LANG_CLASSIFIEDS_1['my_ads']);
     $menu->set_var('help', $LANG_CLASSIFIEDS_1['help']);
 
+    $mode = isset($_REQUEST['mode']) ? (string) $_REQUEST['mode'] : '';
+    $current = array(
+        'all' => ($mode === '' || $mode === 'v' || $mode === 'va' || $mode === 'p'),
+        'offer' => ($mode === 'o'),
+        'demand' => ($mode === 'd'),
+        'place' => ($mode === 'e'),
+        'my' => ($mode === 'my'),
+        'help' => ($mode === 'h')
+    );
+
+    foreach ($current as $key => $active) {
+        $menu->set_var($key . '_class', $active ? ' is-active' : '');
+        $menu->set_var(
+            $key . '_current',
+            $active ? ' aria-current="page"' : ''
+        );
+    }
+
     if (SEC_hasRights('classifieds.admin')) {
         $menu->set_var(
             'admin',
-            '<li><a href="' . $_CONF['site_url']
+            '<li class="classifieds-nav__admin"><a href="' . $_CONF['site_url']
             . '/admin/plugins/classifieds/index.php">'
             . $LANG_CLASSIFIEDS_1['admin'] . '</a></li>'
         );
