@@ -167,47 +167,50 @@ function CLASSIFIEDS_getAdForm($ad = array()) {
 	$template->set_var('price_label', $LANG_CLASSIFIEDS_2['price']);
 	$template->set_var('price', number_format(floatval($ad['price']), $_CONF['decimal_count']));
 	
-	//images
-	$template->set_var('images', $LANG_CLASSIFIEDS_2['images']);
-	$fileinputs = '';
+    // Images: one modern multi-file selector, progressively enhanced by JS.
+    $template->set_var('images', $LANG_CLASSIFIEDS_2['images']);
     $saved_images = '';
     $icount = 0;
-    if ($_CLASSIFIEDS_CONF['max_images_per_ad'] > 0) {
-	    if ($ad['clid'] != '') {
-            $icount = DB_count($_TABLES['cl_pic'],'pi_pid', $ad['clid']);
-            if ($icount > 0) {
-                $result_pics = DB_query(
+    $maxImages = max(0, (int) $_CLASSIFIEDS_CONF['max_images_per_ad']);
+
+    if ($maxImages > 0 && $ad['clid'] != '') {
+        $icount = (int) DB_count($_TABLES['cl_pic'], 'pi_pid', $ad['clid']);
+
+        if ($icount > 0) {
+            $result_pics = DB_query(
                 "SELECT pi_img_num, pi_filename FROM {$_TABLES['cl_pic']} "
                 . "WHERE pi_pid = '" . (int) $ad['clid'] . "' ORDER BY pi_img_num"
             );
-                for ($z = 1; $z <= $icount; $z++) {
-                    $I = DB_fetchArray($result_pics);
-                    $filename = rawurlencode(basename($I['pi_filename']));
-                    $imageUrl = $_CLASSIFIEDS_CONF['url_images'] . $filename;
-                    $saved_images .= '<div><p>' . $z . ') '
-                        . '<a class="lightbox" href="' . $imageUrl . '">'
-                        . '<img class="classifieds-gallery-thumb" loading="lazy" src="'
-                        . $imageUrl . '" alt="'
-                        . htmlspecialchars($ad['title'], ENT_QUOTES, $_CONF['default_charset'])
-                        . '" /></a>'
-                        . '&nbsp;&nbsp;&nbsp;' . $LANG_ADMIN['delete']
-                        . ': <input type="checkbox" name="delete[' .$I['pi_img_num']
-                        . ']"' . XHTML . '><br' . XHTML . '></p></div>';
-                }
-            }
-		}
 
-        $newallowed = $_CLASSIFIEDS_CONF['max_images_per_ad'] - $icount;
-        for ($z = $icount + 1; $z <= $_CLASSIFIEDS_CONF['max_images_per_ad']; $z++) {
-            $fileinputs .= $z . ') <input type="file" dir="ltr" name="file'
-                        . $z . '"' . XHTML . '> ';
-            if ($z < $_CLASSIFIEDS_CONF['max_images_per_ad']) {
-                $fileinputs .= '<br' . XHTML . '>';
+            while ($I = DB_fetchArray($result_pics)) {
+                $filename = rawurlencode(basename($I['pi_filename']));
+                $imageUrl = $_CLASSIFIEDS_CONF['url_images'] . $filename;
+                $saved_images .= '<div class="classifieds-image-item">'
+                    . '<a class="classifieds-lightbox" data-classifieds-lightbox href="'
+                    . $imageUrl . '">'
+                    . '<img class="classifieds-image-item__thumb" loading="lazy" src="'
+                    . $imageUrl . '" alt="'
+                    . htmlspecialchars($ad['title'], ENT_QUOTES, $_CONF['default_charset'])
+                    . '" /></a>'
+                    . '<label class="classifieds-image-item__delete">'
+                    . '<input type="checkbox" name="delete[' . (int) $I['pi_img_num']
+                    . ']" value="1"' . XHTML . '> '
+                    . htmlspecialchars($LANG_ADMIN['delete'], ENT_QUOTES, $_CONF['default_charset'])
+                    . '</label></div>';
             }
         }
     }
+
+    $availableImages = max(0, $maxImages - $icount);
     $template->set_var('saved_images', $saved_images);
-    $template->set_var('image_form_elements', $fileinputs);
+    $template->set_var('image_upload_label', $LANG_CLASSIFIEDS_2['image_upload_label']);
+    $template->set_var('image_upload_help', sprintf(
+        $LANG_CLASSIFIEDS_2['image_upload_help'],
+        $availableImages,
+        $maxImages
+    ));
+    $template->set_var('image_upload_disabled', $availableImages > 0 ? '' : ' disabled');
+    $template->set_var('image_upload_max', $availableImages);
 	
 	//your details
 	if (!is_numeric($ad['clid'])) {
