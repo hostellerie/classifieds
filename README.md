@@ -53,7 +53,9 @@ This makes `classifieds.publish` an optional restriction mechanism rather than a
 
 ## Category ordering
 
-Root categories retain their numeric display order for historical compatibility. Subcategories are positioned semantically in the administration interface using **First**, **After [sibling]**, or **Last**. The plugin recalculates the stored `catorder` values automatically and normalizes sibling order when a subcategory is moved to another parent.
+All categories are positioned semantically in the administration interface using **First**, **After [sibling]**, or **Last**. This applies both to root categories and to subcategories. The plugin keeps `catorder` as an internal storage detail, recalculates it automatically, and normalizes both the former and new sibling groups when a category changes parent.
+
+The CSV importer still accepts the numeric `order` column because it is useful for portable bulk imports; after import, normal administration no longer exposes raw order numbers.
 
 ## Category CSV import
 
