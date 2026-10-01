@@ -2515,7 +2515,17 @@ function CLASSIFIEDS_viewAd($clid)
         $ad->set_var('pictures', '');
     } else {
         $infoPicture = '<p class="info_picture">'
-            . $LANG_CLASSIFIEDS_1['enlarge_picture'] . '</p>';
+            . '<button type="button" class="classifieds-gallery-open" '
+            . 'data-classifieds-lightbox-open '
+            . 'data-lightbox-close-label="'
+            . htmlspecialchars($LANG_CLASSIFIEDS_1['close_picture'], ENT_QUOTES, $_CONF['default_charset'])
+            . '" data-lightbox-previous-label="'
+            . htmlspecialchars($LANG_CLASSIFIEDS_1['previous_picture'], ENT_QUOTES, $_CONF['default_charset'])
+            . '" data-lightbox-next-label="'
+            . htmlspecialchars($LANG_CLASSIFIEDS_1['next_picture'], ENT_QUOTES, $_CONF['default_charset'])
+            . '">'
+            . htmlspecialchars($LANG_CLASSIFIEDS_1['enlarge_picture'], ENT_QUOTES, $_CONF['default_charset'])
+            . '</button></p>';
         $ad->set_var(
             'pictures',
             '<div id="ad-pictures" class="classifieds-gallery">' . $savedImages
