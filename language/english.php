@@ -175,6 +175,7 @@ $LANG_CLASSIFIEDS_ADMIN = array(
 	'catorder'                => 'Order',
 	'catdeleted'              => 'Status',
 	'root'                    => 'Root category',
+    'root_category_help'      => 'Root categories are used only to organize child categories and cannot receive ads directly. Ads must be published in a child category.',
 	'deletion_succes'         => 'The deletion was successful.',
     'deletion_fail'           => 'Oups! The deletion failed.',
 	'cat_informations'        => 'Category informations',
