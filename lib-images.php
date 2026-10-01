@@ -114,9 +114,16 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
 
         foreach ($uploadFiles as $file) {
             $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $extension = preg_replace('/[^a-z0-9]/', '', $extension);
-            if ($extension === '') {
+            if ($extension === 'jpeg') {
                 $extension = 'jpg';
+            }
+
+            if (!in_array($extension, array('jpg', 'png', 'gif'), true)) {
+                COM_errorLog(
+                    'Classifieds: rejected image with unsupported filename extension.'
+                );
+                CLASSIFIEDS_cleanupImageFiles($filenames);
+                return $result;
             }
 
             $filename = $clid . '_' . $nextNumber . '.' . $extension;
@@ -217,7 +224,7 @@ function CLASSIFIEDS_deleteImage($image)
         return true;
     }
 
-    return @unlink($path);
+    return unlink($path);
 }
 
 
