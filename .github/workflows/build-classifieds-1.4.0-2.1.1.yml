@@ -69,25 +69,55 @@ jobs:
             }
           '
 
-          echo "Checking language-key parity and duplicate Plugin API callbacks..."
+          echo "Checking language-key parity..."
+          php -r '
+            function classifieds_language_contract($path) {
+                $LANG_CLASSIFIEDS_1 = array();
+                $LANG_CLASSIFIEDS_2 = array();
+                $LANG_CLASSIFIEDS_ADMIN = array();
+                $LANG_CLASSIFIEDS_EMAIL = array();
+                $LANG_confignames = array();
+                $LANG_configtooltips = array();
+                $LANG_configselects = array();
+                include $path;
+
+                return array(
+                    "public" => array_keys($LANG_CLASSIFIEDS_1),
+                    "forms" => array_keys($LANG_CLASSIFIEDS_2),
+                    "admin" => array_keys($LANG_CLASSIFIEDS_ADMIN),
+                    "email" => array_keys($LANG_CLASSIFIEDS_EMAIL),
+                    "config" => isset($LANG_confignames["classifieds"])
+                        ? array_keys($LANG_confignames["classifieds"]) : array(),
+                    "tooltips" => isset($LANG_configtooltips["classifieds"])
+                        ? array_keys($LANG_configtooltips["classifieds"]) : array(),
+                    "select_ids" => isset($LANG_configselects["classifieds"])
+                        ? array_keys($LANG_configselects["classifieds"]) : array()
+                );
+            }
+
+            $en = classifieds_language_contract("language/english.php");
+            $fr = classifieds_language_contract("language/french_france_utf-8.php");
+
+            foreach ($en as $section => $keys) {
+                sort($keys);
+                $other = $fr[$section];
+                sort($other);
+                if ($keys !== $other) {
+                    fwrite(STDERR, "Language key parity failure in " . $section . "\n");
+                    fwrite(STDERR, "English: " . implode(", ", $keys) . "\n");
+                    fwrite(STDERR, "French: " . implode(", ", $other) . "\n");
+                    exit(1);
+                }
+            }
+          '
+
+          echo "Checking duplicate Plugin API callbacks..."
           python3 - <<'PY'
           from __future__ import print_function
           from collections import Counter
           from pathlib import Path
           import re
           import sys
-
-          def language_keys(path):
-              text = Path(path).read_text(encoding="utf-8")
-              return Counter(re.findall(r"""['"]([^'"]+)['"]\s*=>""", text))
-
-          english = language_keys("language/english.php")
-          french = language_keys("language/french_france_utf-8.php")
-          if english != french:
-              print("Language key parity failure.")
-              print("Only/different in English:", english - french)
-              print("Only/different in French:", french - english)
-              sys.exit(1)
 
           callbacks = Counter()
           locations = {}
