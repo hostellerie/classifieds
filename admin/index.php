@@ -204,6 +204,10 @@ function CLASSIFIEDS_listCategories()
         array(
             'url' => $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=csvtemplate',
             'text' => $LANG_CLASSIFIEDS_ADMIN['csv_template']
+        ),
+        array(
+            'url' => $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=csvhelp',
+            'text' => $LANG_CLASSIFIEDS_ADMIN['csv_documentation']
         )
     );
     $retval .= ADMIN_createMenu($menu_arr, '', '');
@@ -300,6 +304,9 @@ function CLASSIFIEDS_categoryCsvForm()
     $html = '<div class="classifieds-csv-import">'
         . '<p>' . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_help'], ENT_QUOTES, $_CONF['default_charset']) . '</p>'
         . '<p><code>key,category,parent_key,order</code></p>'
+        . '<p><a href="' . $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=csvhelp">'
+        . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_documentation_link'], ENT_QUOTES, $_CONF['default_charset'])
+        . '</a></p>'
         . '<form method="post" enctype="multipart/form-data" action="' . $action . '">'
         . '<input type="hidden" name="mode" value="cat">'
         . '<input type="hidden" name="op" value="csvimport">'
@@ -312,6 +319,69 @@ function CLASSIFIEDS_categoryCsvForm()
         . '<p><button type="submit">'
         . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['csv_preview'], ENT_QUOTES, $_CONF['default_charset'])
         . '</button></p></form></div>';
+
+    return $html;
+}
+
+/**
+ * Render end-user documentation for preparing a category CSV file.
+ *
+ * @return string
+ */
+function CLASSIFIEDS_categoryCsvHelp()
+{
+    global $_CONF, $LANG_CLASSIFIEDS_ADMIN;
+
+    $e = function ($value) use ($_CONF) {
+        return htmlspecialchars($value, ENT_QUOTES, $_CONF['default_charset']);
+    };
+
+    $html = '<div class="classifieds-csv-help">'
+        . '<p>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_intro']) . '</p>'
+        . '<h3>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_format_title']) . '</h3>'
+        . '<p>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_format_text']) . '</p>'
+        . '<pre><code>key,category,parent_key,order'
+        . "\nvehicles,Vehicles,,10"
+        . "\ncars,Cars,vehicles,10"
+        . "\nmotorcycles,Motorcycles,vehicles,20"
+        . "\nreal-estate,Real estate,,20"
+        . "\nreal-estate-sale,Sale,real-estate,10"
+        . "\nreal-estate-rental,Rental,real-estate,20</code></pre>"
+        . '<h3>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_columns_title']) . '</h3>'
+        . '<dl>'
+        . '<dt><code>key</code></dt><dd>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_key']) . '</dd>'
+        . '<dt><code>category</code></dt><dd>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_category']) . '</dd>'
+        . '<dt><code>parent_key</code></dt><dd>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_parent']) . '</dd>'
+        . '<dt><code>order</code></dt><dd>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_order']) . '</dd>'
+        . '</dl>'
+        . '<h3>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_hierarchy_title']) . '</h3>'
+        . '<p>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_hierarchy_text']) . '</p>'
+        . '<pre><code>property,Property,,10'
+        . "\nsale,For sale,property,10"
+        . "\napartments,Apartments,sale,10"
+        . "\nhouses,Houses,sale,20</code></pre>"
+        . '<h3>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_rules_title']) . '</h3>'
+        . '<ul>'
+        . '<li>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_rule_utf8']) . '</li>'
+        . '<li>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_rule_header']) . '</li>'
+        . '<li>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_rule_key']) . '</li>'
+        . '<li>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_rule_parent']) . '</li>'
+        . '<li>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_rule_order']) . '</li>'
+        . '<li>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_rule_existing']) . '</li>'
+        . '<li>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_rule_preview']) . '</li>'
+        . '</ul>'
+        . '<h3>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_workflow_title']) . '</h3>'
+        . '<ol>'
+        . '<li>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_step_template']) . '</li>'
+        . '<li>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_step_edit']) . '</li>'
+        . '<li>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_step_preview']) . '</li>'
+        . '<li>' . $e($LANG_CLASSIFIEDS_ADMIN['csv_doc_step_confirm']) . '</li>'
+        . '</ol>'
+        . '<p><a href="' . $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=csvtemplate">'
+        . $e($LANG_CLASSIFIEDS_ADMIN['csv_template']) . '</a> &middot; '
+        . '<a href="' . $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat&amp;op=csvimport">'
+        . $e($LANG_CLASSIFIEDS_ADMIN['csv_import']) . '</a></p>'
+        . '</div>';
 
     return $html;
 }
@@ -514,6 +584,12 @@ switch ($_REQUEST['mode']) {
                     . '&amp;mode=cat'
                 );
                 exit;
+
+            case 'csvhelp':
+                $display .= COM_startBlock($LANG_CLASSIFIEDS_ADMIN['csv_documentation']);
+                $display .= CLASSIFIEDS_categoryCsvHelp();
+                $display .= COM_endBlock();
+                break;
 
             case 'csvimport':
                 require_once $_CONF['path'] . 'plugins/classifieds/lib-categories.php';
