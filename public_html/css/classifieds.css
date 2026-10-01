@@ -580,7 +580,90 @@ body.classifieds-lightbox-open {
 
 .classifieds-form__images {
     display: grid;
-    gap: .75rem;
+    gap: 1rem;
+}
+
+.classifieds-image-existing,
+.classifieds-image-upload__preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: .8rem;
+}
+
+.classifieds-image-item,
+.classifieds-image-upload__preview-item {
+    min-width: 0;
+}
+
+.classifieds-image-item__thumb,
+.classifieds-image-upload__preview-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: .55rem;
+}
+
+.classifieds-image-item__delete {
+    display: flex;
+    gap: .35rem;
+    align-items: center;
+    margin-top: .4rem;
+    font-size: .88em;
+}
+
+.classifieds-image-upload {
+    padding: 1rem;
+    border: 1px dashed rgba(127, 127, 127, .45);
+    border-radius: .7rem;
+}
+
+.classifieds-image-upload__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.classifieds-image-upload__button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: .5rem .9rem;
+    border: 1px solid currentColor;
+    border-radius: .55rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.classifieds-image-upload__input:focus-visible + .classifieds-image-upload__help {
+    outline: none;
+}
+
+.classifieds-image-upload__button:hover {
+    background: rgba(127, 127, 127, .08);
+}
+
+.classifieds-image-upload__help {
+    margin: .55rem 0 0;
+    font-size: .9em;
+    opacity: .72;
+}
+
+.classifieds-image-upload__preview {
+    margin-top: 1rem;
+}
+
+.classifieds-image-upload__preview-name {
+    display: block;
+    margin-top: .35rem;
+    overflow: hidden;
+    font-size: .82em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .classifieds-form__actions {
