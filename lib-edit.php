@@ -404,25 +404,29 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
     $template->set_var('category_label', $LANG_CLASSIFIEDS_ADMIN['category']);
 	$template->set_var('category', $catid['category']);
 
-    //catorder
+    // Root categories keep a numeric order. Child categories use a semantic
+    // first / after / last position so administrators never manipulate raw
+    // catorder values for siblings.
     $template->set_var('catorder_label', $LANG_CLASSIFIEDS_ADMIN['catorder']);
-	$template->set_var('catorder', $catid['catorder']);
-	
-    $res = DB_query(
-        "SELECT catorder, category, pid FROM {$_TABLES['cl_cat']} "
-        . "ORDER BY catorder ASC, category ASC"
-    );
-	$categories_order = '<blockquote>';
+    $template->set_var('catorder', (int) $catid['catorder']);
+    $template->set_var('child_position_label', $LANG_CLASSIFIEDS_ADMIN['child_position']);
 
-	while ($A = DB_fetchArray($res)) {
-	    if ($A['pid'] == 0) {
-	         $categories_order .= '<p><strong>' . $A['catorder'] .  '. ' . $A['category'] . '</strong></p>';
-	    } else {
-	        $categories_order .=  '&nbsp;&nbsp;  ' . $A['catorder'] .  '. ' . $A['category'];
-	    }
-	}
-	$categories_order .= '<br' . XHTML . '>&nbsp;</blockquote>';
-	$template->set_var('categories_order', $categories_order);
+    $currentPid = (int) $catid['pid'];
+    $currentCid = (int) $catid['cid'];
+    $selectedPosition = ($currentPid > 0 && $currentCid > 0)
+        ? CLASSIFIEDS_childCategoryPosition($currentPid, $currentCid)
+        : 'last';
+
+    $template->set_var(
+        'child_position_options',
+        CLASSIFIEDS_childCategoryPositionOptions(
+            $currentPid,
+            $currentCid,
+            $selectedPosition
+        )
+    );
+    $template->set_var('root_order_hidden', $currentPid > 0 ? ' hidden="hidden"' : '');
+    $template->set_var('child_position_hidden', $currentPid > 0 ? '' : ' hidden="hidden"');
 
 	//active
 	$template->set_var('catdeleted_label', $LANG_CLASSIFIEDS_ADMIN['catdeleted']);
