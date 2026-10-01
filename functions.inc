@@ -124,6 +124,19 @@ function plugin_getheadercode_classifieds()
         . '/css/classifieds.css?v=' . rawurlencode((string) $cssVersion)
         . '" type="text/css" media="screen"' . XHTML . '>' . LB;
 
+    $scriptName = isset($_SERVER['PHP_SELF']) ? str_replace('\\', '/', (string) $_SERVER['PHP_SELF']) : '';
+    $isCategoryAdmin = strpos($scriptName, '/admin/plugins/classifieds/index.php') !== false
+        && isset($_REQUEST['mode'])
+        && $_REQUEST['mode'] === 'cat';
+
+    if ($isCategoryAdmin) {
+        $jsPath = $_CLASSIFIEDS_CONF['path_html'] . 'js/admin-categories.js';
+        $jsVersion = is_file($jsPath) ? filemtime($jsPath) : plugin_chkVersion_classifieds();
+        $retval .= '    <script src="' . $_CLASSIFIEDS_CONF['site_url']
+            . '/js/admin-categories.js?v=' . rawurlencode((string) $jsVersion)
+            . '" defer></script>' . LB;
+    }
+
     return $retval;
 }
 
@@ -2436,6 +2449,188 @@ function CLASSIFIEDS_checkAdAccess($ad)
  * @param int $exclude
  * @return string
  */
+/**
+ * Return the current semantic position of a child category.
+ *
+ * @param int $pid Parent category id
+ * @param int $cid Current category id
+ * @return string first, last or after:<cid>
+ */
+function CLASSIFIEDS_childCategoryPosition($pid, $cid)
+{
+    global $_TABLES;
+
+    $pid = (int) $pid;
+    $cid = (int) $cid;
+    if ($pid <= 0 || $cid <= 0) {
+        return 'last';
+    }
+
+    $result = DB_query(
+        "SELECT cid FROM {$_TABLES['cl_cat']} "
+        . "WHERE pid = " . $pid
+        . " ORDER BY catorder ASC, category ASC, cid ASC"
+    );
+
+    $ids = array();
+    while ($row = DB_fetchArray($result)) {
+        $ids[] = (int) $row['cid'];
+    }
+
+    $index = array_search($cid, $ids, true);
+    if ($index === false || $index === 0) {
+        return 'first';
+    }
+    if ($index === count($ids) - 1) {
+        return 'last';
+    }
+
+    return 'after:' . (int) $ids[$index - 1];
+}
+
+/**
+ * Build semantic child-position options for every possible root parent.
+ *
+ * "After" options carry data-parent so the admin JavaScript can expose only
+ * siblings belonging to the currently selected parent.
+ *
+ * @param int $selectedPid
+ * @param int $excludeCid
+ * @param string $selectedPosition
+ * @return string
+ */
+function CLASSIFIEDS_childCategoryPositionOptions($selectedPid, $excludeCid, $selectedPosition)
+{
+    global $_CONF, $_TABLES, $LANG_CLASSIFIEDS_ADMIN;
+
+    $selectedPid = (int) $selectedPid;
+    $excludeCid = (int) $excludeCid;
+    $selectedPosition = (string) $selectedPosition;
+
+    $retval = '<option value="first"'
+        . ($selectedPosition === 'first' ? ' selected="selected"' : '')
+        . '>' . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['position_first'], ENT_QUOTES, $_CONF['default_charset'])
+        . '</option>' . LB;
+
+    $result = DB_query(
+        "SELECT cid, pid, category FROM {$_TABLES['cl_cat']} "
+        . "WHERE pid > 0"
+        . ($excludeCid > 0 ? " AND cid <> " . $excludeCid : '')
+        . " ORDER BY pid ASC, catorder ASC, category ASC, cid ASC"
+    );
+
+    while ($row = DB_fetchArray($result)) {
+        $cid = (int) $row['cid'];
+        $pid = (int) $row['pid'];
+        $value = 'after:' . $cid;
+        $label = sprintf($LANG_CLASSIFIEDS_ADMIN['position_after'], $row['category']);
+
+        $retval .= '<option value="' . $value . '" data-parent="' . $pid . '"'
+            . ($value === $selectedPosition && $pid === $selectedPid ? ' selected="selected"' : '')
+            . '>' . htmlspecialchars($label, ENT_QUOTES, $_CONF['default_charset'])
+            . '</option>' . LB;
+    }
+
+    $retval .= '<option value="last"'
+        . ($selectedPosition === 'last' ? ' selected="selected"' : '')
+        . '>' . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['position_last'], ENT_QUOTES, $_CONF['default_charset'])
+        . '</option>' . LB;
+
+    return $retval;
+}
+
+/**
+ * Normalize child category order for one parent.
+ *
+ * @param int $pid
+ * @return void
+ */
+function CLASSIFIEDS_normalizeChildCategoryOrder($pid)
+{
+    global $_TABLES;
+
+    $pid = (int) $pid;
+    if ($pid <= 0) {
+        return;
+    }
+
+    $result = DB_query(
+        "SELECT cid FROM {$_TABLES['cl_cat']} "
+        . "WHERE pid = " . $pid
+        . " ORDER BY catorder ASC, category ASC, cid ASC"
+    );
+
+    $order = 1;
+    while ($row = DB_fetchArray($result)) {
+        DB_query(
+            "UPDATE {$_TABLES['cl_cat']} SET catorder = " . $order
+            . " WHERE cid = " . (int) $row['cid']
+        );
+        $order++;
+    }
+}
+
+/**
+ * Apply first / after:<cid> / last positioning to one child category.
+ *
+ * @param int $cid
+ * @param int $pid
+ * @param string $position
+ * @param int $oldPid
+ * @return void
+ */
+function CLASSIFIEDS_applyChildCategoryPosition($cid, $pid, $position, $oldPid = 0)
+{
+    global $_TABLES;
+
+    $cid = (int) $cid;
+    $pid = (int) $pid;
+    $oldPid = (int) $oldPid;
+
+    if ($cid <= 0 || $pid <= 0) {
+        return;
+    }
+
+    $result = DB_query(
+        "SELECT cid FROM {$_TABLES['cl_cat']} "
+        . "WHERE pid = " . $pid . " AND cid <> " . $cid
+        . " ORDER BY catorder ASC, category ASC, cid ASC"
+    );
+
+    $siblings = array();
+    while ($row = DB_fetchArray($result)) {
+        $siblings[] = (int) $row['cid'];
+    }
+
+    $position = strtolower(trim((string) $position));
+    if ($position === 'first') {
+        array_unshift($siblings, $cid);
+    } elseif (strpos($position, 'after:') === 0) {
+        $afterCid = (int) substr($position, 6);
+        $index = array_search($afterCid, $siblings, true);
+        if ($index === false) {
+            $siblings[] = $cid;
+        } else {
+            array_splice($siblings, $index + 1, 0, array($cid));
+        }
+    } else {
+        $siblings[] = $cid;
+    }
+
+    $order = 1;
+    foreach ($siblings as $siblingCid) {
+        DB_query(
+            "UPDATE {$_TABLES['cl_cat']} SET catorder = " . $order
+            . " WHERE cid = " . (int) $siblingCid
+        );
+        $order++;
+    }
+
+    if ($oldPid > 0 && $oldPid !== $pid) {
+        CLASSIFIEDS_normalizeChildCategoryOrder($oldPid);
+    }
+}
+
 function CLASSIFIEDS_parentCategoryOptions($selected = 0, $exclude = 0)
 {
     global $_CONF, $_TABLES;
