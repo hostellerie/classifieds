@@ -790,18 +790,9 @@ switch ($_REQUEST['mode']) {
         $display .= CLASSIFIEDS_adminGettingStarted();
         $display .= COM_startBlock($LANG_CLASSIFIEDS_1['plugin_name']);
 
-        // Show which groups currently own the publish feature.
-        $ft_id = (int) DB_getItem(
-            $_TABLES['features'],
-            'ft_id',
-            "ft_name = 'classifieds.publish'"
-        );
-        $sql = "SELECT g.grp_name "
-            . "FROM {$_TABLES['access']} AS a "
-            . "LEFT JOIN {$_TABLES['groups']} AS g ON a.acc_grp_id = g.grp_id "
-            . "WHERE a.acc_ft_id = " . $ft_id;
-        $result = DB_query($sql);
-        $groupCount = DB_numRows($result);
+        // Reflect the same publication policy enforced by public mutations.
+        $publishGroups = CLASSIFIEDS_publishGroups();
+        $groupCount = count($publishGroups);
 
         if ($groupCount === 0) {
             $display .= '<p>' . $LANG_CLASSIFIEDS_ADMIN['publish_all_logged_in'] . '</p>';
@@ -810,9 +801,9 @@ switch ($_REQUEST['mode']) {
                 ? $LANG_CLASSIFIEDS_ADMIN['publish_restricted_group']
                 : $LANG_CLASSIFIEDS_ADMIN['publish_restricted_groups'];
             $display .= '<p>' . sprintf($label, $groupCount) . '</p><ul>';
-            while ($A = DB_fetchArray($result)) {
+            foreach ($publishGroups as $groupName) {
                 $display .= '<li>'
-                    . htmlspecialchars($A['grp_name'], ENT_QUOTES, $_CONF['default_charset'])
+                    . htmlspecialchars($groupName, ENT_QUOTES, $_CONF['default_charset'])
                     . '</li>';
             }
             $display .= '</ul>';
