@@ -98,6 +98,8 @@ Ad saves now follow:
 
 ## Configuration and administration
 
+- Clarified the historical `classifieds.publish` policy in administration: with no assigned group all registered users may publish; assigning the feature to one or more groups restricts publication to those groups. Existing restricted installations remain unchanged.
+
 - Added explicit native configuration tab hierarchy.
 - Corrected text settings to use no selection array.
 - Changed currency to a normal text setting instead of a nonexistent select-list ID.
