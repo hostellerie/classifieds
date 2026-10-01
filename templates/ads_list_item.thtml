@@ -1,17 +1,15 @@
 <article{class}>
-    <div class="classifieds-list-item__date">
-        <span>{date}</span>
-        <span>{time}</span>
-    </div>
-
     <div class="classifieds-list-item__image">
         {small_pic}
     </div>
 
     <div class="classifieds-list-item__main">
-        <h3 class="ad-list-title">{title} {edit}</h3>
+        <h2 class="ad-list-title">{title} {edit}</h2>
+        <div class="classifieds-list-item__meta">
+            <span class="classifieds-list-item__date">{date}</span>
+            <span class="ad-list-location">{cat} · {postcode} {city}</span>
+        </div>
         <p class="ad-list-price">{price} {currency}</p>
-        <p class="ad-list-location">{cat} · {postcode} {city}</p>
     </div>
 
     {views}

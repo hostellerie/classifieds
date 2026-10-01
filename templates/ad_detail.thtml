@@ -1,13 +1,15 @@
 <article id="ad" class="classifieds-ad">
     <header class="classifieds-ad__header">
         <h1>{title} {edit}</h1>
-        {postby}
+        <div class="classifieds-ad__byline">{postby}</div>
     </header>
 
     <div class="classifieds-ad__layout">
         <section class="classifieds-ad__content">
-            {big_picture}
-            {pictures}
+            <div class="classifieds-ad__media">
+                {big_picture}
+                {pictures}
+            </div>
 
             <div class="classifieds-ad__meta">
                 {price} {currency} {postal}
@@ -24,10 +26,12 @@
             {tel}
             {siren}
             {admin}
-            {modify}
-            {delete}
-            {view_all}
-            {report}
+            <div class="classifieds-ad__actions">
+                {modify}
+                {delete}
+                {view_all}
+                {report}
+            </div>
         </aside>
     </div>
 </article>

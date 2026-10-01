@@ -185,6 +185,16 @@ function plugin_getheadercode_classifieds()
             . '" defer></script>' . LB;
     }
 
+    $publicEntry = '/' . trim(CLASSIFIEDS_PUBLIC_FOLDER, '/') . '/index.php';
+    if (substr($scriptName, -strlen($publicEntry)) === $publicEntry) {
+        $publicJsPath = $_CLASSIFIEDS_CONF['path_html'] . 'js/classifieds.js';
+        $publicJsVersion = $pluginVersion . '-'
+            . (is_file($publicJsPath) ? filemtime($publicJsPath) : '0');
+        $retval .= '    <script src="' . $_CLASSIFIEDS_CONF['site_url']
+            . '/js/classifieds.js?v=' . rawurlencode((string) $publicJsVersion)
+            . '" defer></script>' . LB;
+    }
+
     return $retval;
 }
 
@@ -1698,33 +1708,30 @@ function CLASSIFIEDS_filterVars($vars, &$arr)
  */
 function CLASSIFIEDS_user_menu() 
 {
-    global $_CONF, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_1, $_TABLES;
+    global $_CONF, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_1;
 
-    $retval = COM_startBlock();
-
-    // generate the menu from the template
     $menu = new Template($_CONF['path'] . 'plugins/classifieds/templates/menus');
     $menu->set_file(array('menu' => 'user_menu.thtml'));
     $menu->set_var('site_url', $_CLASSIFIEDS_CONF['site_url']);
-	$menu->set_var('place_an_ad', $LANG_CLASSIFIEDS_1['place_an_ad']);
-	$menu->set_var('all_ads', $LANG_CLASSIFIEDS_1['all_ads']);
-	$menu->set_var('offer', $LANG_CLASSIFIEDS_1['offer']);
-	$menu->set_var('demand', $LANG_CLASSIFIEDS_1['demand']);
-	$menu->set_var('my_ads', $LANG_CLASSIFIEDS_1['my_ads']);
-	$menu->set_var('help', $LANG_CLASSIFIEDS_1['help']);
-	
-	if (SEC_hasRights('classifieds.admin')) {
-        $menu->set_var('admin', '| ' . '<a href="' . $_CONF['site_url'] . '/admin/plugins/classifieds/index.php">' . $LANG_CLASSIFIEDS_1['admin'] . '</a>');
+    $menu->set_var('place_an_ad', $LANG_CLASSIFIEDS_1['place_an_ad']);
+    $menu->set_var('all_ads', $LANG_CLASSIFIEDS_1['all_ads']);
+    $menu->set_var('offer', $LANG_CLASSIFIEDS_1['offer']);
+    $menu->set_var('demand', $LANG_CLASSIFIEDS_1['demand']);
+    $menu->set_var('my_ads', $LANG_CLASSIFIEDS_1['my_ads']);
+    $menu->set_var('help', $LANG_CLASSIFIEDS_1['help']);
+
+    if (SEC_hasRights('classifieds.admin')) {
+        $menu->set_var(
+            'admin',
+            '<li><a href="' . $_CONF['site_url']
+            . '/admin/plugins/classifieds/index.php">'
+            . $LANG_CLASSIFIEDS_1['admin'] . '</a></li>'
+        );
     } else {
-	    $menu->set_var('admin', '');
-	}
-	
-    $retval .= $menu->parse('output', 'menu');
+        $menu->set_var('admin', '');
+    }
 
-    $retval .= COM_endBlock();
-
-    // retval results
-    return $retval;
+    return $menu->parse('output', 'menu');
 }
 
 function CLASSIFIEDS_centerblock_lastAds ($limit = 10) 
@@ -1922,15 +1929,16 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
             $checked_category = (int) $catid;
         }
 		$categories .= CLASSIFIEDS_adCategoryOptions($checked_category);
-        $search_box = '<div id="ad-list-searchbox">
-                        <form action="' . $_CLASSIFIEDS_CONF['site_url'] . '/index.php" id="classifieds_cat" method="get"><strong>' .
-						    $type_label .
-						    '</strong>&nbsp;&nbsp; <select name="catid">' . $categories .
-						    '</select>
-						<input type="submit" name="submit" value="' . $LANG_CLASSIFIEDS_1['search_button'] . '" '.
-						XHTML .'>
-						</form>
-					 </div>';
+        $search_box = '<div id="ad-list-searchbox" class="classifieds-filter">'
+            . '<form action="' . $_CLASSIFIEDS_CONF['site_url']
+            . '/index.php" id="classifieds_cat" method="get" class="classifieds-filter__form">'
+            . '<label for="classifieds-category" class="classifieds-filter__label">'
+            . $type_label . '</label>'
+            . '<select id="classifieds-category" name="catid" class="classifieds-filter__select">'
+            . $categories . '</select>'
+            . '<input class="classifieds-filter__submit" type="submit" name="submit" value="'
+            . $LANG_CLASSIFIEDS_1['search_button'] . '" ' . XHTML . '>'
+            . '</form></div>';
 		$ad->set_var('search_box', $search_box);
 	} else {
 	    $ad->set_var('search_box', '');
@@ -2371,12 +2379,16 @@ function CLASSIFIEDS_viewAd($clid)
             if ($z === 1) {
                 $ad->set_var(
                     'big_picture',
-                    '<img class="classifieds-main-image" loading="eager" src="'
-                    . $imageUrl . '" alt="' . $alt . '" />'
+                    '<figure class="classifieds-ad__figure">'
+                    . '<a class="classifieds-lightbox" data-classifieds-lightbox href="'
+                    . $imageUrl . '">'
+                    . '<img class="classifieds-main-image" loading="eager" src="'
+                    . $imageUrl . '" alt="' . $alt . '" /></a></figure>'
                 );
             }
 
-            $savedImages .= '<a class="lightbox" href="' . $imageUrl . '">'
+            $savedImages .= '<a class="classifieds-lightbox" data-classifieds-lightbox href="'
+                . $imageUrl . '">'
                 . '<img class="classifieds-gallery-thumb" loading="lazy" src="'
                 . $imageUrl . '" alt="' . $alt . '" /></a>';
         }
@@ -2386,12 +2398,12 @@ function CLASSIFIEDS_viewAd($clid)
         $ad->set_var('big_picture', '');
         $ad->set_var('pictures', '');
     } else {
-        $infoPicture = '<p class="info_picture"><img src="'
-            . $_CLASSIFIEDS_CONF['site_url'] . '/images/enlarge.png" alt="" /> '
+        $infoPicture = '<p class="info_picture">'
             . $LANG_CLASSIFIEDS_1['enlarge_picture'] . '</p>';
         $ad->set_var(
             'pictures',
-            '<div id="ad-pictures">' . $savedImages . $infoPicture . '</div>'
+            '<div id="ad-pictures" class="classifieds-gallery">' . $savedImages
+            . '</div>' . $infoPicture
         );
     }
 
@@ -2421,8 +2433,8 @@ function CLASSIFIEDS_viewAd($clid)
 
     $ad->set_var(
         'admin',
-        '<h3>' . $LANG_CLASSIFIEDS_1['manage_ad'] . ' ('
-        . (int) $A['hits'] . ' ' . $LANG_CLASSIFIEDS_1['hits'] . ')</h3>'
+        '<h2 class="classifieds-ad__aside-title">' . $LANG_CLASSIFIEDS_1['manage_ad'] . ' ('
+        . (int) $A['hits'] . ' ' . $LANG_CLASSIFIEDS_1['hits'] . ')</h2>'
     );
 
     $canEdit = ($isAdmin || SEC_hasAccess2($A) >= 3)
@@ -2522,12 +2534,26 @@ function CLASSIFIEDS_viewAd($clid)
         $ad->set_var('postal', '');
     }
 
+    $categoryUrl = plugin_idToURL_classifieds(
+        '',
+        'category:' . (int) $A['catid']
+    );
+    $categoryLabel = htmlspecialchars(
+        $category,
+        ENT_QUOTES,
+        $_CONF['default_charset']
+    );
+    if ($categoryUrl !== '') {
+        $categoryLabel = '<a href="'
+            . htmlspecialchars($categoryUrl, ENT_QUOTES, $_CONF['default_charset'])
+            . '">' . $categoryLabel . '</a>';
+    }
+
     $ad->set_var(
         'category',
         '<p>' . $LANG_CLASSIFIEDS_1['category']
         . $LANG_CLASSIFIEDS_1['double_point'] . ' <strong>'
-        . htmlspecialchars($category, ENT_QUOTES, $_CONF['default_charset'])
-        . '</strong></p>'
+        . $categoryLabel . '</strong></p>'
     );
 
     $ad->set_var(
