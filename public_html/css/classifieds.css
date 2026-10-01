@@ -488,38 +488,67 @@ body.classifieds-lightbox-open {
 
 /* Theme-neutral plugin administration navigation */
 .plugin-admin-nav {
-    margin: 0 0 1.25rem;
+    margin: 0 0 1.5rem;
+    overflow-x: auto;
+    border-bottom: 1px solid rgba(127, 127, 127, .22);
+    scrollbar-width: thin;
 }
 
 .plugin-admin-nav__primary {
     display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-    align-items: center;
+    width: max-content;
+    min-width: 100%;
+    gap: 1.25rem;
+    align-items: flex-end;
 }
 
 .plugin-admin-nav__item {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    min-height: 2.4rem;
-    padding: .5rem .8rem;
-    border: 1px solid currentColor;
-    border-radius: .35rem;
+    min-height: 2.8rem;
+    padding: .55rem .1rem .75rem;
+    border: 0;
+    border-radius: 0;
     background: transparent;
     color: inherit;
     font: inherit;
+    font-weight: 600;
     text-decoration: none;
     cursor: pointer;
+    opacity: .72;
+}
+
+.plugin-admin-nav__item:hover {
+    background: transparent;
+    opacity: 1;
 }
 
 .plugin-admin-nav__item.is-active {
     font-weight: 700;
-    box-shadow: inset 0 -2px 0 currentColor;
+    opacity: 1;
+}
+
+.plugin-admin-nav__item.is-active::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: currentColor;
+}
+
+.plugin-admin-nav__item:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
 }
 
 .plugin-admin-nav__form {
-    display: inline-block;
+    display: inline-flex;
     margin: 0;
 }
 
@@ -776,18 +805,6 @@ body.classifieds-lightbox-open {
 }
 
 @media (max-width: 640px) {
-    .plugin-admin-nav__primary {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
-    .plugin-admin-nav__item,
-    .plugin-admin-nav__form,
-    .plugin-admin-nav__form .plugin-admin-nav__item {
-        width: 100%;
-        box-sizing: border-box;
-    }
-
     .classifieds-form__row {
         grid-template-columns: 1fr;
         gap: 0;
