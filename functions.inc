@@ -1997,6 +1997,34 @@ function modifAd($ad)
     }
 }
 
+/**
+ * Render a complete Classifieds document through the current Geeklog page API.
+ *
+ * Block placement remains owned by Geeklog/the active theme. In particular,
+ * right blocks follow the site's normal COM_createHTMLDocument() policy rather
+ * than being forced by the plugin.
+ *
+ * @param string $content
+ * @param string $pageTitle
+ * @param string $headerCode
+ * @param int    $httpStatus
+ * @return string
+ */
+function CLASSIFIEDS_renderPage($content, $pageTitle = '', $headerCode = '', $httpStatus = 200)
+{
+    $information = array(
+        'what' => 'menu',
+        'pagetitle' => (string) $pageTitle,
+        'httpstatus' => (int) $httpStatus
+    );
+
+    if ($headerCode !== '') {
+        $information['headercode'] = $headerCode;
+    }
+
+    return COM_createHTMLDocument($content, $information);
+}
+
 function CLASSIFIEDS_viewAd($clid)
 {
     global $_TABLES, $_CLASSIFIEDS_CONF, $_CONF;
@@ -2008,16 +2036,20 @@ function CLASSIFIEDS_viewAd($clid)
     }
 
     if (($_USER['uid'] < 2) && !empty($_CLASSIFIEDS_CONF['classifieds_login_required'])) {
-        return COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name'])
-            . SEC_loginRequiredForm()
-            . COM_siteFooter(1);
+        return CLASSIFIEDS_renderPage(
+            SEC_loginRequiredForm(),
+            $LANG_CLASSIFIEDS_1['plugin_name']
+        );
     }
 
     if (!CLASSIFIEDS_checkAdAccess($clid)) {
-        return COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name'])
-            . CLASSIFIEDS_user_menu()
-            . CLASSIFIEDS_message($LANG_CLASSIFIEDS_1['ads_not_available'])
-            . COM_siteFooter(1);
+        return CLASSIFIEDS_renderPage(
+            CLASSIFIEDS_user_menu()
+            . CLASSIFIEDS_message($LANG_CLASSIFIEDS_1['ads_not_available']),
+            $LANG_CLASSIFIEDS_1['plugin_name'],
+            '',
+            404
+        );
     }
 
     $sql = "SELECT a.*, u.username, c.category "
@@ -2080,8 +2112,7 @@ function CLASSIFIEDS_viewAd($clid)
         . htmlspecialchars($canonicalUrl, ENT_QUOTES, $_CONF['default_charset'])
         . '"' . XHTML . '>' . LB;
 
-    $retval = COM_siteHeader('menu', $pageTitle, $headerCode);
-    $retval .= CLASSIFIEDS_user_menu();
+    $retval = CLASSIFIEDS_user_menu();
 
     $message = isset($_REQUEST['msg']) ? (string) $_REQUEST['msg'] : '';
     if ($message !== '') {
@@ -2331,11 +2362,10 @@ function CLASSIFIEDS_viewAd($clid)
     );
 
     $retval .= $ad->parse('', 'ad');
-    $retval .= COM_siteFooter(0);
 
     hitAd($clid);
 
-    return $retval;
+    return CLASSIFIEDS_renderPage($retval, $pageTitle, $headerCode);
 }
 
 
