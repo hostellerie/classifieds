@@ -268,19 +268,20 @@ $LANG_CLASSIFIEDS_ADMIN = array(
 
 $LANG_CLASSIFIEDS_EMAIL = array(
     'hello'                   => 'Hello',
-    'new_ad'                  => 'Your new ad has been posted on',
-	'edit_ad'                 => 'Your ad has been edited on',
-	'delete_ad'               => 'Your ad has been deleted on',
-	'expire_ad'               => 'Your ad has expired on',
-	'online_for'              => 'and it will be online for',
-	'days'                    => 'days.',
-	'post_new'                => 'You can post a new one on',
-	'you_can_see'             => 'You can see it on',
-	'thanks'                  => 'Thanks,',
-	'sign'                    => 'The admin',
-	'no_reply'                => 'PS: This is an automated mail, thank you not to respond.',
-	'your_ad'                 => 'Your ad:',
-	'price'                   => 'Price:',
+    'new_ad'                  => 'Your new ad has been published.',
+    'edit_ad'                 => 'Your ad has been updated.',
+    'delete_ad'               => 'Your ad has been removed.',
+    'expire_ad'               => 'Your ad has expired.',
+    'online_for'              => 'It will remain online for',
+    'days'                    => 'days.',
+    'price'                   => 'Price:',
+    'view_ad'                 => 'View ad',
+    'manage_ad'               => 'Manage my ad',
+    'my_ads'                  => 'My ads',
+    'post_new_button'         => 'Place a new ad',
+    'publisher'               => 'Publisher',
+    'automatic_notice'        => 'This is an automated message. Please do not reply to this email.',
+
 );
 
 
