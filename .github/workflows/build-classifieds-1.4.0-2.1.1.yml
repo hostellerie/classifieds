@@ -67,6 +67,15 @@ jobs:
             exit 1
           fi
 
+          echo "Checking legacy Classifieds folder normalization..."
+          grep -Fq "function CLASSIFIEDS_normalizeLegacyConfiguration" functions.inc
+          grep -Fq "CLASSIFIEDS_normalizeLegacyConfiguration();" functions.inc
+          if grep -R -n "classifieds_folder.*text" \
+              --include='*.php' --include='*.inc' --exclude-dir=dist .; then
+            echo "classifieds_folder must not be exposed as an editable configuration item."
+            exit 1
+          fi
+
           echo "Validating plugin.json..."
           php -r '
             $m = json_decode(file_get_contents("plugin.json"), true);
