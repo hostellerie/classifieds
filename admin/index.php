@@ -541,7 +541,6 @@ switch ($_REQUEST['mode']) {
 
                 $category = DB_escapeString(COM_getTextContent($_REQUEST['category']));
                 $pid = (int) $_REQUEST['pid'];
-                $catorder = empty($_REQUEST['catorder']) ? 0 : (int) $_REQUEST['catorder'];
                 $catdeleted = !empty($_REQUEST['catdeleted']) ? 1 : 0;
                 $position = isset($_REQUEST['position'])
                     ? strtolower(trim((string) $_REQUEST['position']))
@@ -553,7 +552,7 @@ switch ($_REQUEST['mode']) {
                 $cid = (!empty($_REQUEST['cid']) && is_numeric($_REQUEST['cid']))
                     ? (int) $_REQUEST['cid']
                     : 0;
-                $oldPid = 0;
+                $oldPid = null;
 
                 if ($cid > 0) {
                     $oldPid = (int) DB_getItem(
@@ -563,20 +562,19 @@ switch ($_REQUEST['mode']) {
                     );
                 }
 
-                // Child order is managed semantically after the row is saved.
-                // Root categories keep the historical numeric catorder field.
-                $storedOrder = ($pid > 0) ? 0 : $catorder;
-
+                // catorder is internal only. The semantic position is applied
+                // after saving and both the current and former sibling groups
+                // are normalized automatically.
                 if ($cid > 0) {
                     $sql = "pid = '{$pid}', "
                          . "category = '{$category}', "
-                         . "catorder = '{$storedOrder}', "
+                         . "catorder = '0', "
                          . "catdeleted = '{$catdeleted}'";
                     $sql = "UPDATE {$_TABLES['cl_cat']} SET {$sql} WHERE cid = {$cid}";
                 } else {
                     $sql = "pid = '{$pid}', "
                          . "category = '{$category}', "
-                         . "catorder = '{$storedOrder}', "
+                         . "catorder = '0', "
                          . "catdeleted = '{$catdeleted}', "
                          . "owner_id = '" . (int) $_USER['uid'] . "'";
                     $sql = "INSERT INTO {$_TABLES['cl_cat']} SET {$sql}";
@@ -588,17 +586,12 @@ switch ($_REQUEST['mode']) {
                         $cid = (int) DB_insertId();
                     }
 
-                    if ($pid > 0) {
-                        CLASSIFIEDS_applyChildCategoryPosition(
-                            $cid,
-                            $pid,
-                            $position,
-                            $oldPid
-                        );
-                    } elseif ($oldPid > 0) {
-                        // A former child became a root category.
-                        CLASSIFIEDS_normalizeChildCategoryOrder($oldPid);
-                    }
+                    CLASSIFIEDS_applyChildCategoryPosition(
+                        $cid,
+                        $pid,
+                        $position,
+                        $oldPid
+                    );
                 }
 
                 if (DB_error()) {
