@@ -1350,7 +1350,7 @@ function CLASSIFIEDS_upgradeConfiguration()
         'help_page' => array($_CLASSIFIEDS_DEFAULT['help_page'], 'text', 0, 2, NULL, 206, true),
         'currency' => array($_CLASSIFIEDS_DEFAULT['currency'], 'text', 0, 2, NULL, 207, true),
         'maxPerPage' => array($_CLASSIFIEDS_DEFAULT['maxPerPage'], 'text', 0, 2, NULL, 210, true),
-        'allow_republish' => array(0, 'select', 0, 2, 3, 220, true),
+        'allow_republish' => array($_CLASSIFIEDS_DEFAULT['allow_republish'], 'select', 0, 2, 3, 220, true),
 
         'fs_email' => array(NULL, 'fieldset', 0, 3, NULL, 0, true),
         'create_ad_email_user' => array($_CLASSIFIEDS_DEFAULT['create_ad_email_user'], 'select', 0, 3, 3, 301, true),
