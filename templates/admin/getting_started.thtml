@@ -1,0 +1,9 @@
+<section class="plugin-admin-help classifieds-admin-getting-started">
+    <h2>{getting_started_title}</h2>
+    <p>{getting_started_intro}</p>
+    <ol>
+        <li><a href="{configuration_url}">{getting_started_configure}</a></li>
+        <li><a href="{categories_url}">{getting_started_categories}</a></li>
+        <li><a href="{public_url}">{getting_started_public}</a></li>
+    </ol>
+</section>
