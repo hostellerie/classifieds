@@ -54,6 +54,8 @@ motorcycles,Motorcycles,vehicles,20
 
 `key` and `parent_key` are import-only identifiers used to resolve the hierarchy; the database keeps its native `cid` / `pid` structure. Root categories use an empty `parent_key`. Rows may appear in any order. The importer validates the complete file before writing, detects missing parents and cycles, previews create/skip actions, skips categories already present under the same parent, and revalidates on confirmation.
 
+See `docs/category-csv-import.md` for the complete end-user guide, examples and spreadsheet/export recommendations.
+
 ## Images
 
 Uploaded ad images remain in the site-scoped Geeklog public image directory:
