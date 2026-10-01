@@ -50,7 +50,7 @@ if (!defined('VERSION')) {
  */
 function CLASSIFIEDS_getAdForm($ad = array()) {
 
-    global $_CONF, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_2, $LANG_CLASSIFIEDS_ADMIN, $_TABLES, $LANG24, $LANG_ADMIN, $_USER;
+    global $_CONF, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_1, $LANG_CLASSIFIEDS_2, $LANG_CLASSIFIEDS_ADMIN, $_TABLES, $LANG24, $LANG_ADMIN, $_USER;
 
     $defaults = array(
         'clid' => '',
