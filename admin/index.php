@@ -741,12 +741,12 @@ switch ($_REQUEST['mode']) {
         $groupCount = DB_numRows($result);
 
         if ($groupCount === 0) {
-            $display .= '<p>' . $LANG_CLASSIFIEDS_ADMIN['no_group_access'] . '</p>';
+            $display .= '<p>' . $LANG_CLASSIFIEDS_ADMIN['publish_all_logged_in'] . '</p>';
         } else {
             $label = ($groupCount === 1)
-                ? $LANG_CLASSIFIEDS_ADMIN['group_access']
-                : $LANG_CLASSIFIEDS_ADMIN['groups_access'];
-            $display .= '<p>' . $groupCount . ' ' . $label . '</p><ul>';
+                ? $LANG_CLASSIFIEDS_ADMIN['publish_restricted_group']
+                : $LANG_CLASSIFIEDS_ADMIN['publish_restricted_groups'];
+            $display .= '<p>' . sprintf($label, $groupCount) . '</p><ul>';
             while ($A = DB_fetchArray($result)) {
                 $display .= '<li>'
                     . htmlspecialchars($A['grp_name'], ENT_QUOTES, $_CONF['default_charset'])
