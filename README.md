@@ -51,6 +51,10 @@ Classifieds preserves its historical publication-access behavior:
 
 This makes `classifieds.publish` an optional restriction mechanism rather than a mandatory setup step. Existing sites that already reserve publication to one or more dedicated groups keep that behavior unchanged.
 
+## Category ordering
+
+Root categories retain their numeric display order for historical compatibility. Subcategories are positioned semantically in the administration interface using **First**, **After [sibling]**, or **Last**. The plugin recalculates the stored `catorder` values automatically and normalizes sibling order when a subcategory is moved to another parent.
+
 ## Category CSV import
 
 Category administration can import a UTF-8 CSV file with the columns:
