@@ -117,8 +117,10 @@ function plugin_getheadercode_classifieds()
 
     $retval = '';
 
+    $pluginVersion = plugin_chkVersion_classifieds();
     $cssPath = $_CLASSIFIEDS_CONF['path_html'] . 'css/classifieds.css';
-    $cssVersion = is_file($cssPath) ? filemtime($cssPath) : plugin_chkVersion_classifieds();
+    $cssVersion = $pluginVersion . '-'
+        . (is_file($cssPath) ? filemtime($cssPath) : '0');
 
     $retval .= '    <link rel="stylesheet" href="' . $_CLASSIFIEDS_CONF['site_url']
         . '/css/classifieds.css?v=' . rawurlencode((string) $cssVersion)
@@ -131,7 +133,8 @@ function plugin_getheadercode_classifieds()
 
     if ($isCategoryAdmin) {
         $jsPath = $_CLASSIFIEDS_CONF['path_html'] . 'js/admin-categories.js';
-        $jsVersion = is_file($jsPath) ? filemtime($jsPath) : plugin_chkVersion_classifieds();
+        $jsVersion = $pluginVersion . '-'
+            . (is_file($jsPath) ? filemtime($jsPath) : '0');
         $retval .= '    <script src="' . $_CLASSIFIEDS_CONF['site_url']
             . '/js/admin-categories.js?v=' . rawurlencode((string) $jsVersion)
             . '" defer></script>' . LB;
