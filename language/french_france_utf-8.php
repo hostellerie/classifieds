@@ -282,6 +282,11 @@ $LANG_CLASSIFIEDS_EMAIL = array(
     'post_new_button'         => 'Publier une nouvelle annonce',
     'publisher'               => 'Annonceur',
     'automatic_notice'        => 'Ceci est un message automatique. Merci de ne pas répondre à cet email.',
+    'admin_manage'            => 'Gérer Classifieds',
+    'subject_create'          => 'Nouvelle annonce',
+    'subject_edit'            => 'Annonce mise à jour',
+    'subject_delete'          => 'Annonce retirée',
+    'subject_expire'          => 'Annonce expirée',
 
 );
 
