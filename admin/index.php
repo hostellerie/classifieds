@@ -118,6 +118,29 @@ function CLASSIFIEDS_admin_menu($mode = '')
     return $retval;
 }
 
+/**
+ * Render concise first-use guidance from a theme-neutral template.
+ *
+ * @return string
+ */
+function CLASSIFIEDS_adminGettingStarted()
+{
+    global $_CONF, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_ADMIN;
+
+    $template = new Template($_CONF['path'] . 'plugins/classifieds/templates/admin');
+    $template->set_file(array('help' => 'getting_started.thtml'));
+    $template->set_var('getting_started_title', $LANG_CLASSIFIEDS_ADMIN['getting_started_title']);
+    $template->set_var('getting_started_intro', $LANG_CLASSIFIEDS_ADMIN['getting_started_intro']);
+    $template->set_var('getting_started_configure', $LANG_CLASSIFIEDS_ADMIN['getting_started_configure']);
+    $template->set_var('getting_started_categories', $LANG_CLASSIFIEDS_ADMIN['getting_started_categories']);
+    $template->set_var('getting_started_public', $LANG_CLASSIFIEDS_ADMIN['getting_started_public']);
+    $template->set_var('configuration_url', $_CONF['site_admin_url'] . '/configuration.php?conf_group=classifieds');
+    $template->set_var('categories_url', $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat');
+    $template->set_var('public_url', $_CLASSIFIEDS_CONF['site_url'] . '/index.php');
+
+    return $template->parse('output', 'help');
+}
+
 function CLASSIFIEDS_listAds()
 {
     global $_CONF, $_TABLES, $_IMAGE_TYPE, $LANG_ADMIN, $LANG_CLASSIFIEDS_ADMIN;
@@ -764,6 +787,7 @@ switch ($_REQUEST['mode']) {
 		break;
 		
 	default :
+        $display .= CLASSIFIEDS_adminGettingStarted();
         $display .= COM_startBlock($LANG_CLASSIFIEDS_1['plugin_name']);
 
         // Show which groups currently own the publish feature.
