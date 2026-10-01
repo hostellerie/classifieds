@@ -9,6 +9,8 @@ if (!defined('VERSION')) {
     die('This file can not be used on its own.');
 }
 
+require_once dirname(__FILE__) . '/lib-images.php';
+
 /**
  * Normalize and persist one ad.
  *
