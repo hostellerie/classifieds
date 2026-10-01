@@ -42,7 +42,13 @@ function CLASSIFIEDS_normalizeUploadFiles($files)
                 );
             }
         } elseif (!empty($file['name'])) {
-            $normalized[] = $file;
+            $normalized[] = array(
+                'name' => (string) $file['name'],
+                'type' => isset($file['type']) ? (string) $file['type'] : '',
+                'tmp_name' => isset($file['tmp_name']) ? (string) $file['tmp_name'] : '',
+                'error' => isset($file['error']) ? (int) $file['error'] : UPLOAD_ERR_NO_FILE,
+                'size' => isset($file['size']) ? (int) $file['size'] : 0
+            );
         }
     }
 
