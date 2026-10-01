@@ -96,6 +96,7 @@ $_CLASSIFIEDS_DEFAULT['classifieds_edit_header'] = '';
 $_CLASSIFIEDS_DEFAULT['help_page'] = $LANG_CLASSIFIEDS_1['under_construction']; // Static page ID
 $_CLASSIFIEDS_DEFAULT['currency'] = '$';
 $_CLASSIFIEDS_DEFAULT['maxPerPage'] = 50;
+$_CLASSIFIEDS_DEFAULT['allow_republish'] = 0;
 
  /**
  * Email settings
@@ -170,7 +171,7 @@ function plugin_initconfig_classifieds()
                 'text', 0, 2, NULL, 207, true, 'classifieds', 0);
 		$c->add('maxPerPage', $_CLASSIFIEDS_DEFAULT['maxPerPage'],
                 'text', 0, 2, NULL, 210, true, 'classifieds', 0);
-		$c->add('allow_republish', 0,
+		$c->add('allow_republish', $_CLASSIFIEDS_DEFAULT['allow_republish'],
                 'select', 0, 2, 3, 220, true, 'classifieds', 0);
 				
 		//email
