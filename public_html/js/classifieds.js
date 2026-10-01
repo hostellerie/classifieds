@@ -2,9 +2,6 @@
     'use strict';
 
     var links = document.querySelectorAll('[data-classifieds-lightbox]');
-    if (!links.length) {
-        return;
-    }
 
     var overlay = document.createElement('div');
     overlay.className = 'classifieds-lightbox-overlay';
@@ -17,7 +14,9 @@
         '<button class="classifieds-lightbox-overlay__close" type="button" aria-label="Close">×</button>' +
         '</figure>';
 
-    document.body.appendChild(overlay);
+    if (links.length) {
+        document.body.appendChild(overlay);
+    }
 
     var image = overlay.querySelector('.classifieds-lightbox-overlay__image');
     var closeButton = overlay.querySelector('.classifieds-lightbox-overlay__close');
@@ -42,24 +41,77 @@
         closeButton.focus();
     }
 
-    Array.prototype.forEach.call(links, function (link) {
-        link.addEventListener('click', function (event) {
-            event.preventDefault();
-            openViewer(link);
+    if (links.length) {
+        Array.prototype.forEach.call(links, function (link) {
+            link.addEventListener('click', function (event) {
+                event.preventDefault();
+                openViewer(link);
+            });
         });
-    });
 
-    closeButton.addEventListener('click', closeViewer);
+        closeButton.addEventListener('click', closeViewer);
 
-    overlay.addEventListener('click', function (event) {
-        if (event.target === overlay) {
-            closeViewer();
+        overlay.addEventListener('click', function (event) {
+            if (event.target === overlay) {
+                closeViewer();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (!overlay.hidden && event.key === 'Escape') {
+                closeViewer();
+            }
+        });
+    }
+
+    var upload = document.querySelector('[data-classifieds-image-upload]');
+    if (upload) {
+        var input = upload.querySelector('.classifieds-image-upload__input');
+        var preview = upload.querySelector('[data-classifieds-image-preview]');
+        var maxFiles = parseInt(upload.getAttribute('data-max-files'), 10) || 0;
+
+        if (input && preview) {
+            input.addEventListener('change', function () {
+                preview.innerHTML = '';
+
+                var files = Array.prototype.slice.call(input.files || []);
+                if (maxFiles > 0 && files.length > maxFiles) {
+                    files = files.slice(0, maxFiles);
+
+                    if (typeof DataTransfer !== 'undefined') {
+                        var transfer = new DataTransfer();
+                        files.forEach(function (file) {
+                            transfer.items.add(file);
+                        });
+                        input.files = transfer.files;
+                    }
+                }
+
+                files.forEach(function (file) {
+                    if (!/^image\//.test(file.type)) {
+                        return;
+                    }
+
+                    var card = document.createElement('div');
+                    card.className = 'classifieds-image-upload__preview-item';
+
+                    var image = document.createElement('img');
+                    image.className = 'classifieds-image-upload__preview-image';
+                    image.alt = '';
+                    image.src = URL.createObjectURL(file);
+                    image.addEventListener('load', function () {
+                        URL.revokeObjectURL(image.src);
+                    });
+
+                    var name = document.createElement('span');
+                    name.className = 'classifieds-image-upload__preview-name';
+                    name.textContent = file.name;
+
+                    card.appendChild(image);
+                    card.appendChild(name);
+                    preview.appendChild(card);
+                });
+            });
         }
-    });
-
-    document.addEventListener('keydown', function (event) {
-        if (!overlay.hidden && event.key === 'Escape') {
-            closeViewer();
-        }
-    });
+    }
 }());
