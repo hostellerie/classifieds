@@ -98,11 +98,11 @@ require_once $_CONF['path'] . 'plugins/classifieds/classifieds.php';
  * Legacy files under path_data/classifieds_data/proversion are intentionally
  * not loaded so the old and new implementations can never run together.
  */
+// Scheduled-task callback must remain available during normal plugin bootstrap.
 require_once $_CONF['path'] . 'plugins/classifieds/lib-notifications.php';
-require_once $_CONF['path'] . 'plugins/classifieds/lib-images.php';
-require_once $_CONF['path'] . 'plugins/classifieds/lib-republish.php';
-require_once $_CONF['path'] . 'plugins/classifieds/lib-ads.php';
-require_once $_CONF['path'] . 'plugins/classifieds/lib-contact.php';
+
+// Public CRUD, image, republish and contact modules are loaded only by the
+// entry points that need them. Keep functions.inc bootstrap-safe and light.
 
 
 
