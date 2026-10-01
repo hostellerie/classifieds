@@ -1,11 +1,11 @@
-<nav class="classifieds-nav">
+<nav class="classifieds-nav" aria-label="Classifieds">
     <ul class="classifieds-nav__list">
-        <li><a href="{site_url}/index.php">{all_ads}</a></li>
-        <li><a href="{site_url}/index.php?mode=o">{offer}</a></li>
-        <li><a href="{site_url}/index.php?mode=d">{demand}</a></li>
-        <li><a href="{site_url}/index.php?mode=e">{place_an_ad}</a></li>
-        <li><a href="{site_url}/index.php?mode=my">{my_ads}</a></li>
-        <li><a href="{site_url}/index.php?mode=h">{help}</a></li>
+        <li><a class="classifieds-nav__link{all_class}"{all_current} href="{site_url}/index.php">{all_ads}</a></li>
+        <li><a class="classifieds-nav__link{offer_class}"{offer_current} href="{site_url}/index.php?mode=o">{offer}</a></li>
+        <li><a class="classifieds-nav__link{demand_class}"{demand_current} href="{site_url}/index.php?mode=d">{demand}</a></li>
+        <li><a class="classifieds-nav__link{place_class}"{place_current} href="{site_url}/index.php?mode=e">{place_an_ad}</a></li>
+        <li><a class="classifieds-nav__link{my_class}"{my_current} href="{site_url}/index.php?mode=my">{my_ads}</a></li>
+        <li><a class="classifieds-nav__link{help_class}"{help_current} href="{site_url}/index.php?mode=h">{help}</a></li>
         {admin}
     </ul>
 </nav>
