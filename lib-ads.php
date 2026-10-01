@@ -204,7 +204,7 @@ function CLASSIFIEDS_saveAd($data, $files)
         CLASSIFIEDS_emailNewAd($rawTitle, $rawText, $clid, $uid, $price);
     }
 
-    PLG_itemSaved((string) $clid, 'classifieds');
+    PLG_itemSaved('ad:' . (int) $clid, 'classifieds');
 
     return $result;
 }
@@ -352,7 +352,7 @@ function CLASSIFIEDS_deleteAd($clid, $hard = false)
         require_once $_CONF['path_system'] . 'lib-comment.php';
         CMT_deleteComment('', (string) $clid, 'classifieds', false);
 
-        PLG_itemDeleted((string) $clid, 'classifieds');
+        PLG_itemDeleted('ad:' . (int) $clid, 'classifieds');
         return true;
     }
 
@@ -374,7 +374,7 @@ function CLASSIFIEDS_deleteAd($clid, $hard = false)
         $ad['price']
     );
 
-    PLG_itemDeleted((string) $clid, 'classifieds');
+    PLG_itemDeleted('ad:' . (int) $clid, 'classifieds');
 
     return true;
 }
