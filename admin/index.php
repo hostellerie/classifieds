@@ -61,6 +61,7 @@ $vars = array('mode'       => 'alpha',
 			  'category'   => 'text',
 			  'catorder'   => 'number',
               'catdeleted' => 'number',
+              'position'    => 'text',
               'csv_action'  => 'alpha',
 );
 
@@ -542,32 +543,64 @@ switch ($_REQUEST['mode']) {
                 $pid = (int) $_REQUEST['pid'];
                 $catorder = empty($_REQUEST['catorder']) ? 0 : (int) $_REQUEST['catorder'];
                 $catdeleted = !empty($_REQUEST['catdeleted']) ? 1 : 0;
+                $position = isset($_REQUEST['position'])
+                    ? strtolower(trim((string) $_REQUEST['position']))
+                    : 'last';
+                if (!preg_match('/^(?:first|last|after:[0-9]+)$/', $position)) {
+                    $position = 'last';
+                }
 
-                if (!empty($_REQUEST['cid']) && is_numeric($_REQUEST['cid'])) {
-                    $cid = (int) $_REQUEST['cid'];
+                $cid = (!empty($_REQUEST['cid']) && is_numeric($_REQUEST['cid']))
+                    ? (int) $_REQUEST['cid']
+                    : 0;
+                $oldPid = 0;
+
+                if ($cid > 0) {
+                    $oldPid = (int) DB_getItem(
+                        $_TABLES['cl_cat'],
+                        'pid',
+                        'cid = ' . $cid
+                    );
+                }
+
+                // Child order is managed semantically after the row is saved.
+                // Root categories keep the historical numeric catorder field.
+                $storedOrder = ($pid > 0) ? 0 : $catorder;
+
+                if ($cid > 0) {
                     $sql = "pid = '{$pid}', "
                          . "category = '{$category}', "
-                         . "catorder = '{$catorder}', "
+                         . "catorder = '{$storedOrder}', "
                          . "catdeleted = '{$catdeleted}'";
                     $sql = "UPDATE {$_TABLES['cl_cat']} SET {$sql} WHERE cid = {$cid}";
                 } else {
-                    if ($catorder <= 0) {
-                        $catorder = (int) DB_getItem(
-                            $_TABLES['cl_cat'],
-                            'catorder',
-                            'cid = ' . $pid
-                        ) + 1;
-                    }
-
                     $sql = "pid = '{$pid}', "
                          . "category = '{$category}', "
-                         . "catorder = '{$catorder}', "
+                         . "catorder = '{$storedOrder}', "
                          . "catdeleted = '{$catdeleted}', "
                          . "owner_id = '" . (int) $_USER['uid'] . "'";
                     $sql = "INSERT INTO {$_TABLES['cl_cat']} SET {$sql}";
                 }
 
                 DB_query($sql);
+                if (!DB_error()) {
+                    if ($cid <= 0) {
+                        $cid = (int) DB_insertId();
+                    }
+
+                    if ($pid > 0) {
+                        CLASSIFIEDS_applyChildCategoryPosition(
+                            $cid,
+                            $pid,
+                            $position,
+                            $oldPid
+                        );
+                    } elseif ($oldPid > 0) {
+                        // A former child became a root category.
+                        CLASSIFIEDS_normalizeChildCategoryOrder($oldPid);
+                    }
+                }
+
                 if (DB_error()) {
                     $msg = isset($LANG_CLASSIFIEDS_ADMIN['save_fail'])
                         ? $LANG_CLASSIFIEDS_ADMIN['save_fail']
