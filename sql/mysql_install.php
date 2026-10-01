@@ -58,6 +58,7 @@ CREATE TABLE {$_TABLES['cl']} (
   perm_members tinyint(1) unsigned NOT NULL DEFAULT '2',
   perm_anon tinyint(1) unsigned NOT NULL DEFAULT '2',
   INDEX cl_cat(clid),
+  INDEX cl_catid(catid),
   INDEX cl_date(modified),
   PRIMARY KEY (clid)
 ) ENGINE=InnoDB
