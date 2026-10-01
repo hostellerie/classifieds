@@ -139,7 +139,7 @@ function CLASSIFIEDS_ensureImageDirectory()
 
     $imagePath = rtrim($_CONF['path_images'], '/\\') . '/classifieds';
 
-    if (!is_dir($imagePath) && !@mkdir($imagePath, 0755, true)) {
+    if (!is_dir($imagePath) && !mkdir($imagePath, 0755, true)) {
         COM_errorLog('Classifieds: unable to create image directory ' . $imagePath);
         return false;
     }
