@@ -68,7 +68,11 @@ $vars = array('mode'       => 'alpha',
               'msg'        => 'text',
               'cid'        => 'number',
 			  'pid'        => 'number',
-			  'category'   => 'text',              'catdeleted' => 'number',
+			  'category'   => 'text',
+              'meta_title' => 'text',
+              'meta_description' => 'text',
+              'meta_keywords' => 'text',
+              'catdeleted' => 'number',
               'position'    => 'text',
               'csv_action'  => 'alpha',
 );
@@ -598,7 +602,26 @@ switch ($_REQUEST['mode']) {
                     break;
                 }
 
-                $category = DB_escapeString(COM_getTextContent($_REQUEST['category']));
+                if (!CLASSIFIEDS_ensureCategorySeoSchema()) {
+                    $display .= COM_showMessageText(
+                        $LANG_CLASSIFIEDS_2['save_fail'],
+                        $LANG_CLASSIFIEDS_2['error']
+                    );
+                    break;
+                }
+
+                $category = DB_escapeString(
+                    CLASSIFIEDS_normalizePublicText($_REQUEST['category'], true)
+                );
+                $metaTitle = DB_escapeString(
+                    CLASSIFIEDS_normalizePublicText($_REQUEST['meta_title'], true)
+                );
+                $metaDescription = DB_escapeString(
+                    CLASSIFIEDS_normalizePublicText($_REQUEST['meta_description'], true)
+                );
+                $metaKeywords = DB_escapeString(
+                    CLASSIFIEDS_normalizePublicText($_REQUEST['meta_keywords'], true)
+                );
                 $pid = (int) $_REQUEST['pid'];
                 $catdeleted = !empty($_REQUEST['catdeleted']) ? 1 : 0;
                 $position = isset($_REQUEST['position'])
@@ -627,12 +650,18 @@ switch ($_REQUEST['mode']) {
                 if ($cid > 0) {
                     $sql = "pid = '{$pid}', "
                          . "category = '{$category}', "
+                         . "meta_title = '{$metaTitle}', "
+                         . "meta_description = '{$metaDescription}', "
+                         . "meta_keywords = '{$metaKeywords}', "
                          . "catorder = '0', "
                          . "catdeleted = '{$catdeleted}'";
                     $sql = "UPDATE {$_TABLES['cl_cat']} SET {$sql} WHERE cid = {$cid}";
                 } else {
                     $sql = "pid = '{$pid}', "
                          . "category = '{$category}', "
+                         . "meta_title = '{$metaTitle}', "
+                         . "meta_description = '{$metaDescription}', "
+                         . "meta_keywords = '{$metaKeywords}', "
                          . "catorder = '0', "
                          . "catdeleted = '{$catdeleted}', "
                          . "owner_id = '" . (int) $_USER['uid'] . "'";
@@ -683,8 +712,17 @@ switch ($_REQUEST['mode']) {
                     exit;
                 }
 
+                if (!CLASSIFIEDS_ensureCategorySeoSchema()) {
+                    $display .= COM_showMessageText(
+                        $LANG_CLASSIFIEDS_2['save_fail'],
+                        $LANG_CLASSIFIEDS_2['error']
+                    );
+                    break;
+                }
+
                 $res = DB_query(
-                    "SELECT cid, pid, category, catorder, catdeleted, owner_id, group_id, "
+                    "SELECT cid, pid, category, meta_title, meta_description, meta_keywords, "
+                    . "catorder, catdeleted, owner_id, group_id, "
                     . "perm_owner, perm_group, perm_members, perm_anon "
                     . "FROM {$_TABLES['cl_cat']} WHERE cid = " . $cid . " LIMIT 1"
                 );
