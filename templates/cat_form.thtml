@@ -32,6 +32,25 @@
         </div>
     </fieldset>
 
+    <fieldset class="classifieds-form__section">
+        <legend>{seo_metadata_label}</legend>
+
+        <div class="classifieds-form__field">
+            <label for="classifieds-meta-title">{meta_title_label}</label>
+            <input id="classifieds-meta-title" type="text" name="meta_title" value="{meta_title}" maxlength="255"{xhtml}>
+        </div>
+
+        <div class="classifieds-form__field">
+            <label for="classifieds-meta-description">{meta_description_label}</label>
+            <textarea id="classifieds-meta-description" name="meta_description" rows="3" maxlength="160">{meta_description}</textarea>
+        </div>
+
+        <div class="classifieds-form__field">
+            <label for="classifieds-meta-keywords">{meta_keywords_label}</label>
+            <input id="classifieds-meta-keywords" type="text" name="meta_keywords" value="{meta_keywords}" maxlength="255"{xhtml}>
+        </div>
+    </fieldset>
+
     <p class="classifieds-form__required"><span class="classifieds-required">*</span> {required_field}</p>
 
     <div class="classifieds-form__actions">
