@@ -800,7 +800,13 @@ function CLASSIFIEDS_getContentResource($id, $uid = 0, $subtypeHint = '')
 
     if ($identity['subtype'] === 'category') {
         $cid = (int) $identity['numeric_id'];
-        $sql = "SELECT c.cid, c.pid, c.category "
+
+        if (!CLASSIFIEDS_ensureCategorySeoSchema()) {
+            return array();
+        }
+
+        $sql = "SELECT c.cid, c.pid, c.category, "
+            . "c.meta_title, c.meta_description, c.meta_keywords "
             . "FROM {$_TABLES['cl_cat']} AS c "
             . "WHERE c.cid = " . $cid . " AND c.catdeleted = 0"
             . COM_getPermSQL('AND', $uid, 2, 'c')
@@ -817,9 +823,11 @@ function CLASSIFIEDS_getContentResource($id, $uid = 0, $subtypeHint = '')
         return array(
             'id' => 'category:' . $cid,
             'title' => (string) $row['category'],
+            'meta-title' => (string) $row['meta_title'],
+            'meta-keywords' => (string) $row['meta_keywords'],
             'url' => plugin_idToURL_classifieds('category', $cid),
-            'description' => '',
-            'excerpt' => '',
+            'description' => (string) $row['meta_description'],
+            'excerpt' => (string) $row['meta_description'],
             'date-created' => 0,
             'date-modified' => 0,
             'type' => 'classifieds',
@@ -1511,9 +1519,58 @@ function CLASSIFIEDS_upgradeConfiguration()
  *
  * @return bool
  */
+/**
+ * Ensure category SEO metadata columns exist.
+ *
+ * @return bool
+ */
+function CLASSIFIEDS_ensureCategorySeoSchema()
+{
+    global $_TABLES;
+
+    $result = DB_query("SHOW COLUMNS FROM {$_TABLES['cl_cat']}");
+    if (DB_error()) {
+        return false;
+    }
+
+    $columns = array();
+    while ($row = DB_fetchArray($result)) {
+        if (isset($row['Field'])) {
+            $columns[$row['Field']] = true;
+        }
+    }
+
+    $definitions = array(
+        'meta_title' => "VARCHAR(255) NOT NULL DEFAULT ''",
+        'meta_description' => "VARCHAR(320) NOT NULL DEFAULT ''",
+        'meta_keywords' => "VARCHAR(255) NOT NULL DEFAULT ''"
+    );
+
+    foreach ($definitions as $column => $definition) {
+        if (!isset($columns[$column])) {
+            DB_query(
+                "ALTER TABLE {$_TABLES['cl_cat']} ADD "
+                . $column . " " . $definition
+            );
+            if (DB_error()) {
+                COM_errorLog(
+                    'Classifieds: failed to add category SEO column ' . $column . '.'
+                );
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 function CLASSIFIEDS_upgradeDatabase()
 {
     global $_TABLES;
+
+    if (!CLASSIFIEDS_ensureCategorySeoSchema()) {
+        return false;
+    }
 
     foreach (array('cl', 'cl_cat', 'cl_pic', 'cl_users') as $tableKey) {
         DB_query("ALTER TABLE {$_TABLES[$tableKey]} ENGINE=InnoDB");
@@ -2204,8 +2261,12 @@ function modifAd($ad)
  * @param bool   $noIndex Whether this route variant should be excluded from indexing
  * @return string
  */
-function CLASSIFIEDS_resourceHeaderCode($resourceId, $description = '', $noIndex = false)
-{
+function CLASSIFIEDS_resourceHeaderCode(
+    $resourceId,
+    $description = '',
+    $noIndex = false,
+    $keywords = ''
+) {
     global $_CONF;
 
     $metaTags = array();
@@ -2217,6 +2278,14 @@ function CLASSIFIEDS_resourceHeaderCode($resourceId, $description = '', $noIndex
         $metaTags[] = array(
             'name' => 'description',
             'content' => $description
+        );
+    }
+
+    $keywords = trim(strip_tags((string) $keywords));
+    if ($keywords !== '') {
+        $metaTags[] = array(
+            'name' => 'keywords',
+            'content' => $keywords
         );
     }
 
