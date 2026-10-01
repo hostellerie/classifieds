@@ -4,6 +4,13 @@ Development branch: `classifieds_1.4.0`
 
 Classifieds 1.4.0 is a modernization release built from the last public 1.3.2 codebase. It keeps the existing content model and public URL structure while removing historical edition, telemetry, image-proxy and compatibility debt.
 
+## Memorandum alignment
+
+- Replaced legacy full-page `COM_siteHeader()` / `COM_siteFooter()` rendering with `COM_createHTMLDocument()`, leaving block layout to Geeklog and the active theme.
+- Added active-plugin/ACL guards for administration, first-use admin guidance, stable resource identities across metadata/lifecycle/interoperability, category lifecycle events, category-aware search ACLs, and root/category sitemap coverage.
+- Versioned CSS/JS with the release version plus `filemtime()`, completed French administration labels, and reduced unconditional bootstrap loading.
+- Added CI checks for PHP 5.6 syntax, legacy page rendering, manifest integrity, language contract parity, duplicate Plugin API callbacks and installable ZIP structure.
+
 ## Privacy and edition unification
 
 - Removed installation telemetry.
