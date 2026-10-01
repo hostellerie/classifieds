@@ -1,20 +1,13 @@
 document.addEventListener('DOMContentLoaded', function () {
     var parentSelect = document.getElementById('classifieds-parent-category');
-    var rootOrderField = document.getElementById('classifieds-root-order-field');
-    var childPositionField = document.getElementById('classifieds-child-position-field');
-    var positionSelect = document.getElementById('classifieds-child-position');
+    var positionSelect = document.getElementById('classifieds-category-position');
 
-    if (!parentSelect || !rootOrderField || !childPositionField || !positionSelect) {
+    if (!parentSelect || !positionSelect) {
         return;
     }
 
     function refreshPositionOptions() {
         var parentId = parseInt(parentSelect.value || '0', 10);
-        var isChild = parentId > 0;
-
-        rootOrderField.hidden = isChild;
-        childPositionField.hidden = !isChild;
-
         var options = positionSelect.options;
         var selectedStillValid = false;
 
@@ -36,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        if (isChild && !selectedStillValid) {
+        if (!selectedStillValid) {
             positionSelect.value = 'last';
         }
     }
