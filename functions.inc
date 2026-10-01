@@ -1484,6 +1484,24 @@ function CLASSIFIEDS_upgradeDatabase()
         }
     }
 
+    $indexExists = (int) DB_getItem(
+        'information_schema.statistics',
+        'COUNT(*)',
+        "table_schema = DATABASE() "
+        . "AND table_name = '" . DB_escapeString($_TABLES['cl']) . "' "
+        . "AND index_name = 'cl_catid'"
+    );
+
+    if ($indexExists === 0) {
+        DB_query(
+            "ALTER TABLE {$_TABLES['cl']} ADD INDEX cl_catid (catid)"
+        );
+        if (DB_error()) {
+            COM_errorLog('Classifieds: failed to add the cl_catid index.');
+            return false;
+        }
+    }
+
     return true;
 }
 
