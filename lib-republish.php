@@ -81,7 +81,7 @@ function CLASSIFIEDS_repost($clid)
         $ad['price']
     );
     PLG_itemSaved((string) $newClid, 'classifieds');
-    PLG_itemDeleted((string) $clid, 'classifieds');
+    PLG_itemDeleted('ad:' . (int) $clid, 'classifieds');
 
     $result['ok'] = true;
     $result['new_id'] = $newClid;
