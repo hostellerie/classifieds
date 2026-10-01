@@ -51,12 +51,13 @@ function CLASSIFIEDS_normalizeUploadFiles($files)
 
 function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
 {
-    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES;
+    global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES, $LANG_CLASSIFIEDS_2;
 
     $result = array(
         'ok' => false,
         'uploaded_files' => array(),
-        'delete_files' => array()
+        'delete_files' => array(),
+        'errors' => array()
     );
 
     $clid = (int) $clid;
@@ -143,15 +144,26 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
 
             $upload->setMaxFileUploads(1);
 
+            $canResize = false;
             if (!empty($_CONF['image_lib'])) {
                 if ($_CONF['image_lib'] === 'imagemagick') {
                     $upload->setMogrifyPath($_CONF['path_to_mogrify']);
+                    $canResize = true;
                 } elseif ($_CONF['image_lib'] === 'netpbm') {
                     $upload->setNetPBM($_CONF['path_to_netpbm']);
+                    $canResize = true;
                 } elseif ($_CONF['image_lib'] === 'gdlib') {
                     $upload->setGDLib();
+                    $canResize = true;
                 }
+            } elseif (function_exists('gd_info')) {
+                // Geeklog often ships with image_lib unset. Reuse its native
+                // Upload resizing path with GD when the extension is available.
+                $upload->setGDLib();
+                $canResize = true;
+            }
 
+            if ($canResize) {
                 $upload->setAutomaticResize(true);
                 $upload->keepOriginalImage(false);
 
@@ -202,6 +214,13 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
                     'Classifieds: image #' . ($index + 1)
                     . ' could not be uploaded.'
                 );
+                $result['errors'][] = $canResize
+                    ? $LANG_CLASSIFIEDS_2['image_upload_failed']
+                    : sprintf(
+                        $LANG_CLASSIFIEDS_2['image_too_large_no_resizer'],
+                        (int) $_CLASSIFIEDS_CONF['max_image_width'],
+                        (int) $_CLASSIFIEDS_CONF['max_image_height']
+                    );
                 return $result;
             }
         }
