@@ -97,52 +97,6 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
     if (!empty($uploadFiles) && $availableSlots > 0) {
         require_once $_CONF['path_system'] . 'classes/upload.class.php';
 
-        $upload = new upload();
-
-        if (!empty($_CONF['debug_image_upload'])) {
-            $upload->setLogFile($_CONF['path'] . 'logs/error.log');
-            $upload->setDebug(true);
-        }
-
-        $upload->setMaxFileUploads($availableSlots);
-
-        if (!empty($_CONF['image_lib'])) {
-            if ($_CONF['image_lib'] === 'imagemagick') {
-                $upload->setMogrifyPath($_CONF['path_to_mogrify']);
-            } elseif ($_CONF['image_lib'] === 'netpbm') {
-                $upload->setNetPBM($_CONF['path_to_netpbm']);
-            } elseif ($_CONF['image_lib'] === 'gdlib') {
-                $upload->setGDLib();
-            }
-
-            $upload->setAutomaticResize(true);
-            $upload->keepOriginalImage(false);
-
-            if (isset($_CONF['jpeg_quality'])) {
-                $upload->setJpegQuality($_CONF['jpeg_quality']);
-            }
-        }
-
-        $upload->setAllowedMimeTypes(array(
-            'image/gif'   => '.gif',
-            'image/jpeg'  => '.jpg,.jpeg',
-            'image/pjpeg' => '.jpg,.jpeg',
-            'image/x-png' => '.png',
-            'image/png'   => '.png'
-        ));
-
-        if (!$upload->setPath($_CLASSIFIEDS_CONF['path_images'])) {
-            COM_errorLog('Classifieds: image upload path is unavailable.');
-            return $result;
-        }
-
-        $upload->setMaxDimensions(
-            (int) $_CLASSIFIEDS_CONF['max_image_width'],
-            (int) $_CLASSIFIEDS_CONF['max_image_height']
-        );
-        $upload->setMaxFileSize((int) $_CLASSIFIEDS_CONF['max_image_size']);
-        $upload->setPerms('0644');
-
         $nextNumber = (int) DB_getItem(
             $_TABLES['cl_pic'],
             'MAX(pi_img_num)',
@@ -172,27 +126,87 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
             $nextNumber++;
         }
 
-        $upload->setFileNames($filenames);
-
-        // Geeklog's Upload class reads the global $_FILES array directly and
-        // expects one scalar file structure per entry. The modern images[]
-        // control arrives as nested arrays, so expose the already validated,
-        // flattened files only for the duration of the core upload call.
+        // Geeklog 2.1.1's Upload class reads the global $_FILES array directly
+        // and expects exactly one scalar file structure per entry. A native
+        // multiple input (images[]) therefore cannot be passed to it as-is.
+        // Process the already flattened batch one image at a time, keeping the
+        // core Upload class responsible for MIME, size, dimensions and resize.
         $originalFiles = $_FILES;
-        $_FILES = array();
-        foreach ($uploadFiles as $index => $file) {
-            $_FILES['classifieds_image_' . ($index + 1)] = $file;
-        }
 
-        $upload->uploadFiles();
+        foreach ($uploadFiles as $index => $file) {
+            $upload = new upload();
+
+            if (!empty($_CONF['debug_image_upload'])) {
+                $upload->setLogFile($_CONF['path'] . 'logs/error.log');
+                $upload->setDebug(true);
+            }
+
+            $upload->setMaxFileUploads(1);
+
+            if (!empty($_CONF['image_lib'])) {
+                if ($_CONF['image_lib'] === 'imagemagick') {
+                    $upload->setMogrifyPath($_CONF['path_to_mogrify']);
+                } elseif ($_CONF['image_lib'] === 'netpbm') {
+                    $upload->setNetPBM($_CONF['path_to_netpbm']);
+                } elseif ($_CONF['image_lib'] === 'gdlib') {
+                    $upload->setGDLib();
+                }
+
+                $upload->setAutomaticResize(true);
+                $upload->keepOriginalImage(false);
+
+                if (isset($_CONF['jpeg_quality'])) {
+                    $upload->setJpegQuality($_CONF['jpeg_quality']);
+                }
+            }
+
+            $upload->setAllowedMimeTypes(array(
+                'image/gif'   => '.gif',
+                'image/jpeg'  => '.jpg,.jpeg',
+                'image/pjpeg' => '.jpg,.jpeg',
+                'image/x-png' => '.png',
+                'image/png'   => '.png'
+            ));
+
+            if (!$upload->setPath($_CLASSIFIEDS_CONF['path_images'])) {
+                $_FILES = $originalFiles;
+                COM_errorLog('Classifieds: image upload path is unavailable.');
+                CLASSIFIEDS_cleanupImageFiles($filenames);
+                return $result;
+            }
+
+            $upload->setMaxDimensions(
+                (int) $_CLASSIFIEDS_CONF['max_image_width'],
+                (int) $_CLASSIFIEDS_CONF['max_image_height']
+            );
+            $upload->setMaxFileSize((int) $_CLASSIFIEDS_CONF['max_image_size']);
+            $upload->setPerms('0644');
+            $upload->setFileNames($filenames[$index]);
+
+            $_FILES = array(
+                'classifieds_image' => array(
+                    'name' => (string) $file['name'],
+                    'type' => (string) $file['type'],
+                    'tmp_name' => (string) $file['tmp_name'],
+                    'error' => (int) $file['error'],
+                    'size' => (int) $file['size']
+                )
+            );
+
+            $upload->uploadFiles();
+
+            if ($upload->areErrors()) {
+                $_FILES = $originalFiles;
+                CLASSIFIEDS_cleanupImageFiles($filenames);
+                COM_errorLog(
+                    'Classifieds: image #' . ($index + 1)
+                    . ' could not be uploaded.'
+                );
+                return $result;
+            }
+        }
 
         $_FILES = $originalFiles;
-
-        if ($upload->areErrors()) {
-            CLASSIFIEDS_cleanupImageFiles($filenames);
-            COM_errorLog('Classifieds: one or more ad images could not be uploaded.');
-            return $result;
-        }
 
         foreach ($filenames as $index => $filename) {
             DB_query(
