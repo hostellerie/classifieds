@@ -55,6 +55,18 @@ jobs:
             exit 1
           fi
 
+          echo "Checking Classifieds page and Configuration navigation contracts..."
+          grep -Fq "if (\$_REQUEST['mode'] !== 'v')" public_html/index.php
+          grep -Fq "CLASSIFIEDS_renderPage(\$display, \$pageTitle, \$headerCode)" public_html/index.php
+          grep -Fq "function CLASSIFIEDS_adminConfigurationControl" admin/index.php
+          grep -Fq "method=\"post\"" admin/index.php
+          grep -Fq "name=\"conf_group\" value=\"classifieds\"" admin/index.php
+          if grep -R -n "configuration.php?conf_group=classifieds" \
+              --include='*.php' --include='*.thtml' --exclude-dir=dist .; then
+            echo "Classifieds must enter Geeklog Configuration through the native POST conf_group contract."
+            exit 1
+          fi
+
           echo "Validating plugin.json..."
           php -r '
             $m = json_decode(file_get_contents("plugin.json"), true);
