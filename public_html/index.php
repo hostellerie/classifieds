@@ -351,7 +351,7 @@ switch ($_REQUEST['mode']) {
         $pageTitle = $LANG_CLASSIFIEDS_1['plugin_name'];
         $display = CLASSIFIEDS_user_menu();
         if (!empty($_CLASSIFIEDS_CONF['classifieds_main_header'])) {
-            $display .= '<div>'
+            $display .= '<div class="classifieds-page-intro">'
                 . PLG_replaceTags($_CLASSIFIEDS_CONF['classifieds_main_header'])
                 . '</div>';
         }
