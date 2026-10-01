@@ -80,7 +80,7 @@ function CLASSIFIEDS_repost($clid)
         (int) $ad['owner_id'],
         $ad['price']
     );
-    PLG_itemSaved((string) $newClid, 'classifieds');
+    PLG_itemSaved('ad:' . (int) $newClid, 'classifieds');
     PLG_itemDeleted('ad:' . (int) $clid, 'classifieds');
 
     $result['ok'] = true;
