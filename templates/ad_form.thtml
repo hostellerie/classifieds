@@ -43,9 +43,27 @@
 
     <fieldset class="classifieds-form__section">
         <legend>{images}</legend>
+
         <div class="classifieds-form__images">
-            {saved_images}
-            {image_form_elements}
+            <div class="classifieds-image-existing">
+                {saved_images}
+            </div>
+
+            <div class="classifieds-image-upload" data-classifieds-image-upload data-max-files="{image_upload_max}">
+                <label class="classifieds-image-upload__button" for="classifieds-images">
+                    {image_upload_label}
+                </label>
+                <input
+                    id="classifieds-images"
+                    class="classifieds-image-upload__input"
+                    type="file"
+                    name="images[]"
+                    accept="image/jpeg,image/png,image/gif"
+                    multiple{image_upload_disabled}{xhtml}
+                >
+                <p class="classifieds-image-upload__help">{image_upload_help}</p>
+                <div class="classifieds-image-upload__preview" data-classifieds-image-preview aria-live="polite"></div>
+            </div>
         </div>
     </fieldset>
 
