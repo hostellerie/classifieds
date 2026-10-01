@@ -77,24 +77,19 @@ function CLASSIFIEDS_getAdForm($ad = array()) {
     );
     $ad = is_array($ad) ? array_merge($defaults, $ad) : $defaults;
 
-	if ($_USER['uid'] < 2) {
-	    return SEC_loginRequiredForm();
-	}
-	if(!SEC_hasRights('classifieds.publish')) {
-	
-	    	//Give publish rights to logged-in users if there is no group with this feature
-			$ft_id = DB_getItem($_TABLES['features'], 'ft_id', "ft_name = 'classifieds.publish'");
-			$grp_id = DB_getItem($_TABLES['access'], 'acc_grp_id', "acc_ft_id = $ft_id");
-            //COM_errorLog('Classifieds feature: ' . $ft_id . ' | Group: ' . $grp_id );
-			if ($grp_id == '') {
-			    // Give access
-			} else {
-			    // Display message
-				return $LANG_CLASSIFIEDS_2['access_reserved'] . ' <strong>"' . DB_getItem($_TABLES['groups'], 'grp_name', "grp_id = $grp_id") . '"</strong>';
-			}
-	    
-	}
-	
+    if ($_USER['uid'] < 2) {
+        return SEC_loginRequiredForm();
+    }
+
+    if (!CLASSIFIEDS_canPublish()) {
+        $groups = CLASSIFIEDS_publishGroups();
+        $label = empty($groups) ? '' : ' <strong>"'
+            . implode('", "', array_map('htmlspecialchars', $groups))
+            . '"</strong>';
+
+        return $LANG_CLASSIFIEDS_2['access_reserved'] . $label;
+    }
+
 	$active = true;
 	if ($ad['clid'] !== '' && $ad['created'] !== '') {
 	    $created = COM_getUserDateTimeFormat($ad['created']);
