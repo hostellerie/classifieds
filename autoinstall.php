@@ -113,6 +113,10 @@ function plugin_compatible_with_this_version_classifieds($pi_name)
         return false;
     }
 
+    if (!defined('VERSION') || version_compare(VERSION, '2.1.1', '<')) {
+        return false;
+    }
+
     return true;
 }
 
