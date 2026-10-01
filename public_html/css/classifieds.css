@@ -6,34 +6,60 @@
 /* Public navigation */
 .classifieds-nav {
     margin: 0 0 2rem;
-    border-bottom: 1px solid rgba(127, 127, 127, .28);
+    overflow-x: auto;
+    border-bottom: 1px solid rgba(127, 127, 127, .2);
+    scrollbar-width: thin;
 }
 
 .classifieds-nav__list {
     display: flex;
-    flex-wrap: wrap;
-    gap: .25rem 1.35rem;
+    width: max-content;
+    min-width: 100%;
+    gap: .3rem;
     align-items: center;
     margin: 0;
-    padding: .65rem 0 .9rem;
+    padding: 0 0 .7rem;
     list-style: none;
 }
 
-.classifieds-nav__list a {
-    display: inline-block;
-    padding: .35rem 0;
+.classifieds-nav__link,
+.classifieds-nav__admin a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.45rem;
+    padding: .5rem .8rem;
+    border-radius: .55rem;
+    color: inherit;
     font-weight: 600;
-    text-decoration-thickness: .08em;
-    text-underline-offset: .22em;
+    line-height: 1;
+    text-decoration: none;
+    transition: background-color .15s ease, opacity .15s ease;
 }
 
-.classifieds-nav__list a:focus-visible,
+.classifieds-nav__link:hover,
+.classifieds-nav__admin a:hover {
+    background: rgba(127, 127, 127, .09);
+}
+
+.classifieds-nav__link.is-active {
+    background: rgba(127, 127, 127, .14);
+    font-weight: 700;
+}
+
+.classifieds-nav__admin {
+    margin-left: .35rem;
+    padding-left: .65rem;
+    border-left: 1px solid rgba(127, 127, 127, .22);
+}
+
+.classifieds-nav__link:focus-visible,
+.classifieds-nav__admin a:focus-visible,
 .classifieds-lightbox:focus-visible,
 .classifieds-filter__select:focus-visible,
 .classifieds-filter__submit:focus-visible,
 .classifieds-action:focus-visible {
     outline: 2px solid currentColor;
-    outline-offset: 3px;
+    outline-offset: 2px;
 }
 
 /* Catalogue */
