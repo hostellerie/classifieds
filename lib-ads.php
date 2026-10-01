@@ -44,7 +44,7 @@ function CLASSIFIEDS_saveAd($data, $files)
     }
 
     $uid = isset($_USER['uid']) ? (int) $_USER['uid'] : 1;
-    if ($uid < 2) {
+    if ($uid < 2 || !CLASSIFIEDS_canPublish()) {
         return $result;
     }
 
