@@ -192,7 +192,7 @@ function CLASSIFIEDS_discardRepublishedAd($clid)
     while ($image = DB_fetchArray($result)) {
         $path = $_CLASSIFIEDS_CONF['path_images'] . basename($image['pi_filename']);
         if (is_file($path)) {
-            @unlink($path);
+            unlink($path);
         }
     }
 
@@ -222,7 +222,7 @@ function CLASSIFIEDS_copyImages($ad, $clid)
 
         if (!CLASSIFIEDS_copyImage($filename, $newFilename)) {
             foreach ($copiedFiles as $copied) {
-                @unlink($_CLASSIFIEDS_CONF['path_images'] . $copied);
+                unlink($_CLASSIFIEDS_CONF['path_images'] . $copied);
             }
             return false;
         }
@@ -232,7 +232,7 @@ function CLASSIFIEDS_copyImages($ad, $clid)
             . $clid . "', " . (int) $A['pi_img_num'] . ", '" . DB_escapeString($newFilename) . "')");
         if (DB_error()) {
             foreach ($copiedFiles as $copied) {
-                @unlink($_CLASSIFIEDS_CONF['path_images'] . $copied);
+                unlink($_CLASSIFIEDS_CONF['path_images'] . $copied);
             }
             DB_query("DELETE FROM {$_TABLES['cl_pic']} WHERE pi_pid = '" . $clid . "'");
             return false;
@@ -258,7 +258,7 @@ function CLASSIFIEDS_copyImage($file, $newfile)
         return false;
     }
 
-    if (!@copy($source, $target)) {
+    if (!copy($source, $target)) {
         COM_errorLog('Classifieds: unable to copy image ' . basename($file) . ' to ' . basename($newfile));
         return false;
     }
