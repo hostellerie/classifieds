@@ -359,10 +359,15 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
 
     global $_CONF, $_CLASSIFIEDS_CONF, $LANG_CLASSIFIEDS_2, $LANG_CLASSIFIEDS_ADMIN, $_TABLES, $LANG24, $LANG_ADMIN, $_USER;
 
+    CLASSIFIEDS_ensureCategorySeoSchema();
+
     $defaults = array(
         'cid' => '',
         'pid' => 0,
         'category' => '',
+        'meta_title' => '',
+        'meta_description' => '',
+        'meta_keywords' => '',
         'catorder' => 0,
         'catdeleted' => 0,
         'position' => ''
@@ -402,7 +407,31 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
 	
 	//category
     $template->set_var('category_label', $LANG_CLASSIFIEDS_ADMIN['category']);
-	$template->set_var('category', $catid['category']);
+	$template->set_var('category', htmlspecialchars(
+        $catid['category'],
+        ENT_QUOTES,
+        $_CONF['default_charset']
+    ));
+
+    $template->set_var('seo_metadata_label', $LANG_CLASSIFIEDS_ADMIN['seo_metadata']);
+    $template->set_var('meta_title_label', $LANG_CLASSIFIEDS_ADMIN['meta_title']);
+    $template->set_var('meta_description_label', $LANG_CLASSIFIEDS_ADMIN['meta_description']);
+    $template->set_var('meta_keywords_label', $LANG_CLASSIFIEDS_ADMIN['meta_keywords']);
+    $template->set_var('meta_title', htmlspecialchars(
+        $catid['meta_title'],
+        ENT_QUOTES,
+        $_CONF['default_charset']
+    ));
+    $template->set_var('meta_description', htmlspecialchars(
+        $catid['meta_description'],
+        ENT_QUOTES,
+        $_CONF['default_charset']
+    ));
+    $template->set_var('meta_keywords', htmlspecialchars(
+        $catid['meta_keywords'],
+        ENT_QUOTES,
+        $_CONF['default_charset']
+    ));
 
     // All categories use semantic first / after / last positioning.
     // catorder remains an internal storage detail.
