@@ -2173,30 +2173,11 @@ function CLASSIFIEDS_viewAd($clid)
         . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
 
     $description = trim(strip_tags((string) $A['text']));
-    if (strlen($description) > 160) {
-        $description = substr($description, 0, 157) . '...';
-    }
-
-    $metaTags = array();
-    if ($description !== '') {
-        $metaTags[] = array(
-            'name' => 'description',
-            'content' => $description
-        );
-    }
-
-    if ($isAdmin && (!empty($A['deleted']) || !$active || empty($A['enable']))) {
-        $metaTags[] = array(
-            'name' => 'robots',
-            'content' => 'noindex,follow'
-        );
-    }
-
-    $headerCode = PLG_getMetaTags('classifieds', (string) $clid, $metaTags);
-    $canonicalUrl = plugin_idToURL_classifieds('classifieds', $clid);
-    $headerCode .= '<link rel="canonical" href="'
-        . htmlspecialchars($canonicalUrl, ENT_QUOTES, $_CONF['default_charset'])
-        . '"' . XHTML . '>' . LB;
+    $headerCode = CLASSIFIEDS_resourceHeaderCode(
+        'ad:' . $clid,
+        $description,
+        $isAdmin && (!empty($A['deleted']) || !$active || empty($A['enable']))
+    );
 
     $retval = CLASSIFIEDS_user_menu();
 
