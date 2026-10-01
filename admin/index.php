@@ -778,7 +778,10 @@ switch ($_REQUEST['mode']) {
                         break;
                     }
 
-                    if ((int) $_FILES['category_csv']['size'] > 262144) {
+                    $uploadSize = isset($_FILES['category_csv']['size'])
+                        ? (int) $_FILES['category_csv']['size']
+                        : 0;
+                    if ($uploadSize > 262144) {
                         $display .= CLASSIFIEDS_categoryImportErrorsHtml(array('too_large'));
                         $display .= CLASSIFIEDS_categoryCsvForm();
                         break;
