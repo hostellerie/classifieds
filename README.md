@@ -1,3 +1,9 @@
+# Classifieds
+
+Classifieds 1.4.0 is modernized against the current Geeklog plugin development
+baseline. See `docs/memorandum-compliance.md` for the audited contracts,
+intentional boundaries and release checks.
+
 # Classifieds for Geeklog
 
 Classifieds provides small classified ads integrated with Geeklog permissions, users, search, comments, autotags and administration.
