@@ -475,7 +475,8 @@ function plugin_dopluginsearch_classifieds(
         . "AND a.enable = 1 "
         . "AND c.catdeleted = 0 "
         . "AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= " . $activeDays . " "
-        . COM_getPermSQL('AND', 0, 2, 'a') . ' ';
+        . COM_getPermSQL('AND', 0, 2, 'a') . ' '
+        . COM_getPermSQL('AND', 0, 2, 'c') . ' ';
 
     if (!empty($datestart) && !empty($dateend)) {
         $delim = substr($datestart, 4, 1);
