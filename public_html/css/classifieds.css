@@ -63,6 +63,18 @@
 }
 
 /* Catalogue */
+.classifieds-page-intro {
+    margin: 0 0 1.4rem;
+}
+
+.classifieds-page-intro > :first-child {
+    margin-top: 0;
+}
+
+.classifieds-page-intro > :last-child {
+    margin-bottom: 0;
+}
+
 .classifieds-page-title {
     margin: 0 0 1rem;
     line-height: 1.15;
