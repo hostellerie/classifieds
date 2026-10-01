@@ -76,6 +76,30 @@ $vars = array('mode'       => 'alpha',
 CLASSIFIEDS_filterVars($vars, $_REQUEST);
 
 /**
+ * Render the native Geeklog Configuration entry as a POST control.
+ *
+ * Geeklog Configuration expects conf_group through POST on the supported
+ * compatibility baseline. Keep one canonical implementation so navigation and
+ * first-use guidance cannot diverge.
+ *
+ * @param string $label
+ * @param string $buttonClass
+ * @return string
+ */
+function CLASSIFIEDS_adminConfigurationControl($label, $buttonClass = 'plugin-admin-nav__item')
+{
+    global $_CONF;
+
+    return '<form class="plugin-admin-nav__form" method="post" action="'
+        . $_CONF['site_admin_url'] . '/configuration.php">'
+        . '<input type="hidden" name="conf_group" value="classifieds">'
+        . '<button class="' . htmlspecialchars($buttonClass, ENT_QUOTES, $_CONF['default_charset'])
+        . '" type="submit">'
+        . htmlspecialchars($label, ENT_QUOTES, $_CONF['default_charset'])
+        . '</button></form>';
+}
+
+/**
  * Persistent Classifieds administration navigation.
  *
  * @param string $mode Current admin section
@@ -106,12 +130,9 @@ function CLASSIFIEDS_admin_menu($mode = '')
         . htmlspecialchars($LANG_CLASSIFIEDS_1['categories_list'], ENT_QUOTES, $_CONF['default_charset'])
         . '</a>';
 
-    $retval .= '<form class="plugin-admin-nav__form" method="post" action="'
-        . $_CONF['site_admin_url'] . '/configuration.php">'
-        . '<input type="hidden" name="conf_group" value="classifieds">'
-        . '<button class="plugin-admin-nav__item" type="submit">'
-        . htmlspecialchars($LANG_CLASSIFIEDS_ADMIN['configuration'], ENT_QUOTES, $_CONF['default_charset'])
-        . '</button></form>';
+    $retval .= CLASSIFIEDS_adminConfigurationControl(
+        $LANG_CLASSIFIEDS_ADMIN['configuration']
+    );
 
     $retval .= '</div></nav>';
 
@@ -134,7 +155,13 @@ function CLASSIFIEDS_adminGettingStarted()
     $template->set_var('getting_started_configure', $LANG_CLASSIFIEDS_ADMIN['getting_started_configure']);
     $template->set_var('getting_started_categories', $LANG_CLASSIFIEDS_ADMIN['getting_started_categories']);
     $template->set_var('getting_started_public', $LANG_CLASSIFIEDS_ADMIN['getting_started_public']);
-    $template->set_var('configuration_url', $_CONF['site_admin_url'] . '/configuration.php?conf_group=classifieds');
+    $template->set_var(
+        'configuration_control',
+        CLASSIFIEDS_adminConfigurationControl(
+            $LANG_CLASSIFIEDS_ADMIN['getting_started_configure'],
+            'plugin-admin-help__action'
+        )
+    );
     $template->set_var('categories_url', $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat');
     $template->set_var('public_url', $_CLASSIFIEDS_CONF['site_url'] . '/index.php');
 
