@@ -2074,10 +2074,13 @@ function CLASSIFIEDS_viewAd($clid)
     $active = ($activeDays <= (int) $_CLASSIFIEDS_CONF['active_days']);
 
     if (!$isAdmin && (empty($A['enable']) || !empty($A['deleted']) || !$active)) {
-        return COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name'])
-            . CLASSIFIEDS_user_menu()
-            . CLASSIFIEDS_message($LANG_CLASSIFIEDS_1['ads_not_available'])
-            . COM_siteFooter(1);
+        return CLASSIFIEDS_renderPage(
+            CLASSIFIEDS_user_menu()
+            . CLASSIFIEDS_message($LANG_CLASSIFIEDS_1['ads_not_available']),
+            $LANG_CLASSIFIEDS_1['plugin_name'],
+            '',
+            404
+        );
     }
 
     $title = (string) $A['title'];
