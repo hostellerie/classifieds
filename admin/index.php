@@ -585,6 +585,31 @@ switch ($_REQUEST['mode']) {
                 );
                 exit;
 
+            case 'edit':
+                $cid = (int) $_REQUEST['cid'];
+                if ($cid <= 0) {
+                    echo COM_refresh(
+                        $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat'
+                    );
+                    exit;
+                }
+
+                $res = DB_query(
+                    "SELECT cid, pid, category, catorder, catdeleted, owner_id, group_id, "
+                    . "perm_owner, perm_group, perm_members, perm_anon "
+                    . "FROM {$_TABLES['cl_cat']} WHERE cid = " . $cid . " LIMIT 1"
+                );
+                $categoryRow = DB_fetchArray($res);
+                if (!is_array($categoryRow)) {
+                    echo COM_refresh(
+                        $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat'
+                    );
+                    exit;
+                }
+
+                $display .= CLASSIFIEDS_getCatForm($categoryRow);
+                break;
+
             case 'csvhelp':
                 $display .= COM_startBlock($LANG_CLASSIFIEDS_ADMIN['csv_documentation']);
                 $display .= CLASSIFIEDS_categoryCsvHelp();
