@@ -365,7 +365,8 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
         'pid' => 0,
         'category' => '',
         'catorder' => 0,
-        'catdeleted' => 0
+        'catdeleted' => 0,
+        'position' => ''
     );
     $catid = is_array($catid) ? array_merge($defaults, $catid) : $defaults;
 	
@@ -413,9 +414,12 @@ function CLASSIFIEDS_getCatForm($catid = array()) {
 
     $currentPid = (int) $catid['pid'];
     $currentCid = (int) $catid['cid'];
-    $selectedPosition = ($currentPid > 0 && $currentCid > 0)
-        ? CLASSIFIEDS_childCategoryPosition($currentPid, $currentCid)
-        : 'last';
+    $selectedPosition = (isset($catid['position'])
+        && preg_match('/^(?:first|last|after:[0-9]+)$/', (string) $catid['position']))
+        ? (string) $catid['position']
+        : (($currentPid > 0 && $currentCid > 0)
+            ? CLASSIFIEDS_childCategoryPosition($currentPid, $currentCid)
+            : 'last');
 
     $template->set_var(
         'child_position_options',
