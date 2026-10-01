@@ -16,10 +16,16 @@
             <input id="classifieds-category-name" type="text" name="category" value="{category}" maxlength="255" required{xhtml}>
         </div>
 
-        <div class="classifieds-form__field">
+        <div id="classifieds-root-order-field" class="classifieds-form__field"{root_order_hidden}>
             <label for="classifieds-category-order">{catorder_label}</label>
             <input id="classifieds-category-order" type="number" min="0" name="catorder" value="{catorder}"{xhtml}>
-            {categories_order}
+        </div>
+
+        <div id="classifieds-child-position-field" class="classifieds-form__field"{child_position_hidden}>
+            <label for="classifieds-child-position">{child_position_label}</label>
+            <select id="classifieds-child-position" name="position">
+                {child_position_options}
+            </select>
         </div>
 
         <div class="classifieds-form__field">
