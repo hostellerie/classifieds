@@ -864,30 +864,64 @@ function plugin_collectSitemapItems_classifieds($uid = 1, $limit = 0)
 
     $uid = (int) $uid;
     $limit = (int) $limit;
-
-    $sql = "SELECT a.clid, UNIX_TIMESTAMP(a.modified) AS modified "
-        . "FROM {$_TABLES['cl']} AS a "
-        . "WHERE a.deleted = 0 "
-        . "AND a.enable = 1 "
-        . "AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= "
-        . (int) $_CLASSIFIEDS_CONF['active_days']
-        . COM_getPermSQL('AND', $uid, 2, 'a')
-        . " ORDER BY a.modified DESC";
-
-    if ($limit > 0) {
-        $sql .= ' LIMIT ' . $limit;
-    }
-
-    $result = DB_query($sql);
     $items = array();
 
-    while ($A = DB_fetchArray($result)) {
+    $canAdd = function () use (&$items, $limit) {
+        return $limit <= 0 || count($items) < $limit;
+    };
+
+    if ($canAdd()) {
         $items[] = array(
-            'url' => plugin_idToURL_classifieds('classifieds', $A['clid']),
-            'date-modified' => isset($A['modified']) ? (int) $A['modified'] : 0,
-            'change-freq' => 'weekly',
-            'priority' => 0.6
+            'url' => plugin_idToURL_classifieds('root', 'root'),
+            'date-modified' => 0,
+            'change-freq' => 'daily',
+            'priority' => 0.8
         );
+    }
+
+    if ($canAdd()) {
+        $categorySql = "SELECT c.cid "
+            . "FROM {$_TABLES['cl_cat']} AS c "
+            . "WHERE c.catdeleted = 0"
+            . COM_getPermSQL('AND', $uid, 2, 'c')
+            . " ORDER BY c.pid ASC, c.catorder ASC, c.category ASC";
+
+        $categoryResult = DB_query($categorySql);
+        while ($canAdd() && ($category = DB_fetchArray($categoryResult))) {
+            $items[] = array(
+                'url' => plugin_idToURL_classifieds(
+                    'category',
+                    (int) $category['cid']
+                ),
+                'date-modified' => 0,
+                'change-freq' => 'weekly',
+                'priority' => 0.7
+            );
+        }
+    }
+
+    if ($canAdd()) {
+        $sql = "SELECT a.clid, UNIX_TIMESTAMP(a.modified) AS modified "
+            . "FROM {$_TABLES['cl']} AS a "
+            . "INNER JOIN {$_TABLES['cl_cat']} AS c ON c.cid = a.catid "
+            . "WHERE a.deleted = 0 "
+            . "AND a.enable = 1 "
+            . "AND c.catdeleted = 0 "
+            . "AND TO_DAYS(NOW()) - TO_DAYS(a.created) <= "
+            . (int) $_CLASSIFIEDS_CONF['active_days']
+            . COM_getPermSQL('AND', $uid, 2, 'a')
+            . COM_getPermSQL('AND', $uid, 2, 'c')
+            . " ORDER BY a.modified DESC";
+
+        $result = DB_query($sql);
+        while ($canAdd() && ($A = DB_fetchArray($result))) {
+            $items[] = array(
+                'url' => plugin_idToURL_classifieds('ad', (int) $A['clid']),
+                'date-modified' => isset($A['modified']) ? (int) $A['modified'] : 0,
+                'change-freq' => 'weekly',
+                'priority' => 0.6
+            );
+        }
     }
 
     return $items;
@@ -1998,6 +2032,51 @@ function modifAd($ad)
     if ($ad > 0) {
         DB_query("UPDATE {$_TABLES['cl']} SET modif = modif + 1 WHERE clid = " . $ad);
     }
+}
+
+/**
+ * Build canonical/meta header code for a Classifieds resource.
+ *
+ * @param string $resourceId Stable Classifieds identity (root, category:N, ad:N)
+ * @param string $description Optional plain-text description
+ * @param bool   $noIndex Whether this route variant should be excluded from indexing
+ * @return string
+ */
+function CLASSIFIEDS_resourceHeaderCode($resourceId, $description = '', $noIndex = false)
+{
+    global $_CONF;
+
+    $metaTags = array();
+    $description = trim(strip_tags((string) $description));
+    if ($description !== '') {
+        if (strlen($description) > 160) {
+            $description = substr($description, 0, 157) . '...';
+        }
+        $metaTags[] = array(
+            'name' => 'description',
+            'content' => $description
+        );
+    }
+
+    if ($noIndex) {
+        $metaTags[] = array(
+            'name' => 'robots',
+            'content' => 'noindex,follow'
+        );
+    }
+
+    $headerCode = function_exists('PLG_getMetaTags')
+        ? PLG_getMetaTags('classifieds', (string) $resourceId, $metaTags)
+        : '';
+
+    $canonicalUrl = plugin_idToURL_classifieds('', $resourceId);
+    if ($canonicalUrl !== '') {
+        $headerCode .= '<link rel="canonical" href="'
+            . htmlspecialchars($canonicalUrl, ENT_QUOTES, $_CONF['default_charset'])
+            . '"' . XHTML . '>' . LB;
+    }
+
+    return $headerCode;
 }
 
 /**
