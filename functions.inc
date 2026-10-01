@@ -2450,7 +2450,7 @@ function CLASSIFIEDS_checkAdAccess($ad)
  * @return string
  */
 /**
- * Return the current semantic position of a child category.
+ * Return the current semantic position of a category among its siblings.
  *
  * @param int $pid Parent category id
  * @param int $cid Current category id
@@ -2462,7 +2462,7 @@ function CLASSIFIEDS_childCategoryPosition($pid, $cid)
 
     $pid = (int) $pid;
     $cid = (int) $cid;
-    if ($pid <= 0 || $cid <= 0) {
+    if ($pid < 0 || $cid <= 0) {
         return 'last';
     }
 
@@ -2489,7 +2489,7 @@ function CLASSIFIEDS_childCategoryPosition($pid, $cid)
 }
 
 /**
- * Build semantic child-position options for every possible root parent.
+ * Build semantic position options for every possible parent, including root.
  *
  * "After" options carry data-parent so the admin JavaScript can expose only
  * siblings belonging to the currently selected parent.
@@ -2514,7 +2514,7 @@ function CLASSIFIEDS_childCategoryPositionOptions($selectedPid, $excludeCid, $se
 
     $result = DB_query(
         "SELECT cid, pid, category FROM {$_TABLES['cl_cat']} "
-        . "WHERE pid > 0"
+        . "WHERE pid >= 0"
         . ($excludeCid > 0 ? " AND cid <> " . $excludeCid : '')
         . " ORDER BY pid ASC, catorder ASC, category ASC, cid ASC"
     );
@@ -2540,7 +2540,7 @@ function CLASSIFIEDS_childCategoryPositionOptions($selectedPid, $excludeCid, $se
 }
 
 /**
- * Normalize child category order for one parent.
+ * Normalize category order for one parent, including root.
  *
  * @param int $pid
  * @return void
@@ -2550,7 +2550,7 @@ function CLASSIFIEDS_normalizeChildCategoryOrder($pid)
     global $_TABLES;
 
     $pid = (int) $pid;
-    if ($pid <= 0) {
+    if ($pid < 0) {
         return;
     }
 
@@ -2571,7 +2571,7 @@ function CLASSIFIEDS_normalizeChildCategoryOrder($pid)
 }
 
 /**
- * Apply first / after:<cid> / last positioning to one child category.
+ * Apply first / after:<cid> / last positioning to one category.
  *
  * @param int $cid
  * @param int $pid
@@ -2579,15 +2579,15 @@ function CLASSIFIEDS_normalizeChildCategoryOrder($pid)
  * @param int $oldPid
  * @return void
  */
-function CLASSIFIEDS_applyChildCategoryPosition($cid, $pid, $position, $oldPid = 0)
+function CLASSIFIEDS_applyChildCategoryPosition($cid, $pid, $position, $oldPid = null)
 {
     global $_TABLES;
 
     $cid = (int) $cid;
     $pid = (int) $pid;
-    $oldPid = (int) $oldPid;
+    $oldPidValue = ($oldPid === null) ? null : (int) $oldPid;
 
-    if ($cid <= 0 || $pid <= 0) {
+    if ($cid <= 0 || $pid < 0) {
         return;
     }
 
@@ -2626,8 +2626,8 @@ function CLASSIFIEDS_applyChildCategoryPosition($cid, $pid, $position, $oldPid =
         $order++;
     }
 
-    if ($oldPid > 0 && $oldPid !== $pid) {
-        CLASSIFIEDS_normalizeChildCategoryOrder($oldPid);
+    if ($oldPidValue !== null && $oldPidValue !== $pid) {
+        CLASSIFIEDS_normalizeChildCategoryOrder($oldPidValue);
     }
 }
 
