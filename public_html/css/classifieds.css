@@ -573,6 +573,46 @@ body.classifieds-lightbox-open {
     cursor: pointer;
 }
 
+/* Text navigation action used when Geeklog Configuration requires POST.
+ * This is intentionally a button semantically, but presents like the adjacent
+ * navigation links in first-use guidance.
+ */
+.classifieds-admin-getting-started .plugin-admin-nav__form {
+    display: inline;
+    margin: 0;
+}
+
+.classifieds-admin-getting-started .plugin-admin-help__text-action {
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: .14em;
+    cursor: pointer;
+}
+
+.classifieds-admin-getting-started .plugin-admin-help__text-action:hover,
+.classifieds-admin-getting-started .plugin-admin-help__text-action:focus {
+    background: transparent;
+    box-shadow: none;
+}
+
+.classifieds-admin-getting-started .plugin-admin-help__text-action:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
 @media (max-width: 760px) {
     .classifieds-filter__form {
         align-items: stretch;

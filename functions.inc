@@ -3097,12 +3097,9 @@ function CLASSIFIEDS_formatShortDate($date)
 
     $format = !empty($_CONF['shortdate']) ? $_CONF['shortdate'] : '%x';
 
-    if (function_exists('COM_strftime')) {
-        return COM_strftime($format, $timestamp);
-    }
-
-    // Geeklog 2.1.1 has no COM_strftime() helper. Its configured shortdate
-    // value still uses strftime-style tokens, so use PHP's native formatter.
+    // Geeklog 2.1.1 has no COM_strftime(). PHP 5.6, the compatibility
+    // baseline for that core, provides strftime() and understands Geeklog's
+    // configured shortdate tokens directly.
     return strftime($format, $timestamp);
 }
 

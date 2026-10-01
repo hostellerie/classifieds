@@ -159,7 +159,7 @@ function CLASSIFIEDS_adminGettingStarted()
         'configuration_control',
         CLASSIFIEDS_adminConfigurationControl(
             $LANG_CLASSIFIEDS_ADMIN['getting_started_configure'],
-            'plugin-admin-help__action'
+            'plugin-admin-help__text-action'
         )
     );
     $template->set_var('categories_url', $_CONF['site_admin_url'] . '/plugins/classifieds/index.php?mode=cat');
