@@ -38,18 +38,28 @@
 require_once '../../../lib-common.php';
 require_once '../../auth.inc.php';
 
+if (!isset($_PLUGINS) || !in_array('classifieds', $_PLUGINS, true)) {
+    echo COM_refresh($_CONF['site_admin_url'] . '/moderation.php');
+    exit;
+}
+
 $display = '';
 
 // Ensure user even has the rights to access this page
-if (! SEC_hasRights('classifieds.admin')) {
-    $display .= COM_siteHeader('menu', $MESSAGE[30])
-             . COM_showMessageText($MESSAGE[29], $MESSAGE[30])
-             . COM_siteFooter();
+if (!SEC_hasRights('classifieds.admin')) {
+    $display = COM_showMessageText($MESSAGE[29], $MESSAGE[30]);
 
     // Log attempt to access.log
     COM_accessLog("User {$_USER['username']} tried to illegally access the Classifieds plugin administration screen.");
 
-    echo $display;
+    echo COM_createHTMLDocument(
+        $display,
+        array(
+            'what' => 'menu',
+            'pagetitle' => $MESSAGE[30],
+            'httpstatus' => 403
+        )
+    );
     exit;
 }
 
@@ -58,9 +68,7 @@ $vars = array('mode'       => 'alpha',
               'msg'        => 'text',
               'cid'        => 'number',
 			  'pid'        => 'number',
-			  'category'   => 'text',
-			  'catorder'   => 'number',
-              'catdeleted' => 'number',
+			  'category'   => 'text',              'catdeleted' => 'number',
               'position'    => 'text',
               'csv_action'  => 'alpha',
 );
@@ -471,8 +479,6 @@ if ($_REQUEST['mode'] === 'cat' && $_REQUEST['op'] === 'csvtemplate') {
     exit;
 }
 
-$display .= COM_siteHeader('menu', $LANG_CLASSIFIEDS_1['plugin_name']);
-
 $display .= CLASSIFIEDS_admin_menu($_REQUEST['mode']);
 
 // If any message
@@ -500,9 +506,12 @@ switch ($_REQUEST['mode']) {
                     $msg = $LANG_CLASSIFIEDS_ADMIN['category_in_use'];
                 } else {
                     DB_delete($_TABLES['cl_cat'], 'cid', $cid);
-                    $msg = (DB_affectedRows('') == 1)
-                        ? $LANG_CLASSIFIEDS_ADMIN['deletion_succes']
-                        : $LANG_CLASSIFIEDS_ADMIN['deletion_fail'];
+                    if (DB_affectedRows('') == 1) {
+                        PLG_itemDeleted('category:' . $cid, 'classifieds');
+                        $msg = $LANG_CLASSIFIEDS_ADMIN['deletion_succes'];
+                    } else {
+                        $msg = $LANG_CLASSIFIEDS_ADMIN['deletion_fail'];
+                    }
                 }
 
                 echo COM_refresh(
@@ -592,6 +601,10 @@ switch ($_REQUEST['mode']) {
                         $position,
                         $oldPid
                     );
+
+                    if (!DB_error()) {
+                        PLG_itemSaved('category:' . $cid, 'classifieds');
+                    }
                 }
 
                 if (DB_error()) {
@@ -792,8 +805,9 @@ switch ($_REQUEST['mode']) {
 		$display .= COM_endBlock();
 }
 
-$display .= COM_siteFooter();
-
-echo $display;
+echo CLASSIFIEDS_renderPage(
+    $display,
+    $LANG_CLASSIFIEDS_1['plugin_name'] . ' - ' . $LANG_CLASSIFIEDS_ADMIN['administration']
+);
 
 ?>
