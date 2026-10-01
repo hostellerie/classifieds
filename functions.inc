@@ -2076,24 +2076,26 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 	    }else {
         $ad->set_var('edit', '');
         }
-        // Price: zero is a valid advertised value.
-        $ad->set_var(
-            'price',
-            number_format(
+        if ((float) $A['price'] > 0) {
+            $price = number_format(
                 (float) $A['price'],
                 $_CONF['decimal_count'],
                 $_CONF['decimal_separator'],
                 $_CONF['thousand_separator']
-            )
-        );
-        $ad->set_var(
-            'currency',
-            htmlspecialchars(
+            );
+            $currency = htmlspecialchars(
                 $_CLASSIFIEDS_CONF['currency'],
                 ENT_QUOTES,
                 $_CONF['default_charset']
-            )
-        );
+            );
+            $ad->set_var(
+                'price_display',
+                '<div class="classifieds-list-item__price">'
+                . $price . ' ' . $currency . '</div>'
+            );
+        } else {
+            $ad->set_var('price_display', '');
+        }
 
         //Category
         $ad->set_var(
@@ -2518,24 +2520,33 @@ function CLASSIFIEDS_viewAd($clid)
         );
     }
 
-    $ad->set_var(
-        'price',
-        number_format(
+    if ((float) $A['price'] > 0) {
+        $price = number_format(
             (float) $A['price'],
             $_CONF['decimal_count'],
             $_CONF['decimal_separator'],
             $_CONF['thousand_separator']
-        )
-    );
-    $ad->set_var(
-        'currency',
-        htmlspecialchars(
+        );
+        $currency = htmlspecialchars(
             $_CLASSIFIEDS_CONF['currency'],
             ENT_QUOTES,
             $_CONF['default_charset']
-        )
-    );
-    $ad->set_var('price_label', $LANG_CLASSIFIEDS_1['price']);
+        );
+        $ad->set_var(
+            'price_block',
+            '<div class="classifieds-ad__price-block">'
+            . '<span class="classifieds-ad__summary-label">'
+            . htmlspecialchars(
+                $LANG_CLASSIFIEDS_1['price'],
+                ENT_QUOTES,
+                $_CONF['default_charset']
+            )
+            . '</span><div class="classifieds-ad__price">'
+            . $price . ' ' . $currency . '</div></div>'
+        );
+    } else {
+        $ad->set_var('price_block', '');
+    }
 
     $locationParts = array();
     if (!empty($A['postcode'])) {
