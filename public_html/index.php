@@ -83,6 +83,7 @@ switch ($_REQUEST['mode']) {
 
 	//Edit
 	case 'e':
+        $headerCode = CLASSIFIEDS_resourceHeaderCode('root', '', true);
 	    /*
 		* Include specific classifieds config file
 		*/
@@ -212,6 +213,7 @@ switch ($_REQUEST['mode']) {
 		break;
 	//My ads
 	case 'my':
+        $headerCode = CLASSIFIEDS_resourceHeaderCode('root', '', true);
         $pageTitle = $LANG_CLASSIFIEDS_1['my_ads'] . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
         $display = CLASSIFIEDS_user_menu();
 		if (COM_isAnonUser()) {
@@ -225,6 +227,7 @@ switch ($_REQUEST['mode']) {
 		break;
 	//Help
 	case 'h':
+        $headerCode = CLASSIFIEDS_resourceHeaderCode('root', '', true);
         $pageTitle = $LANG_CLASSIFIEDS_1['help'] . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
         $display = CLASSIFIEDS_user_menu();
         $display .= PLG_replaceTags($_CLASSIFIEDS_CONF['help_page']);
@@ -235,6 +238,7 @@ switch ($_REQUEST['mode']) {
 		break;
 	//see all
 	case 'va':
+        $headerCode = CLASSIFIEDS_resourceHeaderCode('root', '', true);
         $profileUid = (int) $_REQUEST['u'];
 	    $user = DB_getItem($_TABLES['users'], 'username', 'uid=' . $profileUid);
         $pageTitle = $LANG_CLASSIFIEDS_1['all_ads_from'] . ' ' . $user;
@@ -243,6 +247,7 @@ switch ($_REQUEST['mode']) {
 	    break;
     // Contact advertiser
     case 'c':
+        $headerCode = CLASSIFIEDS_resourceHeaderCode('root', '', true);
         $ad = (int) $_REQUEST['ad'];
         $pageTitle = $LANG_CLASSIFIEDS_1['contact_advertiser'];
         $display = '';
@@ -284,6 +289,7 @@ switch ($_REQUEST['mode']) {
 
     // Report ad / abuse
     case 'r':
+        $headerCode = CLASSIFIEDS_resourceHeaderCode('root', '', true);
         $ad = (int) $_REQUEST['ad'];
         $pageTitle = $LANG_CLASSIFIEDS_1['report'];
         $display = '';
@@ -325,6 +331,7 @@ switch ($_REQUEST['mode']) {
 
 	//profile
 	case 'p' :
+        $headerCode = CLASSIFIEDS_resourceHeaderCode('root', '', true);
 	    require_once ($_CONF['path_system']  . 'lib-user.php');
         $pageTitle = $LANG_CLASSIFIEDS_1['profile'];
         $display = CLASSIFIEDS_user_menu();
@@ -345,10 +352,10 @@ switch ($_REQUEST['mode']) {
                 . '</div>';
         }
 
-        $display .= CLASSIFIEDS_displayAds(1);
-
         $contextId = 'root';
         $requestedCategory = isset($_REQUEST['catid']) ? (int) $_REQUEST['catid'] : 0;
+        $categoryResource = array();
+
         if ($requestedCategory > 0) {
             $categoryResource = CLASSIFIEDS_getContentResource(
                 'category:' . $requestedCategory,
@@ -359,6 +366,39 @@ switch ($_REQUEST['mode']) {
             }
         }
 
+        if (!empty($categoryResource)) {
+            $listHeading = $categoryResource['title'];
+            $pageTitle = $categoryResource['title']
+                . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
+        } elseif ($_REQUEST['mode'] === 'o') {
+            $listHeading = $LANG_CLASSIFIEDS_1['offers'];
+            $pageTitle = $LANG_CLASSIFIEDS_1['offers']
+                . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
+        } elseif ($_REQUEST['mode'] === 'd') {
+            $listHeading = $LANG_CLASSIFIEDS_1['demands'];
+            $pageTitle = $LANG_CLASSIFIEDS_1['demands']
+                . ' - ' . $LANG_CLASSIFIEDS_1['plugin_name'];
+        } else {
+            $listHeading = $LANG_CLASSIFIEDS_1['plugin_name'];
+            $pageTitle = $LANG_CLASSIFIEDS_1['plugin_name'];
+        }
+
+        $isFilterVariant = ($_REQUEST['mode'] === 'o' || $_REQUEST['mode'] === 'd');
+        $rootDescription = ($contextId === 'root')
+            ? (string) $_CLASSIFIEDS_CONF['classifieds_main_header']
+            : '';
+
+        $headerCode = CLASSIFIEDS_resourceHeaderCode(
+            $contextId,
+            $rootDescription,
+            $isFilterVariant
+        );
+
+        $display .= '<h1 class="classifieds-page-title">'
+            . htmlspecialchars($listHeading, ENT_QUOTES, $_CONF['default_charset'])
+            . '</h1>';
+
+        $display .= CLASSIFIEDS_displayAds(1);
         $display .= CLASSIFIEDS_renderItemExtensions($contextId);
 
         if (!empty($_CLASSIFIEDS_CONF['classifieds_main_footer'])) {
