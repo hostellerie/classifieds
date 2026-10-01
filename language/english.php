@@ -281,6 +281,11 @@ $LANG_CLASSIFIEDS_EMAIL = array(
     'post_new_button'         => 'Place a new ad',
     'publisher'               => 'Publisher',
     'automatic_notice'        => 'This is an automated message. Please do not reply to this email.',
+    'admin_manage'            => 'Manage Classifieds',
+    'subject_create'          => 'New ad',
+    'subject_edit'            => 'Ad updated',
+    'subject_delete'          => 'Ad removed',
+    'subject_expire'          => 'Ad expired',
 
 );
 
