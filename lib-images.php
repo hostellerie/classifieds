@@ -9,6 +9,46 @@ if (!defined('VERSION')) {
     die('This file can not be used on its own.');
 }
 
+/**
+ * Flatten PHP's $_FILES structures into ordinary file arrays.
+ *
+ * Supports both historical file1/file2 inputs and modern images[] batches.
+ *
+ * @param array $files
+ * @return array
+ */
+function CLASSIFIEDS_normalizeUploadFiles($files)
+{
+    $normalized = array();
+
+    foreach ((array) $files as $file) {
+        if (!is_array($file) || !isset($file['name'])) {
+            continue;
+        }
+
+        if (is_array($file['name'])) {
+            $count = count($file['name']);
+            for ($i = 0; $i < $count; $i++) {
+                if (empty($file['name'][$i])) {
+                    continue;
+                }
+
+                $normalized[] = array(
+                    'name' => $file['name'][$i],
+                    'type' => isset($file['type'][$i]) ? $file['type'][$i] : '',
+                    'tmp_name' => isset($file['tmp_name'][$i]) ? $file['tmp_name'][$i] : '',
+                    'error' => isset($file['error'][$i]) ? $file['error'][$i] : UPLOAD_ERR_NO_FILE,
+                    'size' => isset($file['size'][$i]) ? $file['size'][$i] : 0
+                );
+            }
+        } elseif (!empty($file['name'])) {
+            $normalized[] = $file;
+        }
+    }
+
+    return $normalized;
+}
+
 function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
 {
     global $_CONF, $_CLASSIFIEDS_CONF, $_TABLES;
@@ -43,8 +83,8 @@ function CLASSIFIEDS_saveImage($ad, $FILES, $clid)
     $availableSlots = max(0, $maxImages - $remainingCount);
 
     $uploadFiles = array();
-    foreach ($FILES as $file) {
-        if (!is_array($file) || empty($file['name'])) {
+    foreach (CLASSIFIEDS_normalizeUploadFiles($FILES) as $file) {
+        if ((int) $file['error'] !== UPLOAD_ERR_OK) {
             continue;
         }
 
