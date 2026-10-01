@@ -229,10 +229,11 @@ function CLASSIFIEDS_sendLifecycleEmail($event, $title, $ad, $adnumber, $uid, $p
             }
 
             $userHtml = $htmlStart
-                . '<div style="padding:4px 24px 24px;">' . $userActions . '</div>'
-                . '<div style="padding:0 24px 24px;color:#666;font-size:13px;line-height:1.5;">'
-                . htmlspecialchars($LANG_CLASSIFIEDS_EMAIL['automatic_notice'], ENT_QUOTES, $_CONF['default_charset'])
+                . '<div style="padding:4px 24px 12px;color:#555;font-size:15px;line-height:1.5;">'
+                . htmlspecialchars($LANG_CLASSIFIEDS_EMAIL['hello'], ENT_QUOTES, $_CONF['default_charset'])
+                . ' ' . $safeAuthor . ','
                 . '</div>'
+                . '<div style="padding:0 24px 24px;">' . $userActions . '</div>'
                 . $htmlEnd;
 
             $ok = (bool) COM_mail(
