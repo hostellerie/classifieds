@@ -176,6 +176,7 @@ $LANG_CLASSIFIEDS_ADMIN = array(
 	'catorder'                => 'Ordre',
 	'catdeleted'              => 'Statut',
 	'root'                    => 'Rubrique racine',
+    'root_category_help'      => 'Les rubriques racines servent uniquement à organiser les sous-rubriques et ne peuvent pas recevoir directement d’annonces. Les annonces doivent être publiées dans une sous-rubrique.',
 	'deletion_succes'         => 'The deletion was successful.',
     'deletion_fail'           => 'Oups! The deletion failed.',
 	'cat_informations'        => 'Informations de la rubrique',
