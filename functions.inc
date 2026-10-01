@@ -1984,13 +1984,13 @@ function CLASSIFIEDS_displayAds ($user = 1, $my = 0, $username='', $view_cat='',
 		} else {
 		    $ad->set_var('class', ' class="ad-list-active"');
 		}
-	
-	    //Date
-        list($date, ) = COM_getUserDateTimeFormat($createdTimestamp, 'dateonly');
-        list($time, ) = COM_getUserDateTimeFormat($createdTimestamp, 'timeonly');
-
-        $ad->set_var('date', $date);
-        $ad->set_var('time', $time);
+        // Date
+        $ad->set_var(
+            'date',
+            isset($created[0])
+                ? htmlspecialchars($created[0], ENT_QUOTES, $_CONF['default_charset'])
+                : ''
+        );
 
 	    $title = ucfirst(mb_strtolower($A['title'], $_CONF['default_charset']));
 		
@@ -2341,24 +2341,21 @@ function CLASSIFIEDS_viewAd($clid)
         $ad->set_var('edit', '');
     }
 
-    if ($createdTimestamp > 0) {
-        list($date, ) = COM_getUserDateTimeFormat($createdTimestamp, 'dateonly');
-        list($time, ) = COM_getUserDateTimeFormat($createdTimestamp, 'timeonly');
-    } else {
-        $date = '';
-        $time = '';
-    }
+    $createdLabel = isset($created[0]) ? (string) $created[0] : '';
 
     $username = isset($A['username']) ? (string) $A['username'] : '';
-    $ad->set_var(
-        'postby',
-        '<p>' . $LANG_CLASSIFIEDS_1['posted_by']
+    $postBy = '<span class="classifieds-ad__author">'
+        . $LANG_CLASSIFIEDS_1['posted_by']
         . ' <a href="' . $_CLASSIFIEDS_CONF['site_url']
         . '/index.php?mode=p&amp;u=' . (int) $A['owner_id'] . '">'
         . htmlspecialchars($username, ENT_QUOTES, $_CONF['default_charset'])
-        . '</a> ' . $LANG_CLASSIFIEDS_1['on'] . ' ' . $date
-        . ' ' . $LANG_CLASSIFIEDS_1['at'] . ' ' . $time . '</p>'
-    );
+        . '</a></span>';
+    if ($createdLabel !== '') {
+        $postBy .= '<span class="classifieds-ad__date">'
+            . htmlspecialchars($createdLabel, ENT_QUOTES, $_CONF['default_charset'])
+            . '</span>';
+    }
+    $ad->set_var('postby', $postBy);
 
     $icount = DB_count($_TABLES['cl_pic'], 'pi_pid', $clid);
     $savedImages = '';
@@ -2431,28 +2428,36 @@ function CLASSIFIEDS_viewAd($clid)
         $ad->set_var('siren', '');
     }
 
-    $ad->set_var(
-        'admin',
-        '<h2 class="classifieds-ad__aside-title">' . $LANG_CLASSIFIEDS_1['manage_ad'] . ' ('
-        . (int) $A['hits'] . ' ' . $LANG_CLASSIFIEDS_1['hits'] . ')</h2>'
-    );
-
     $canEdit = ($isAdmin || SEC_hasAccess2($A) >= 3)
         && empty($A['deleted'])
         && $active;
+
+    if ($canEdit || $isAdmin) {
+        $ad->set_var(
+            'admin',
+            '<div class="classifieds-ad__management-heading">'
+            . '<strong>' . $LANG_CLASSIFIEDS_1['manage_ad'] . '</strong>'
+            . '<span>' . (int) $A['hits'] . ' ' . $LANG_CLASSIFIEDS_1['hits'] . '</span>'
+            . '</div>'
+        );
+    } else {
+        $ad->set_var('admin', '');
+    }
+
     if ($canEdit) {
         $ad->set_var(
             'modify',
-            '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
+            '<a class="classifieds-action" href="' . $_CLASSIFIEDS_CONF['site_url']
             . '/index.php?mode=e&amp;op=edit&amp;ad=' . $clid . '">'
-            . $LANG_CLASSIFIEDS_1['modify_ad'] . '</a></p>'
+            . $LANG_CLASSIFIEDS_1['modify_ad'] . '</a>'
         );
         $ad->set_var(
             'delete',
-            '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
+            '<a class="classifieds-action classifieds-action--danger" href="'
+            . $_CLASSIFIEDS_CONF['site_url']
             . '/index.php?mode=e&amp;op=del&amp;ad=' . $clid
             . '&amp;' . CSRF_TOKEN . '=' . SEC_createToken() . '">'
-            . $LANG_CLASSIFIEDS_1['delete_ad'] . '</a></p>'
+            . $LANG_CLASSIFIEDS_1['delete_ad'] . '</a>'
         );
     } else {
         $ad->set_var('modify', '');
@@ -2461,9 +2466,10 @@ function CLASSIFIEDS_viewAd($clid)
 
     $ad->set_var(
         'report',
-        '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
+        '<a class="classifieds-action classifieds-action--secondary" href="'
+        . $_CLASSIFIEDS_CONF['site_url']
         . '/index.php?mode=r&amp;ad=' . $clid . '">'
-        . $LANG_CLASSIFIEDS_1['report'] . '</a></p>'
+        . $LANG_CLASSIFIEDS_1['report'] . '</a>'
     );
 
     if ((int) $_USER['uid'] === (int) $A['owner_id']) {
@@ -2471,18 +2477,17 @@ function CLASSIFIEDS_viewAd($clid)
     } else {
         $ad->set_var(
             'view_all',
-            '<p><a href="' . $_CLASSIFIEDS_CONF['site_url']
+            '<a class="classifieds-action classifieds-action--secondary" href="'
+            . $_CLASSIFIEDS_CONF['site_url']
             . '/index.php?mode=va&amp;u=' . (int) $A['owner_id'] . '">'
-            . $LANG_CLASSIFIEDS_1['view_all'] . '</a></p>'
+            . $LANG_CLASSIFIEDS_1['view_all'] . '</a>'
         );
     }
 
     if ((float) $A['price'] != 0.0) {
         $ad->set_var(
             'price',
-            '<span class="ad-col1">' . $LANG_CLASSIFIEDS_1['price']
-            . $LANG_CLASSIFIEDS_1['double_point'] . ' <strong>'
-            . number_format(
+            number_format(
                 $A['price'],
                 $_CONF['decimal_count'],
                 $_CONF['decimal_separator'],
@@ -2495,16 +2500,13 @@ function CLASSIFIEDS_viewAd($clid)
                 $_CLASSIFIEDS_CONF['currency'],
                 ENT_QUOTES,
                 $_CONF['default_charset']
-            ) . '</strong></span>'
+            )
         );
     } else {
-        $ad->set_var(
-            'price',
-            '<span class="ad-col1">' . $LANG_CLASSIFIEDS_1['price']
-            . $LANG_CLASSIFIEDS_1['double_point'] . ' --</span>'
-        );
+        $ad->set_var('price', '--');
         $ad->set_var('currency', '');
     }
+    $ad->set_var('price_label', $LANG_CLASSIFIEDS_1['price']);
 
     $locationParts = array();
     if (!empty($A['postcode'])) {
@@ -2523,13 +2525,7 @@ function CLASSIFIEDS_viewAd($clid)
     }
 
     if (!empty($locationParts)) {
-        $ad->set_var(
-            'postal',
-            '<span class="ad-col2">' . $LANG_CLASSIFIEDS_1['postcode']
-            . $LANG_CLASSIFIEDS_1['double_point'] . ' <strong>'
-            . implode(' ', $locationParts)
-            . '</strong></span>'
-        );
+        $ad->set_var('postal', implode(' ', $locationParts));
     } else {
         $ad->set_var('postal', '');
     }
@@ -2549,12 +2545,8 @@ function CLASSIFIEDS_viewAd($clid)
             . '">' . $categoryLabel . '</a>';
     }
 
-    $ad->set_var(
-        'category',
-        '<p>' . $LANG_CLASSIFIEDS_1['category']
-        . $LANG_CLASSIFIEDS_1['double_point'] . ' <strong>'
-        . $categoryLabel . '</strong></p>'
-    );
+    $ad->set_var('category', $categoryLabel);
+    $ad->set_var('category_label', $LANG_CLASSIFIEDS_1['category']);
 
     $ad->set_var(
         'detail',

@@ -11,26 +11,39 @@
                 {pictures}
             </div>
 
-            <div class="classifieds-ad__meta">
-                {price} {currency} {postal}
-                {category}
-            </div>
-
             <div class="classifieds-ad__description">
                 {detail}
             </div>
         </section>
 
-        <aside class="classifieds-ad__aside">
-            {contact}
-            {tel}
-            {siren}
-            {admin}
-            <div class="classifieds-ad__actions">
-                {modify}
-                {delete}
-                {view_all}
-                {report}
+        <aside class="classifieds-ad__summary">
+            <div class="classifieds-ad__price-block">
+                <span class="classifieds-ad__summary-label">{price_label}</span>
+                <div class="classifieds-ad__price">{price} {currency}</div>
+            </div>
+
+            <div class="classifieds-ad__facts">
+                <div class="classifieds-ad__location">{postal}</div>
+                <div class="classifieds-ad__category">
+                    <span class="classifieds-ad__summary-label">{category_label}</span>
+                    {category}
+                </div>
+            </div>
+
+            <div class="classifieds-ad__contact">
+                {contact}
+                {tel}
+                {siren}
+            </div>
+
+            <div class="classifieds-ad__management">
+                {admin}
+                <div class="classifieds-ad__actions">
+                    {modify}
+                    {delete}
+                    {view_all}
+                    {report}
+                </div>
             </div>
         </aside>
     </div>
