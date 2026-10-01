@@ -87,7 +87,9 @@ switch ($_REQUEST['mode']) {
 	    /*
 		* Include specific classifieds config file
 		*/
-		require_once ($_CONF['path'] . 'plugins/classifieds/lib-edit.php');
+        require_once $_CONF['path'] . 'plugins/classifieds/lib-edit.php';
+        require_once $_CONF['path'] . 'plugins/classifieds/lib-ads.php';
+        require_once $_CONF['path'] . 'plugins/classifieds/lib-republish.php';
 		
 		$pageTitle = $LANG_CLASSIFIEDS_1['plugin_name'];
 		$display = CLASSIFIEDS_user_menu();
@@ -247,6 +249,7 @@ switch ($_REQUEST['mode']) {
 	    break;
     // Contact advertiser
     case 'c':
+        require_once $_CONF['path'] . 'plugins/classifieds/lib-contact.php';
         $headerCode = CLASSIFIEDS_resourceHeaderCode('root', '', true);
         $ad = (int) $_REQUEST['ad'];
         $pageTitle = $LANG_CLASSIFIEDS_1['contact_advertiser'];
@@ -289,6 +292,7 @@ switch ($_REQUEST['mode']) {
 
     // Report ad / abuse
     case 'r':
+        require_once $_CONF['path'] . 'plugins/classifieds/lib-contact.php';
         $headerCode = CLASSIFIEDS_resourceHeaderCode('root', '', true);
         $ad = (int) $_REQUEST['ad'];
         $pageTitle = $LANG_CLASSIFIEDS_1['report'];
