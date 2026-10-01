@@ -2544,8 +2544,10 @@ function CLASSIFIEDS_missingField($field)
         $fields[] = $LANG_CLASSIFIEDS_2['category'];
     } else {
         $categoryResult = DB_query(
-            "SELECT pid, catdeleted FROM {$_TABLES['cl_cat']} "
-            . "WHERE cid = " . $catid . " LIMIT 1"
+            "SELECT c.pid, c.catdeleted FROM {$_TABLES['cl_cat']} AS c "
+            . "WHERE c.cid = " . $catid
+            . COM_getPermSQL('AND', 0, 2, 'c')
+            . " LIMIT 1"
         );
         $category = DB_fetchArray($categoryResult);
 
@@ -2591,8 +2593,16 @@ function CLASSIFIEDS_checkAdAccess($ad)
     }
 
     $result = DB_query(
-        "SELECT owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon, deleted "
-        . "FROM {$_TABLES['cl']} WHERE clid = " . $ad . " LIMIT 1"
+        "SELECT "
+        . "a.owner_id, a.group_id, a.perm_owner, a.perm_group, "
+        . "a.perm_members, a.perm_anon, a.deleted, "
+        . "c.owner_id AS cat_owner_id, c.group_id AS cat_group_id, "
+        . "c.perm_owner AS cat_perm_owner, c.perm_group AS cat_perm_group, "
+        . "c.perm_members AS cat_perm_members, c.perm_anon AS cat_perm_anon, "
+        . "c.catdeleted "
+        . "FROM {$_TABLES['cl']} AS a "
+        . "INNER JOIN {$_TABLES['cl_cat']} AS c ON c.cid = a.catid "
+        . "WHERE a.clid = " . $ad . " LIMIT 1"
     );
     $row = DB_fetchArray($result);
     if (!is_array($row)) {
@@ -2603,18 +2613,29 @@ function CLASSIFIEDS_checkAdAccess($ad)
         return true;
     }
 
-    if (!empty($row['deleted'])) {
+    if (!empty($row['deleted']) || !empty($row['catdeleted'])) {
         return false;
     }
 
-    return SEC_hasAccess(
+    $adAccess = SEC_hasAccess(
         $row['owner_id'],
         $row['group_id'],
         $row['perm_owner'],
         $row['perm_group'],
         $row['perm_members'],
         $row['perm_anon']
-    ) >= 2;
+    );
+
+    $categoryAccess = SEC_hasAccess(
+        $row['cat_owner_id'],
+        $row['cat_group_id'],
+        $row['cat_perm_owner'],
+        $row['cat_perm_group'],
+        $row['cat_perm_members'],
+        $row['cat_perm_anon']
+    );
+
+    return $adAccess >= 2 && $categoryAccess >= 2;
 }
 
 /**
@@ -2852,8 +2873,10 @@ function CLASSIFIEDS_adCategoryOptions($selected = 0)
 
     $selected = (int) $selected;
     $result = DB_query(
-        "SELECT cid, pid, category FROM {$_TABLES['cl_cat']} "
-        . "WHERE catdeleted = 0 ORDER BY pid ASC, catorder ASC, category ASC"
+        "SELECT c.cid, c.pid, c.category FROM {$_TABLES['cl_cat']} AS c "
+        . "WHERE c.catdeleted = 0"
+        . COM_getPermSQL('AND', 0, 2, 'c')
+        . " ORDER BY c.pid ASC, c.catorder ASC, c.category ASC"
     );
 
     $retval = '';
